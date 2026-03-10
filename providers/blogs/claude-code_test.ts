@@ -12,6 +12,15 @@ const FIXTURE_HTML = `
         <div class="u-text-style-caption u-foreground-tertiary u-mb-1-5">Mar 9, 2026</div>
         <div class="card_blog_title u-text-style-h6">Bringing Code Review to Claude Code</div>
       </div>
+      <div class="w-dyn-list">
+        <div class="w-dyn-items">
+          <div class="u-foreground-tertiary w-dyn-item">
+            <div class="card-main_tag-wrap">
+              <div class="u-text-style-caption">Claude Code</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     <a href="/blog/code-review" class="clickable_link w-inline-block"></a>
   </div>
@@ -62,4 +71,10 @@ Deno.test("parseBlogPosts parses dates correctly", () => {
 Deno.test("parseBlogPosts uses post URL as id", () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
   assertEquals(posts[0].id, "https://claude.com/blog/code-review");
+});
+
+Deno.test("parseBlogPosts extracts category tags", () => {
+  const posts = parseBlogPosts(FIXTURE_HTML);
+  assertEquals(posts[0].categories, ["Claude Code"]);
+  assertEquals(posts[1].categories, []);
 });
