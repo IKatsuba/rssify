@@ -18,19 +18,19 @@
     - File: `lib/types.ts`
     - _Requirements: 2, 5_
 
-- [ ] 2. Checkpoint — Foundation
+- [x] 2. Checkpoint — Foundation
   - Run `deno check lib/types.ts` to verify types compile
   - Run `deno install` to verify all imports resolve
 
-- [ ] 3. Core Libraries
-  - [ ] 3.1 Implement Feed Composer
+- [x] 3. Core Libraries
+  - [x] 3.1 Implement Feed Composer
     - Create `buildAtomFeed(meta, entries)` using `@feed/feed` Atom class
     - Handle empty entries (return valid empty feed)
     - Handle categories mapping
     - File: `lib/feed.ts`
     - _Requirements: 5_
 
-  - [ ] 3.2 Write Feed Composer tests
+  - [x] 3.2 Write Feed Composer tests
     - Test: generates valid Atom XML with entries
     - Test: generates valid empty feed
     - Test: includes categories as Atom category elements
@@ -38,7 +38,7 @@
     - File: `lib/feed_test.ts`
     - _Requirements: 5_
 
-  - [ ] 3.3 Implement HTML Scraper
+  - [x] 3.3 Implement HTML Scraper
     - Create `scrape(url)` — HTTP fetch with User-Agent header
     - Create `hasContent(html)` — heuristic check using deno-dom
     - Create `scrapeWithBrowser(url)` — Astral headless browser fallback (dynamic import)
@@ -46,7 +46,7 @@
     - File: `lib/scraper.ts`
     - _Requirements: 3_
 
-  - [ ] 3.4 Write Scraper tests
+  - [x] 3.4 Write Scraper tests
     - Test: `hasContent` returns true for substantial HTML
     - Test: `hasContent` returns false for empty/minimal HTML
     - Test: `parseHTML` returns valid Document
@@ -54,7 +54,7 @@
     - File: `lib/scraper_test.ts`
     - _Requirements: 3_
 
-  - [ ] 3.5 Implement Cache Layer
+  - [x] 3.5 Implement Cache Layer
     - Create `initCache()` — connect to Redis via `REDIS_URL`, handle auth, graceful failure
     - Create `getCached(key)` — GET with prefix, silently fail on error
     - Create `setCache(key, value, ttl)` — SET with EX, default TTL 900s, silently fail on error
@@ -62,14 +62,14 @@
     - File: `lib/cache.ts`
     - _Requirements: 6_
 
-  - [ ] 3.6 Write Cache Layer tests
+  - [x] 3.6 Write Cache Layer tests
     - Test: `getCached` returns null when client is null (no Redis)
     - Test: `setCache` does not throw when client is null
     - Note: integration tests with real Redis deferred to final checkpoint
     - File: `lib/cache_test.ts`
     - _Requirements: 6_
 
-- [ ] 4. Checkpoint — Core Libraries
+- [x] 4. Checkpoint — Core Libraries
   - Run `deno test lib/` to verify all library tests pass
   - Run `deno check lib/feed.ts lib/scraper.ts lib/cache.ts` to verify type correctness
 
