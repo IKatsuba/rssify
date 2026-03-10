@@ -1,6 +1,9 @@
+import { getCached, setCache } from '../../lib/cache.ts';
 import { parseHTML, scrape } from '../../lib/scraper.ts';
 import type { FeedEntry, Provider } from '../../lib/types.ts';
 import TurndownService from 'turndown';
+
+const ITEM_CACHE_TTL = 60 * 60 * 24 * 7;
 
 const BLOG_URL = 'https://claude.com/blog';
 
@@ -104,9 +107,20 @@ const provider: Provider = {
     const html = await scrape(BLOG_URL);
     const entries = parseBlogPosts(html);
 
-    // Fetch summary + content from individual post pages in parallel
+    // Fetch summary + content, using per-item cache (24h TTL)
     const details = await Promise.allSettled(
-      entries.map((e) => fetchPostDetails(e.link)),
+      entries.map(async (e) => {
+        const itemKey = `item:${e.link}`;
+        const cached = await getCached(itemKey);
+        if (cached) {
+          return JSON.parse(cached) as PostDetails;
+        }
+        const result = await fetchPostDetails(e.link);
+        if (result.summary || result.content) {
+          setCache(itemKey, JSON.stringify(result), ITEM_CACHE_TTL);
+        }
+        return result;
+      }),
     );
     for (let i = 0; i < entries.length; i++) {
       const result = details[i];
