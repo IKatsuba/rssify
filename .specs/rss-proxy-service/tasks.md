@@ -130,8 +130,8 @@
   - Manually test: `deno task dev` and `curl http://localhost:8000/health`
   - Manually test: `curl http://localhost:8000/blogs/claude-code` returns Atom XML
 
-- [ ] 9. Docker Deployment
-  - [ ] 9.1 Create Dockerfile
+- [x] 9. Docker Deployment
+  - [x] 9.1 Create Dockerfile
     - Use `denoland/deno` base image
     - Install Chromium for headless browser fallback
     - Set `CHROME_BIN` environment variable
@@ -142,14 +142,14 @@
     - File: `Dockerfile`
     - _Requirements: 8_
 
-  - [ ] 9.2 Create docker-compose.yml
+  - [x] 9.2 Create docker-compose.yml
     - Define `app` service: build from Dockerfile, port 8000, env vars (PORT, REDIS_URL)
     - Define `redis` service: `redis:7-alpine`, volume for persistence, healthcheck
     - Add `depends_on` with health condition
     - File: `docker-compose.yml`
     - _Requirements: 8_
 
-- [ ] 10. Final Checkpoint — Complete Verification
+- [x] 10. Final Checkpoint — Complete Verification
   - Run `deno test` — all unit and integration tests pass
   - Run `deno check main.ts` — full type check
   - Run `deno lint` — no lint errors
