@@ -1,5 +1,6 @@
 import type { Provider } from '../lib/types.ts';
 import { provider as claudeCodeProvider } from './blogs/claude-code.ts';
+import { provider as cursorProvider } from './blogs/cursor.ts';
 
 const providers = new Map<string, Provider>();
 
@@ -21,3 +22,4 @@ export function getAllProviders(): Provider[] {
 
 // Register all providers
 registerProvider(claudeCodeProvider);
+registerProvider(cursorProvider);
