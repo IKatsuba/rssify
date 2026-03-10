@@ -59,10 +59,10 @@ app.get("/:namespace/:route", async (c) => {
   });
 });
 
-// Init and start
-await initCache();
-
-const port = Number(Deno.env.get("PORT")) || 8000;
-Deno.serve({ port }, app.fetch);
-
 export { app };
+
+if (import.meta.main) {
+  await initCache();
+  const port = Number(Deno.env.get("PORT")) || 8000;
+  Deno.serve({ port }, app.fetch);
+}

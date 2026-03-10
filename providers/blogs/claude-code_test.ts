@@ -1,53 +1,65 @@
 import { assertEquals } from "@std/assert";
-import { parseEmbeddedPosts } from "./claude-code.ts";
+import { parseBlogPosts } from "./claude-code.ts";
 
 const FIXTURE_HTML = `
 <!DOCTYPE html>
 <html>
-<head><title>Research</title></head>
 <body>
-<script>self.__next_f.push([1,"some-prefix-data"])</script>
-<script>self.__next_f.push([1,"{\\"_type\\":\\"post\\",\\"title\\":\\"Test Post One\\",\\"slug\\":{\\"_type\\":\\"slug\\",\\"current\\":\\"test-post-one\\"},\\"publishedOn\\":\\"2026-01-15T10:00:00.000Z\\",\\"summary\\":\\"A summary of the first test post\\",\\"subjects\\":[{\\"_key\\":\\"alignment\\",\\"_type\\":\\"tag\\",\\"label\\":\\"Alignment\\",\\"value\\":\\"alignment\\"}],\\"directories\\":[{\\"_key\\":\\"research\\",\\"_type\\":\\"tag\\",\\"label\\":\\"Research\\",\\"value\\":\\"research\\"}]}"])</script>
-<script>self.__next_f.push([1,"{\\"_type\\":\\"post\\",\\"title\\":\\"Test Post Two\\",\\"slug\\":{\\"_type\\":\\"slug\\",\\"current\\":\\"test-post-two\\"},\\"publishedOn\\":\\"2026-02-20T14:30:00.000Z\\",\\"summary\\":null,\\"subjects\\":[],\\"directories\\":[]}"])</script>
+<div role="listitem" class="blog_cms_item w-dyn-item">
+  <div class="card_blog_wrap">
+    <div class="card_blog_content">
+      <div>
+        <div class="u-text-style-caption u-foreground-tertiary u-mb-1-5">Mar 9, 2026</div>
+        <div class="card_blog_title u-text-style-h6">Bringing Code Review to Claude Code</div>
+      </div>
+    </div>
+    <a href="/blog/code-review" class="clickable_link w-inline-block"></a>
+  </div>
+</div>
+<div role="listitem" class="blog_cms_item w-dyn-item">
+  <div class="card_blog_wrap">
+    <div class="card_blog_content">
+      <div>
+        <div class="u-text-style-caption u-foreground-tertiary u-mb-1-5">Feb 20, 2026</div>
+        <div class="card_blog_title u-text-style-h6">Common workflow patterns for AI agents</div>
+      </div>
+    </div>
+    <a href="/blog/agent-patterns" class="clickable_link w-inline-block"></a>
+  </div>
+</div>
 </body>
 </html>
 `;
 
-Deno.test("parseEmbeddedPosts extracts posts from fixture HTML", () => {
-  const posts = parseEmbeddedPosts(FIXTURE_HTML);
+Deno.test("parseBlogPosts extracts posts from fixture HTML", () => {
+  const posts = parseBlogPosts(FIXTURE_HTML);
   assertEquals(posts.length, 2);
-  assertEquals(posts[0].title, "Test Post One");
-  assertEquals(posts[1].title, "Test Post Two");
+  assertEquals(posts[0].title, "Bringing Code Review to Claude Code");
+  assertEquals(posts[1].title, "Common workflow patterns for AI agents");
 });
 
-Deno.test("parseEmbeddedPosts returns empty array for HTML without posts", () => {
+Deno.test("parseBlogPosts returns empty array for HTML without posts", () => {
   const html = `<html><body><p>No posts here</p></body></html>`;
-  const posts = parseEmbeddedPosts(html);
+  const posts = parseBlogPosts(html);
   assertEquals(posts.length, 0);
 });
 
-Deno.test("parseEmbeddedPosts correctly maps slug to current value", () => {
-  const posts = parseEmbeddedPosts(FIXTURE_HTML);
-  assertEquals(posts[0].slug.current, "test-post-one");
-  assertEquals(posts[1].slug.current, "test-post-two");
+Deno.test("parseBlogPosts builds full URLs from relative hrefs", () => {
+  const posts = parseBlogPosts(FIXTURE_HTML);
+  assertEquals(posts[0].link, "https://claude.com/blog/code-review");
+  assertEquals(posts[1].link, "https://claude.com/blog/agent-patterns");
 });
 
-Deno.test("parseEmbeddedPosts parses publishedOn as valid date string", () => {
-  const posts = parseEmbeddedPosts(FIXTURE_HTML);
-  const date = new Date(posts[0].publishedOn);
+Deno.test("parseBlogPosts parses dates correctly", () => {
+  const posts = parseBlogPosts(FIXTURE_HTML);
+  const date = posts[0].published;
   assertEquals(isNaN(date.getTime()), false);
   assertEquals(date.getFullYear(), 2026);
+  assertEquals(date.getMonth(), 2); // March = 2
+  assertEquals(date.getDate(), 9);
 });
 
-Deno.test("parseEmbeddedPosts extracts subject labels", () => {
-  const posts = parseEmbeddedPosts(FIXTURE_HTML);
-  assertEquals(posts[0].subjects.length, 1);
-  assertEquals(posts[0].subjects[0].label, "Alignment");
-  assertEquals(posts[1].subjects.length, 0);
-});
-
-Deno.test("parseEmbeddedPosts handles null summary", () => {
-  const posts = parseEmbeddedPosts(FIXTURE_HTML);
-  assertEquals(posts[0].summary, "A summary of the first test post");
-  assertEquals(posts[1].summary, null);
+Deno.test("parseBlogPosts uses post URL as id", () => {
+  const posts = parseBlogPosts(FIXTURE_HTML);
+  assertEquals(posts[0].id, "https://claude.com/blog/code-review");
 });
