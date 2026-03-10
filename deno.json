@@ -1,0 +1,16 @@
+{
+  "imports": {
+    "@hono/hono": "jsr:@hono/hono",
+    "@hono/hono/": "jsr:@hono/hono/",
+    "@b-fuze/deno-dom": "jsr:@b-fuze/deno-dom",
+    "@astral/astral": "jsr:@astral/astral",
+    "@feed/feed": "jsr:@feed/feed",
+    "@iuioiua/redis": "jsr:@iuioiua/redis",
+    "@std/assert": "jsr:@std/assert"
+  },
+  "tasks": {
+    "dev": "deno run --allow-net --allow-env --allow-read --watch main.ts",
+    "start": "deno run --allow-net --allow-env --allow-read main.ts",
+    "test": "deno test --allow-net --allow-env --allow-read"
+  }
+}
