@@ -19,7 +19,7 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
       updated: entry.published,
       summary: entry.summary ?? '',
       content: entry.content
-        ? { body: entry.content, type: 'html' }
+        ? { body: entry.content, type: 'text/markdown' }
         : undefined,
     });
   }
