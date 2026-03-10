@@ -73,8 +73,8 @@
   - Run `deno test lib/` to verify all library tests pass
   - Run `deno check lib/feed.ts lib/scraper.ts lib/cache.ts` to verify type correctness
 
-- [ ] 5. Provider System
-  - [ ] 5.1 Implement Provider Registry
+- [x] 5. Provider System
+  - [x] 5.1 Implement Provider Registry
     - Create `registerProvider(provider)` — stores in Map by `namespace/route`
     - Create `getProvider(namespace, route)` — lookup
     - Create `getAllProviders()` — list all registered
@@ -82,7 +82,7 @@
     - File: `providers/mod.ts`
     - _Requirements: 2_
 
-  - [ ] 5.2 Implement Anthropic Blog Provider
+  - [x] 5.2 Implement Anthropic Blog Provider
     - Create `parseEmbeddedPosts(html)` — extract posts from Next.js RSC streaming data (`self.__next_f.push([...])`)
     - Fields to extract: `title`, `slug.current`, `publishedOn`, `summary`, `subjects`
     - Map to `FeedEntry[]` with full URLs: `https://www.anthropic.com/research/{slug}`
@@ -90,7 +90,7 @@
     - File: `providers/blogs/claude-code.ts`
     - _Requirements: 4_
 
-  - [ ] 5.3 Write Provider tests
+  - [x] 5.3 Write Provider tests
     - Test: `parseEmbeddedPosts` extracts posts from fixture HTML
     - Test: returns empty array for HTML without expected data
     - Test: correctly maps slug to full URL
@@ -99,7 +99,7 @@
     - File: `providers/blogs/claude-code_test.ts`
     - _Requirements: 4_
 
-- [ ] 6. Checkpoint — Provider System
+- [x] 6. Checkpoint — Provider System
   - Run `deno test providers/` to verify provider tests pass
   - Run `deno check providers/mod.ts` to verify registry compiles with provider imports
 
