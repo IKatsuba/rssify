@@ -1,13 +1,13 @@
-import { Hono } from "@hono/hono";
-import { logger } from "@hono/hono/logger";
-import { getAllProviders, getProvider } from "./providers/mod.ts";
-import { buildAtomFeed } from "./lib/feed.ts";
-import { getCached, initCache, setCache } from "./lib/cache.ts";
+import { Hono } from '@hono/hono';
+import { logger } from '@hono/hono/logger';
+import { getAllProviders, getProvider } from './providers/mod.ts';
+import { buildAtomFeed } from './lib/feed.ts';
+import { getCached, initCache, setCache } from './lib/cache.ts';
 
 const app = new Hono();
 
 // Middleware
-app.use("*", logger());
+app.use('*', logger());
 
 // Error handler
 app.onError((err, c) => {
@@ -16,10 +16,10 @@ app.onError((err, c) => {
 });
 
 // Health check
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Index: list available feeds
-app.get("/", (c) => {
+app.get('/', (c) => {
   const feeds = getAllProviders().map((p) => ({
     name: `${p.namespace}/${p.route}`,
     title: p.meta.title,
@@ -29,12 +29,12 @@ app.get("/", (c) => {
 });
 
 // Provider routes: /:namespace/:route
-app.get("/:namespace/:route", async (c) => {
+app.get('/:namespace/:route', async (c) => {
   const { namespace, route } = c.req.param();
   const provider = getProvider(namespace, route);
 
   if (!provider) {
-    return c.json({ error: "Feed not found" }, 404);
+    return c.json({ error: 'Feed not found' }, 404);
   }
 
   const cacheKey = `${namespace}:${route}`;
@@ -43,7 +43,7 @@ app.get("/:namespace/:route", async (c) => {
   const cached = await getCached(cacheKey);
   if (cached) {
     return c.body(cached, 200, {
-      "Content-Type": "application/atom+xml; charset=utf-8",
+      'Content-Type': 'application/atom+xml; charset=utf-8',
     });
   }
 
@@ -55,7 +55,7 @@ app.get("/:namespace/:route", async (c) => {
   setCache(cacheKey, xml);
 
   return c.body(xml, 200, {
-    "Content-Type": "application/atom+xml; charset=utf-8",
+    'Content-Type': 'application/atom+xml; charset=utf-8',
   });
 });
 
@@ -63,6 +63,6 @@ export { app };
 
 if (import.meta.main) {
   await initCache();
-  const port = Number(Deno.env.get("PORT")) || 8000;
+  const port = Number(Deno.env.get('PORT')) || 8000;
   Deno.serve({ port }, app.fetch);
 }

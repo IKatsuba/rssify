@@ -2,7 +2,9 @@
 
 ## Overview
 
-Rssify — сервис на Deno, генерирующий Atom-фиды для сайтов без RSS. Пользователь указывает URL в формате RSSHub (например, `/blogs/claude-code`) и получает валидный Atom 1.0 XML.
+Rssify — сервис на Deno, генерирующий Atom-фиды для сайтов без RSS. Пользователь
+указывает URL в формате RSSHub (например, `/blogs/claude-code`) и получает
+валидный Atom 1.0 XML.
 
 ### Key Changes
 
@@ -15,13 +17,13 @@ Rssify — сервис на Deno, генерирующий Atom-фиды для
 
 ### Chosen Approach
 
-| Problem Area | Chosen Solution | Reference |
-|---|---|---|
-| HTTP Routing | Hono | research.md §1 |
-| HTML Parsing | deno-dom | research.md §2 |
-| Headless Browser | Astral | research.md §3 |
-| Atom Generation | @feed/feed | research.md §4 |
-| Redis Client | @iuioiua/redis | research.md §5 |
+| Problem Area     | Chosen Solution | Reference      |
+| ---------------- | --------------- | -------------- |
+| HTTP Routing     | Hono            | research.md §1 |
+| HTML Parsing     | deno-dom        | research.md §2 |
+| Headless Browser | Astral          | research.md §3 |
+| Atom Generation  | @feed/feed      | research.md §4 |
+| Redis Client     | @iuioiua/redis  | research.md §5 |
 
 ## Architecture
 
@@ -166,7 +168,7 @@ export interface Provider {
 ```typescript
 // Path: providers/mod.ts
 
-import type { Provider } from "../lib/types.ts";
+import type { Provider } from '../lib/types.ts';
 
 const providers = new Map<string, Provider>();
 
@@ -175,7 +177,10 @@ export function registerProvider(provider: Provider): void {
   providers.set(key, provider);
 }
 
-export function getProvider(namespace: string, route: string): Provider | undefined {
+export function getProvider(
+  namespace: string,
+  route: string,
+): Provider | undefined {
   return providers.get(`${namespace}/${route}`);
 }
 
@@ -184,7 +189,7 @@ export function getAllProviders(): Provider[] {
 }
 
 // Auto-import all providers
-import "./blogs/claude-code.ts";
+import './blogs/claude-code.ts';
 ```
 
 ### Anthropic Blog Provider (MVP)
@@ -192,9 +197,9 @@ import "./blogs/claude-code.ts";
 ```typescript
 // Path: providers/blogs/claude-code.ts
 
-import { registerProvider } from "../mod.ts";
-import { scrape } from "../../lib/scraper.ts";
-import type { FeedEntry, Provider } from "../../lib/types.ts";
+import { registerProvider } from '../mod.ts';
+import { scrape } from '../../lib/scraper.ts';
+import type { FeedEntry, Provider } from '../../lib/types.ts';
 
 /**
  * Anthropic research/blog page uses Next.js SSR with React Server Components.
@@ -202,7 +207,7 @@ import type { FeedEntry, Provider } from "../../lib/types.ts";
  * Strategy: fetch HTML, extract JSON payload, parse post objects.
  */
 
-const BLOG_URL = "https://www.anthropic.com/research";
+const BLOG_URL = 'https://www.anthropic.com/research';
 
 interface AnthropicPost {
   title: string;
@@ -216,20 +221,21 @@ function parseEmbeddedPosts(html: string): AnthropicPost[] {
   // Extract JSON from Next.js RSC streaming data
   // Pattern: self.__next_f.push([...]) containing publication data
   const posts: AnthropicPost[] = [];
-  const regex = /"title":"([^"]+)".*?"slug":\{"_type":"slug","current":"([^"]+)"\}.*?"publishedOn":"([^"]+)".*?"summary":("([^"]*?)"|null)/g;
+  const regex =
+    /"title":"([^"]+)".*?"slug":\{"_type":"slug","current":"([^"]+)"\}.*?"publishedOn":"([^"]+)".*?"summary":("([^"]*?)"|null)/g;
   // Actual implementation will parse the structured JSON payload
   return posts;
 }
 
 const provider: Provider = {
-  namespace: "blogs",
-  route: "claude-code",
+  namespace: 'blogs',
+  route: 'claude-code',
   meta: {
-    title: "Anthropic Research Blog",
-    description: "Latest research and updates from Anthropic",
-    link: "https://www.anthropic.com/research",
-    id: "rssify:blogs:claude-code",
-    author: "Anthropic",
+    title: 'Anthropic Research Blog',
+    description: 'Latest research and updates from Anthropic',
+    link: 'https://www.anthropic.com/research',
+    id: 'rssify:blogs:claude-code',
+    author: 'Anthropic',
   },
   async fetch(): Promise<FeedEntry[]> {
     const html = await scrape(BLOG_URL);
@@ -254,7 +260,7 @@ registerProvider(provider);
 ```typescript
 // Path: lib/scraper.ts
 
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from '@b-fuze/deno-dom';
 
 /**
  * Hybrid scraping: HTTP fetch first, headless browser fallback.
@@ -264,7 +270,7 @@ export async function scrape(url: string): Promise<string> {
   // Step 1: Try simple HTTP fetch
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Rssify/1.0 (RSS Feed Generator)",
+      'User-Agent': 'Rssify/1.0 (RSS Feed Generator)',
     },
   });
 
@@ -284,20 +290,20 @@ export async function scrape(url: string): Promise<string> {
 }
 
 function hasContent(html: string): boolean {
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  const doc = new DOMParser().parseFromString(html, 'text/html');
   // Provider-agnostic heuristic: check if body has substantial text
-  const bodyText = doc?.body?.textContent?.trim() ?? "";
+  const bodyText = doc?.body?.textContent?.trim() ?? '';
   return bodyText.length > 200;
 }
 
 async function scrapeWithBrowser(url: string): Promise<string> {
-  const { launch } = await import("@astral/astral");
+  const { launch } = await import('@astral/astral');
   const browser = await launch({
     headless: true,
   });
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.goto(url, { waitUntil: 'networkidle0' });
     const html = await page.evaluate(() => document.documentElement.outerHTML);
     return html;
   } finally {
@@ -309,7 +315,7 @@ async function scrapeWithBrowser(url: string): Promise<string> {
  * Helper: parse HTML string into DOM Document
  */
 export function parseHTML(html: string) {
-  return new DOMParser().parseFromString(html, "text/html");
+  return new DOMParser().parseFromString(html, 'text/html');
 }
 ```
 
@@ -318,8 +324,8 @@ export function parseHTML(html: string) {
 ```typescript
 // Path: lib/feed.ts
 
-import { Atom } from "@feed/feed";
-import type { FeedEntry, FeedMeta } from "./types.ts";
+import { Atom } from '@feed/feed';
+import type { FeedEntry, FeedMeta } from './types.ts';
 
 export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
   const feed = new Atom({
@@ -327,9 +333,7 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
     description: meta.description,
     link: meta.link,
     id: meta.id,
-    updated: entries.length > 0
-      ? entries[0].published
-      : new Date(),
+    updated: entries.length > 0 ? entries[0].published : new Date(),
     authors: [{ name: meta.author }],
   });
 
@@ -341,7 +345,7 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
       updated: entry.published,
       summary: entry.summary,
       content: entry.content
-        ? { body: entry.content, type: "html" }
+        ? { body: entry.content, type: 'html' }
         : undefined,
       categories: entry.categories?.map((c) => ({ name: c })),
     });
@@ -356,15 +360,15 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
 ```typescript
 // Path: lib/cache.ts
 
-import { RedisClient } from "@iuioiua/redis";
+import { RedisClient } from '@iuioiua/redis';
 
 const DEFAULT_TTL = 900; // 15 minutes in seconds
-const KEY_PREFIX = "rssify:";
+const KEY_PREFIX = 'rssify:';
 
 let client: RedisClient | null = null;
 
 export async function initCache(): Promise<void> {
-  const redisUrl = Deno.env.get("REDIS_URL") ?? "redis://localhost:6379";
+  const redisUrl = Deno.env.get('REDIS_URL') ?? 'redis://localhost:6379';
   const url = new URL(redisUrl);
 
   try {
@@ -376,10 +380,10 @@ export async function initCache(): Promise<void> {
 
     // Auth if password provided
     if (url.password) {
-      await client.sendCommand(["AUTH", url.password]);
+      await client.sendCommand(['AUTH', url.password]);
     }
   } catch (error) {
-    console.warn("Redis unavailable, running without cache:", error.message);
+    console.warn('Redis unavailable, running without cache:', error.message);
     client = null;
   }
 }
@@ -387,7 +391,7 @@ export async function initCache(): Promise<void> {
 export async function getCached(key: string): Promise<string | null> {
   if (!client) return null;
   try {
-    const result = await client.sendCommand(["GET", KEY_PREFIX + key]);
+    const result = await client.sendCommand(['GET', KEY_PREFIX + key]);
     return result as string | null;
   } catch {
     return null;
@@ -401,7 +405,13 @@ export async function setCache(
 ): Promise<void> {
   if (!client) return;
   try {
-    await client.sendCommand(["SET", KEY_PREFIX + key, value, "EX", String(ttl)]);
+    await client.sendCommand([
+      'SET',
+      KEY_PREFIX + key,
+      value,
+      'EX',
+      String(ttl),
+    ]);
   } catch {
     // Ignore cache write failures — graceful degradation
   }
@@ -413,27 +423,27 @@ export async function setCache(
 ```typescript
 // Path: main.ts
 
-import { Hono } from "@hono/hono";
-import { logger } from "@hono/hono/logger";
-import { getAllProviders, getProvider } from "./providers/mod.ts";
-import { buildAtomFeed } from "./lib/feed.ts";
-import { getCached, initCache, setCache } from "./lib/cache.ts";
+import { Hono } from '@hono/hono';
+import { logger } from '@hono/hono/logger';
+import { getAllProviders, getProvider } from './providers/mod.ts';
+import { buildAtomFeed } from './lib/feed.ts';
+import { getCached, initCache, setCache } from './lib/cache.ts';
 
 const app = new Hono();
 
 // Middleware
-app.use("*", logger());
+app.use('*', logger());
 
 // Health check
-app.get("/health", (c) => c.json({ status: "ok" }));
+app.get('/health', (c) => c.json({ status: 'ok' }));
 
 // Provider routes: /:namespace/:route
-app.get("/:namespace/:route", async (c) => {
+app.get('/:namespace/:route', async (c) => {
   const { namespace, route } = c.req.param();
   const provider = getProvider(namespace, route);
 
   if (!provider) {
-    return c.json({ error: "Feed not found" }, 404);
+    return c.json({ error: 'Feed not found' }, 404);
   }
 
   const cacheKey = `${namespace}:${route}`;
@@ -442,7 +452,7 @@ app.get("/:namespace/:route", async (c) => {
   const cached = await getCached(cacheKey);
   if (cached) {
     return c.body(cached, 200, {
-      "Content-Type": "application/atom+xml; charset=utf-8",
+      'Content-Type': 'application/atom+xml; charset=utf-8',
     });
   }
 
@@ -454,12 +464,12 @@ app.get("/:namespace/:route", async (c) => {
   setCache(cacheKey, xml);
 
   return c.body(xml, 200, {
-    "Content-Type": "application/atom+xml; charset=utf-8",
+    'Content-Type': 'application/atom+xml; charset=utf-8',
   });
 });
 
 // Index: list available feeds
-app.get("/", (c) => {
+app.get('/', (c) => {
   const feeds = getAllProviders().map((p) => ({
     name: `${p.namespace}/${p.route}`,
     title: p.meta.title,
@@ -471,7 +481,7 @@ app.get("/", (c) => {
 // Init and start
 await initCache();
 
-const port = Number(Deno.env.get("PORT")) || 8000;
+const port = Number(Deno.env.get('PORT')) || 8000;
 Deno.serve({ port }, app.fetch);
 ```
 
@@ -534,7 +544,7 @@ services:
   app:
     build: .
     ports:
-      - "8000:8000"
+      - '8000:8000'
     environment:
       - PORT=8000
       - REDIS_URL=redis://redis:6379
@@ -546,11 +556,11 @@ services:
   redis:
     image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 10s
       timeout: 5s
       retries: 3
@@ -566,12 +576,12 @@ volumes:
 
 ```typescript
 interface FeedEntry {
-  id: string;         // Unique ID (typically full URL of the post)
-  title: string;      // Post title
-  link: string;       // Full URL to the original post
-  published: Date;    // Publication date
-  summary?: string;   // Short description
-  content?: string;   // Full HTML content (optional)
+  id: string; // Unique ID (typically full URL of the post)
+  title: string; // Post title
+  link: string; // Full URL to the original post
+  published: Date; // Publication date
+  summary?: string; // Short description
+  content?: string; // Full HTML content (optional)
   categories?: string[]; // Tags/categories
 }
 ```
@@ -580,33 +590,33 @@ interface FeedEntry {
 
 ```typescript
 interface FeedMeta {
-  title: string;       // Feed title
+  title: string; // Feed title
   description: string; // Feed description
-  link: string;        // Link to the source website
-  id: string;          // Unique feed ID
-  author: string;      // Feed author name
+  link: string; // Link to the source website
+  id: string; // Unique feed ID
+  author: string; // Feed author name
 }
 ```
 
 ## Data Flow Completeness
 
-| Field/Entity | Types | Provider | Scraper | Feed Builder | Cache | HTTP Response |
-|---|---|---|---|---|---|---|
-| FeedEntry | `lib/types.ts` | `providers/blogs/*.ts` | `lib/scraper.ts` | `lib/feed.ts` | serialized JSON | Atom XML |
-| FeedMeta | `lib/types.ts` | `providers/blogs/*.ts` | N/A | `lib/feed.ts` | N/A | Atom XML header |
-| Cache key | string | N/A | N/A | N/A | `lib/cache.ts` | N/A |
+| Field/Entity | Types          | Provider               | Scraper          | Feed Builder  | Cache           | HTTP Response   |
+| ------------ | -------------- | ---------------------- | ---------------- | ------------- | --------------- | --------------- |
+| FeedEntry    | `lib/types.ts` | `providers/blogs/*.ts` | `lib/scraper.ts` | `lib/feed.ts` | serialized JSON | Atom XML        |
+| FeedMeta     | `lib/types.ts` | `providers/blogs/*.ts` | N/A              | `lib/feed.ts` | N/A             | Atom XML header |
+| Cache key    | string         | N/A                    | N/A              | N/A           | `lib/cache.ts`  | N/A             |
 
 ## Error Handling
 
 ### Error Types and Handling
 
-| Error | HTTP Status | User Message |
-|---|---|---|
-| Unknown route | 404 | `{"error": "Feed not found"}` |
-| Target site unreachable | 502 | `{"error": "Source unavailable"}` |
-| Parsing failed | 502 | `{"error": "Failed to parse source"}` |
-| Redis unavailable | — | Graceful degradation, no cache |
-| Headless browser failed | 502 | `{"error": "Failed to render source"}` |
+| Error                   | HTTP Status | User Message                           |
+| ----------------------- | ----------- | -------------------------------------- |
+| Unknown route           | 404         | `{"error": "Feed not found"}`          |
+| Target site unreachable | 502         | `{"error": "Source unavailable"}`      |
+| Parsing failed          | 502         | `{"error": "Failed to parse source"}`  |
+| Redis unavailable       | —           | Graceful degradation, no cache         |
+| Headless browser failed | 502         | `{"error": "Failed to render source"}` |
 
 Error middleware в Hono:
 
@@ -628,47 +638,55 @@ Unit-тесты для каждого модуля с `Deno.test`. Integration-�
 
 ```typescript
 // lib/feed_test.ts
-import { assertEquals } from "@std/assert";
-import { buildAtomFeed } from "./feed.ts";
+import { assertEquals } from '@std/assert';
+import { buildAtomFeed } from './feed.ts';
 
-Deno.test("buildAtomFeed generates valid Atom XML", () => {
+Deno.test('buildAtomFeed generates valid Atom XML', () => {
   const meta = {
-    title: "Test Feed",
-    description: "Test",
-    link: "https://example.com",
-    id: "test:feed",
-    author: "Test",
+    title: 'Test Feed',
+    description: 'Test',
+    link: 'https://example.com',
+    id: 'test:feed',
+    author: 'Test',
   };
   const entries = [{
-    id: "1",
-    title: "Post 1",
-    link: "https://example.com/1",
-    published: new Date("2026-01-01"),
-    summary: "Summary",
+    id: '1',
+    title: 'Post 1',
+    link: 'https://example.com/1',
+    published: new Date('2026-01-01'),
+    summary: 'Summary',
   }];
 
   const xml = buildAtomFeed(meta, entries);
 
-  assertEquals(xml.includes("<feed"), true);
-  assertEquals(xml.includes("<title>Post 1</title>"), true);
-  assertEquals(xml.includes("application/atom+xml") || xml.includes("xmlns=\"http://www.w3.org/2005/Atom\""), true);
+  assertEquals(xml.includes('<feed'), true);
+  assertEquals(xml.includes('<title>Post 1</title>'), true);
+  assertEquals(
+    xml.includes('application/atom+xml') ||
+      xml.includes('xmlns="http://www.w3.org/2005/Atom"'),
+    true,
+  );
 });
 ```
 
 ```typescript
 // providers/blogs/claude-code_test.ts
-Deno.test("parseEmbeddedPosts extracts posts from HTML", () => {
+Deno.test('parseEmbeddedPosts extracts posts from HTML', () => {
   const mockHtml = `...`; // HTML fixture with embedded Next.js data
   const posts = parseEmbeddedPosts(mockHtml);
   assertEquals(posts.length > 0, true);
-  assertEquals(typeof posts[0].title, "string");
+  assertEquals(typeof posts[0].title, 'string');
 });
 ```
 
 ### Edge Cases
 
-1. **Target site returns 403/429** — Provider throws, error middleware returns 502
+1. **Target site returns 403/429** — Provider throws, error middleware returns
+   502
 2. **Empty post list** — Return valid Atom feed with 0 entries
-3. **Redis connection lost mid-request** — Cache methods silently fail, scraping proceeds
-4. **Malformed HTML** — deno-dom returns null/empty, fallback to headless browser
-5. **Next.js data format changes** — parseEmbeddedPosts returns empty array, needs provider update
+3. **Redis connection lost mid-request** — Cache methods silently fail, scraping
+   proceeds
+4. **Malformed HTML** — deno-dom returns null/empty, fallback to headless
+   browser
+5. **Next.js data format changes** — parseEmbeddedPosts returns empty array,
+   needs provider update

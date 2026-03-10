@@ -1,9 +1,9 @@
-import { DOMParser } from "@b-fuze/deno-dom";
+import { DOMParser } from '@b-fuze/deno-dom';
 
 export async function scrape(url: string): Promise<string> {
   const response = await fetch(url, {
     headers: {
-      "User-Agent": "Rssify/1.0 (RSS Feed Generator)",
+      'User-Agent': 'Rssify/1.0 (RSS Feed Generator)',
     },
   });
 
@@ -21,17 +21,17 @@ export async function scrape(url: string): Promise<string> {
 }
 
 export function hasContent(html: string): boolean {
-  const doc = new DOMParser().parseFromString(html, "text/html");
-  const bodyText = doc?.body?.textContent?.trim() ?? "";
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const bodyText = doc?.body?.textContent?.trim() ?? '';
   return bodyText.length > 200;
 }
 
 async function scrapeWithBrowser(url: string): Promise<string> {
-  const { launch } = await import("@astral/astral");
+  const { launch } = await import('@astral/astral');
   const browser = await launch({ headless: true });
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0" });
+    await page.goto(url, { waitUntil: 'networkidle0' });
     const html = await page.evaluate(
       `document.documentElement.outerHTML`,
     ) as string;
@@ -42,5 +42,5 @@ async function scrapeWithBrowser(url: string): Promise<string> {
 }
 
 export function parseHTML(html: string) {
-  return new DOMParser().parseFromString(html, "text/html");
+  return new DOMParser().parseFromString(html, 'text/html');
 }

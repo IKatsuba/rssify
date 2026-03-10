@@ -1,5 +1,5 @@
-import { assertEquals } from "@std/assert";
-import { parseBlogPosts } from "./claude-code.ts";
+import { assertEquals } from '@std/assert';
+import { parseBlogPosts } from './claude-code.ts';
 
 const FIXTURE_HTML = `
 <!DOCTYPE html>
@@ -40,26 +40,26 @@ const FIXTURE_HTML = `
 </html>
 `;
 
-Deno.test("parseBlogPosts extracts posts from fixture HTML", () => {
+Deno.test('parseBlogPosts extracts posts from fixture HTML', () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
   assertEquals(posts.length, 2);
-  assertEquals(posts[0].title, "Bringing Code Review to Claude Code");
-  assertEquals(posts[1].title, "Common workflow patterns for AI agents");
+  assertEquals(posts[0].title, 'Bringing Code Review to Claude Code');
+  assertEquals(posts[1].title, 'Common workflow patterns for AI agents');
 });
 
-Deno.test("parseBlogPosts returns empty array for HTML without posts", () => {
+Deno.test('parseBlogPosts returns empty array for HTML without posts', () => {
   const html = `<html><body><p>No posts here</p></body></html>`;
   const posts = parseBlogPosts(html);
   assertEquals(posts.length, 0);
 });
 
-Deno.test("parseBlogPosts builds full URLs from relative hrefs", () => {
+Deno.test('parseBlogPosts builds full URLs from relative hrefs', () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
-  assertEquals(posts[0].link, "https://claude.com/blog/code-review");
-  assertEquals(posts[1].link, "https://claude.com/blog/agent-patterns");
+  assertEquals(posts[0].link, 'https://claude.com/blog/code-review');
+  assertEquals(posts[1].link, 'https://claude.com/blog/agent-patterns');
 });
 
-Deno.test("parseBlogPosts parses dates correctly", () => {
+Deno.test('parseBlogPosts parses dates correctly', () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
   const date = posts[0].published;
   assertEquals(isNaN(date.getTime()), false);
@@ -68,13 +68,13 @@ Deno.test("parseBlogPosts parses dates correctly", () => {
   assertEquals(date.getDate(), 9);
 });
 
-Deno.test("parseBlogPosts uses post URL as id", () => {
+Deno.test('parseBlogPosts uses post URL as id', () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
-  assertEquals(posts[0].id, "https://claude.com/blog/code-review");
+  assertEquals(posts[0].id, 'https://claude.com/blog/code-review');
 });
 
-Deno.test("parseBlogPosts extracts category tags", () => {
+Deno.test('parseBlogPosts extracts category tags', () => {
   const posts = parseBlogPosts(FIXTURE_HTML);
-  assertEquals(posts[0].categories, ["Claude Code"]);
+  assertEquals(posts[0].categories, ['Claude Code']);
   assertEquals(posts[1].categories, []);
 });

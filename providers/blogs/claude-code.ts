@@ -1,7 +1,8 @@
-import { scrape, parseHTML } from "../../lib/scraper.ts";
-import type { FeedEntry, Provider } from "../../lib/types.ts";
+import { parseHTML, scrape } from '../../lib/scraper.ts';
+import type { FeedEntry, Provider } from '../../lib/types.ts';
+import TurndownService from 'turndown';
 
-const BLOG_URL = "https://claude.com/blog";
+const BLOG_URL = 'https://claude.com/blog';
 
 interface PostDetails {
   summary?: string;
@@ -15,7 +16,7 @@ interface PostDetails {
 export async function fetchPostDetails(url: string): Promise<PostDetails> {
   try {
     const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; Rssify/1.0)" },
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; Rssify/1.0)' },
     });
     if (!res.ok) return {};
     const html = await res.text();
@@ -23,10 +24,15 @@ export async function fetchPostDetails(url: string): Promise<PostDetails> {
     if (!doc) return {};
 
     const meta = doc.querySelector('meta[name="description"]');
-    const summary = meta?.getAttribute("content")?.trim() || undefined;
+    const summary = meta?.getAttribute('content')?.trim() || undefined;
 
-    const richText = doc.querySelector(".u-rich-text-blog");
-    const content = richText?.innerHTML?.trim() || undefined;
+    const richText = doc.querySelector('.u-rich-text-blog');
+    const contentHtml = richText?.innerHTML?.trim();
+    let content: string | undefined;
+    if (contentHtml) {
+      const td = new TurndownService({ headingStyle: 'atx' });
+      content = td.turndown(contentHtml);
+    }
 
     return { summary, content };
   } catch {
@@ -47,29 +53,27 @@ export function parseBlogPosts(html: string): FeedEntry[] {
   const doc = parseHTML(html);
   if (!doc) return [];
 
-  const items = doc.querySelectorAll(".blog_cms_item");
+  const items = doc.querySelectorAll('.blog_cms_item');
   const entries: FeedEntry[] = [];
 
   for (const item of items) {
-    const titleEl = item.querySelector(".card_blog_title");
+    const titleEl = item.querySelector('.card_blog_title');
     const dateEl = item.querySelector(
-      ".u-text-style-caption.u-foreground-tertiary",
+      '.u-text-style-caption.u-foreground-tertiary',
     );
-    const linkEl = item.querySelector("a.clickable_link");
+    const linkEl = item.querySelector('a.clickable_link');
     const tagEl = item.querySelector(
-      ".card-main_tag-wrap .u-text-style-caption",
+      '.card-main_tag-wrap .u-text-style-caption',
     );
 
     const title = titleEl?.textContent?.trim();
     const dateText = dateEl?.textContent?.trim();
-    const href = linkEl?.getAttribute("href");
+    const href = linkEl?.getAttribute('href');
     const tag = tagEl?.textContent?.trim();
 
     if (!title || !href) continue;
 
-    const link = href.startsWith("http")
-      ? href
-      : `https://claude.com${href}`;
+    const link = href.startsWith('http') ? href : `https://claude.com${href}`;
 
     const published = dateText ? new Date(dateText) : new Date();
 
@@ -87,14 +91,14 @@ export function parseBlogPosts(html: string): FeedEntry[] {
 }
 
 const provider: Provider = {
-  namespace: "blogs",
-  route: "claude-code",
+  namespace: 'blogs',
+  route: 'claude-code',
   meta: {
-    title: "Claude Blog",
-    description: "Practical guidance for building with Claude",
+    title: 'Claude Blog',
+    description: 'Practical guidance for building with Claude',
     link: BLOG_URL,
-    id: "rssify:blogs:claude-code",
-    author: "Anthropic",
+    id: 'rssify:blogs:claude-code',
+    author: 'Anthropic',
   },
   async fetch(): Promise<FeedEntry[]> {
     const html = await scrape(BLOG_URL);
@@ -106,7 +110,7 @@ const provider: Provider = {
     );
     for (let i = 0; i < entries.length; i++) {
       const result = details[i];
-      if (result.status === "fulfilled") {
+      if (result.status === 'fulfilled') {
         if (result.value.summary) entries[i].summary = result.value.summary;
         if (result.value.content) entries[i].content = result.value.content;
       }
@@ -116,4 +120,4 @@ const provider: Provider = {
   },
 };
 
-export default provider;
+export { provider };

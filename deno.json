@@ -1,4 +1,7 @@
 {
+  "fmt": {
+    "singleQuote": true
+  },
   "imports": {
     "@hono/hono": "jsr:@hono/hono@^4.12",
     "@hono/hono/": "jsr:/@hono/hono@^4.12/",
@@ -6,7 +9,8 @@
     "@astral/astral": "jsr:@astral/astral",
     "@feed/feed": "jsr:@feed/feed",
     "@iuioiua/redis": "jsr:@iuioiua/redis",
-    "@std/assert": "jsr:@std/assert"
+    "@std/assert": "jsr:@std/assert",
+    "turndown": "npm:turndown@^7.2"
   },
   "tasks": {
     "dev": "deno run --allow-net --allow-env --allow-read --watch main.ts",

@@ -25,7 +25,8 @@
     "jsr:@std/path@1": "1.1.4",
     "jsr:@std/path@^1.0.8": "1.1.4",
     "jsr:@std/path@^1.1.4": "1.1.4",
-    "jsr:@zip-js/zip-js@^2.7.52": "2.8.24"
+    "jsr:@zip-js/zip-js@^2.7.52": "2.8.24",
+    "npm:turndown@^7.2.0": "7.2.0"
   },
   "jsr": {
     "@astral/astral@0.5.5": {
@@ -131,6 +132,17 @@
       "integrity": "3e5744893e2b08f82ec3706ffad05398ee03ab2628457d805e449efda354994b"
     }
   },
+  "npm": {
+    "@mixmark-io/domino@2.2.0": {
+      "integrity": "sha512-Y28PR25bHXUg88kCV7nivXrP2Nj2RueZ3/l/jdx6J9f8J4nsEGcgX0Qe6lt7Pa+J79+kPiJU3LguR6O/6zrLOw=="
+    },
+    "turndown@7.2.0": {
+      "integrity": "sha512-eCZGBN4nNNqM9Owkv9HAtWRYfLA4h909E/WGAWWBpmB275ehNhZyk87/Tpvjbp0jjNl9XwCsbe6bm6CqFsgD+A==",
+      "dependencies": [
+        "@mixmark-io/domino"
+      ]
+    }
+  },
   "workspace": {
     "dependencies": [
       "jsr:@astral/astral@*",
@@ -138,7 +150,8 @@
       "jsr:@feed/feed@*",
       "jsr:@hono/hono@^4.12.0",
       "jsr:@iuioiua/redis@*",
-      "jsr:@std/assert@*"
+      "jsr:@std/assert@*",
+      "npm:turndown@^7.2.0"
     ]
   }
 }

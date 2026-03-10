@@ -1,5 +1,5 @@
-import { Atom } from "@feed/feed";
-import type { FeedEntry, FeedMeta } from "./types.ts";
+import { Atom } from '@feed/feed';
+import type { FeedEntry, FeedMeta } from './types.ts';
 
 export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
   const feed = new Atom({
@@ -8,7 +8,7 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
     link: meta.link,
     id: meta.id,
     updated: entries.length > 0 ? entries[0].published : new Date(),
-    authors: [{ name: meta.author, email: "" }],
+    authors: [{ name: meta.author, email: '' }],
   });
 
   for (const entry of entries) {
@@ -17,9 +17,9 @@ export function buildAtomFeed(meta: FeedMeta, entries: FeedEntry[]): string {
       link: entry.link,
       id: entry.id,
       updated: entry.published,
-      summary: entry.summary ?? "",
+      summary: entry.summary ?? '',
       content: entry.content
-        ? { body: entry.content, type: "html" }
+        ? { body: entry.content, type: 'html' }
         : undefined,
     });
   }

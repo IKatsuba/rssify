@@ -1,5 +1,5 @@
-import type { Provider } from "../lib/types.ts";
-import claudeCodeProvider from "./blogs/claude-code.ts";
+import type { Provider } from '../lib/types.ts';
+import { provider as claudeCodeProvider } from './blogs/claude-code.ts';
 
 const providers = new Map<string, Provider>();
 
