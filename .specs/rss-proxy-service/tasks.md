@@ -103,8 +103,8 @@
   - Run `deno test providers/` to verify provider tests pass
   - Run `deno check providers/mod.ts` to verify registry compiles with provider imports
 
-- [ ] 7. HTTP Server
-  - [ ] 7.1 Implement main application
+- [x] 7. HTTP Server
+  - [x] 7.1 Implement main application
     - Create Hono app with logger middleware
     - Add `onError` handler returning appropriate status codes (404, 502)
     - Add `GET /health` endpoint returning `{"status": "ok"}`
@@ -116,7 +116,7 @@
     - File: `main.ts`
     - _Requirements: 1, 7_
 
-  - [ ] 7.2 Write integration tests
+  - [x] 7.2 Write integration tests
     - Test: `GET /health` returns 200 with status ok
     - Test: `GET /` lists available feeds
     - Test: `GET /blogs/claude-code` returns Atom XML (mock scraper)
@@ -125,7 +125,7 @@
     - File: `main_test.ts`
     - _Requirements: 1, 7_
 
-- [ ] 8. Checkpoint — Working Server
+- [x] 8. Checkpoint — Working Server
   - Run `deno test` to verify all tests pass
   - Manually test: `deno task dev` and `curl http://localhost:8000/health`
   - Manually test: `curl http://localhost:8000/blogs/claude-code` returns Atom XML

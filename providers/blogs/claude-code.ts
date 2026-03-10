@@ -1,4 +1,3 @@
-import { registerProvider } from "../mod.ts";
 import { scrape } from "../../lib/scraper.ts";
 import type { FeedEntry, Provider } from "../../lib/types.ts";
 
@@ -130,4 +129,4 @@ const provider: Provider = {
   },
 };
 
-registerProvider(provider);
+export default provider;

@@ -1,4 +1,5 @@
 import type { Provider } from "../lib/types.ts";
+import claudeCodeProvider from "./blogs/claude-code.ts";
 
 const providers = new Map<string, Provider>();
 
@@ -18,5 +19,5 @@ export function getAllProviders(): Provider[] {
   return [...providers.values()];
 }
 
-// Auto-import all providers
-import "./blogs/claude-code.ts";
+// Register all providers
+registerProvider(claudeCodeProvider);
