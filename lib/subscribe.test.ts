@@ -264,6 +264,21 @@ describe("subscribe to a new feed", () => {
         `<?xml version="1.0" encoding="utf-8"?>\n<!-- c --><html xmlns="http://www.w3.org/1999/xhtml"><head>${link}</head></html>`,
         new Headers({ "content-type": "application/octet-stream" }),
       ],
+      [
+        "no <html>, starting with <head>",
+        `<!-- c --><head>${link}</head><body></body>`,
+        new Headers(),
+      ],
+      [
+        "no <html>, starting with <META>",
+        `<META charset="utf-8">${link}`,
+        new Headers({ "content-type": "text/plain" }),
+      ],
+      [
+        "no <html>, starting with <link/>",
+        `${link.replace(">", "/>")}<title>Blog</title>`,
+        new Headers(),
+      ],
     ]
     for (const [name, text, headers] of bodies) {
       test(name, async () => {
@@ -282,6 +297,8 @@ describe("subscribe to a new feed", () => {
       for (const text of [
         `<!-- never closed <html>${link}`,
         `<!-- c --><note>${link}</note>`,
+        `<header>${link}</header>`,
+        `<linkage>${link}</linkage>`,
       ]) {
         const { fetch, calls } = site({ [PAGE]: { text } })
         expect(

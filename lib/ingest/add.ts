@@ -38,7 +38,9 @@ const failed = (code: AddErrorCode) => ({ kind: "error", code }) as const
 // Discovery only reads an HTML page. The body is sniffed, as Content-Type
 // is often missing or wrong, and an HTML Content-Type counts as well. The
 // sniff skips what may precede the root: a BOM, whitespace, an XML prolog
-// (XHTML) and comments. A loop, not one regex, so a body of many comments
+// (XHTML) and comments. A page may leave out <html> and start with a head
+// element; a false positive costs nothing, as finding no feed links is
+// not_found anyway. A loop, not one regex, so a body of many comments
 // cannot make it backtrack.
 function isHtml(text: string, headers: Headers) {
   const type = headers.get("content-type")?.split(";")[0].trim().toLowerCase()
@@ -58,7 +60,9 @@ function isHtml(text: string, headers: Headers) {
     if (end < 0) return false
     at = skip(end + 3)
   }
-  return /^<(?:!doctype\s+html|html)[\s>]/i.test(text.slice(at, at + 16))
+  return /^<(?:!doctype\s+html|html|head|meta|link)[\s/>]/i.test(
+    text.slice(at, at + 16)
+  )
 }
 
 export async function fetchForAdd(
