@@ -7,7 +7,7 @@ shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
 no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing,
-sanitising and refresh helpers; add-feed, scheduling and plugins are pending.
+sanitising, refresh and add-feed helpers; scheduling and plugins are pending.
 
 ## Commands
 
@@ -63,23 +63,48 @@ Postgres host; its default user is `reader@example.com`.
   queries ordered by `sortAt`/id descending with keyset paging, and scoped
   neighbours. Reads do not mark entries read; read/unread writes are
   idempotent, and mark-all uses the list's `asOf` as its `upTo` cutoff.
-  Inaccessible data returns `not_found`. Subscribe accepts stored feed URLs
-  only, with a 500-subscription cap; new-feed fetching and source inputs
-  are pending. Last unsubscribe deletes the feed, entries and read marks
-  in one transaction.
+  Inaccessible data returns `not_found`. `subscribe(userId, { url } | { source })`
+  checks the 500-subscription cap first (`limit`), resolves built-in sources
+  (unknown IDs return `not_found`) and normalises URLs without fragments.
+  Existing feeds need no fetch. New feeds are fetched outside the transaction;
+  one transaction locks the user, rechecks the cap, inserts the feed, first
+  entries, success polling fields and subscription. A URL conflict subscribes
+  to the winner's feed. Failures write nothing; DB errors throw. Last
+  unsubscribe deletes the feed, entries and read marks in one transaction.
+- `lib/ingest/add.ts`: `fetchForAdd` uses `safeFetch` with a 15 s deadline
+  and parses against the final response URL. The add path discovers HTML
+  after parse failure, using body sniffing or an HTML Content-Type:
+  no links returns `not_found`, several return `multiple` with `choices`,
+  and one rechecks stored feeds before a separate 15 s fetch. Discovery
+  stops there; another HTML page returns `not_found`. Direct feeds keep the
+  normalised input URL after redirects; discovery stores the discovered URL.
+  HTTP 404/410 and non-feeds return `not_found`, other non-2xx responses
+  `unreachable`; `SafeFetchError` codes pass through. A matching plugin gets
+  one 40 s deadline; fetch errors keep their code, other throws or zero
+  entries return `not_found`.
+- `lib/ingest/discover.ts`: `discoverFeeds(html, pageUrl)` uses cheerio to
+  read alternate RSS/Atom/RDF/JSON Feed links, resolving against `<base>`
+  or the final page URL. It returns deduplicated HTTP(S) URLs in document
+  order, with no path guessing.
+- `sources/`: `builtinSources` maps `claude-code` to
+  `https://claude.dev/rss.xml`. `SourcePlugin` defines `fetchEntries` with
+  guarded fetch, known-URL lookup and a shared deadline; `pluginFor` matches
+  the URL exactly against `matches`. The plugin registry is empty; Cursor
+  support is pending. Feed rows are created on subscribe, never seeded.
 - `lib/ingest/refresh.ts`: `refreshFeed(feedId, { skipIfFreshWithin, fetch,
   now })` uses conditional `safeFetch` with a 15 s deadline, then parses
   against the final response URL without changing the stored URL. Nothing
   calls it yet. Missing feeds return; `skipIfFreshWithin` skips recent
   fetches (seconds); plugin feeds throw until plugins are implemented.
-  Parsed success stores the newest 100 items by `sortAt`, with document
+  Shared `storeEntries` takes the newest 100 items by `sortAt`, with document
   order breaking ties and `sortAt = min(publishedAt ?? now, now)`.
   `(feedId, guid)` duplicates keep the first version. In one transaction,
   it inserts, retains the newest 500 by `(sortAt, id)` descending and
   updates the feed; DB errors throw and roll back. Retained entries keep
   read marks; pruning cascades them. Success (including 304) resets
-  failures and schedules +60 min. Failures use the incremented count for
-  `min(60 min × 2^failureCount, 24 h)` and set `failing` at 3; 429/503
+  failures and schedules +60 min; new feeds use the same `successFields`.
+  Failures use `min(60 min × 2^failureCount, 24 h)` with the incremented
+  count and set `failing` at 3; 429/503
   honour longer `Retry-After` delays up to 24 h. HTTP 410 sets `gone`
   with no next fetch. Each fetched outcome writes `lastFetchedAt` once;
   source failures store `lastError` and return normally.
