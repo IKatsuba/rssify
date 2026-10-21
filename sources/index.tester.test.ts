@@ -10,13 +10,35 @@ describe("source lookup tester edges", () => {
       "",
       "Claude-Code",
       " claude-code ",
-      "cursor-blog",
       "__proto__",
       "constructor",
       "toString",
     ]) {
       expect(builtinSource(id)).toBeUndefined()
     }
+  })
+
+  test("registered Cursor descriptor selects only its exact list URL", () => {
+    const source = builtinSource("cursor-blog")
+    expect(source).toMatchObject({
+      id: "cursor-blog",
+      title: "Cursor blog",
+      url: "https://cursor.com/blog",
+      note: "No feed of its own",
+    })
+    expect(pluginFor(source!.url)?.id).toBe(source!.id)
+    for (const url of [
+      "https://cursor.com/blog/",
+      "https://cursor.com/blog/projects",
+      "https://cursor.com/blog?ref=feed",
+      "https://cursor.com/blog#posts",
+      "https://cursor.com.evil.invalid/blog",
+      "http://cursor.com/blog",
+    ]) {
+      expect(pluginFor(url)).toBeUndefined()
+    }
+    expect(builtinSource("Cursor-blog")).toBeUndefined()
+    expect(builtinSource(" cursor-blog ")).toBeUndefined()
   })
 
   test("plugin selection is exact across multiple descriptors and never fetches", () => {

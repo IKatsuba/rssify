@@ -236,6 +236,46 @@ describe("subscribe tester acceptance edges", () => {
     expect(await db.subscription.count()).toBe(1)
   })
 
+  test("registered Cursor layout failure writes nothing", async () => {
+    const calls: string[] = []
+    const fetch: SafeFetch = async (url) => {
+      calls.push(url)
+      return response(url, "<main>No post articles</main>")
+    }
+    expect(
+      await subscribe("tester", { source: "cursor-blog" }, { fetch })
+    ).toEqual({ ok: false, code: "not_found" })
+    expect(calls).toEqual(["https://cursor.com/blog"])
+    await assertEmpty()
+  })
+
+  test("existing Cursor built-in is reused by URL and source without fetching", async () => {
+    const feed = await db.feed.create({
+      data: {
+        url: "https://cursor.com/blog",
+        pluginId: "cursor-blog",
+        status: "gone",
+        failureCount: 4,
+        nextFetchAt: null,
+      },
+    })
+    expect(
+      await subscribe("tester", { source: "cursor-blog" }, { fetch: noFetch })
+    ).toEqual({ ok: true, feedId: feed.id, existed: false })
+    expect(
+      await subscribe(
+        "tester",
+        { url: "https://cursor.com/blog#posts" },
+        { fetch: noFetch }
+      )
+    ).toEqual({ ok: true, feedId: feed.id, existed: true })
+    expect(await db.feed.findUniqueOrThrow({ where: { id: feed.id } })).toEqual(
+      feed
+    )
+    expect(await db.subscription.count()).toBe(1)
+    expect(await db.entry.count()).toBe(0)
+  })
+
   test("same-user simultaneous adds are idempotent and preserve one fetched version", async () => {
     const arrive = twoArrivals()
     const fetch: SafeFetch = async (url) => {
