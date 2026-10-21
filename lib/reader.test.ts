@@ -365,3 +365,113 @@ describe("subscribe", () => {
     expect(await db.subscription.count({ where: { userId: "u1" } })).toBe(500)
   })
 })
+
+// Races are made deterministic by holding a row lock in a separate
+// transaction, starting the racers in a chosen order, and waiting until each
+// is blocked on a lock before starting the next and releasing.
+async function holdLock(lock: (tx: typeof db) => Promise<unknown>) {
+  let release!: () => void
+  const released = new Promise<void>((resolve) => (release = resolve))
+  let held!: () => void
+  const isHeld = new Promise<void>((resolve) => (held = resolve))
+  const done = db.$transaction(
+    async (tx) => {
+      await lock(tx as typeof db)
+      held()
+      await released
+    },
+    { timeout: 10_000 }
+  )
+  await isHeld
+  return async () => {
+    release()
+    await done
+  }
+}
+
+async function lockWaiters(n: number) {
+  const deadline = Date.now() + 3_000
+  for (;;) {
+    const [{ count }] = await db.$queryRaw<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM pg_stat_activity
+      WHERE datname = current_database() AND wait_event_type = 'Lock'`
+    if (count >= n) return
+    if (Date.now() > deadline) throw new Error(`never saw ${n} lock waiters`)
+    await Bun.sleep(10)
+  }
+}
+
+const lockFeed = (id: string) => (tx: typeof db) =>
+  tx.$queryRaw`SELECT id FROM "Feed" WHERE id = ${id} FOR UPDATE`
+
+describe("races", () => {
+  test("two adds at 499 subscriptions leave exactly 500", async () => {
+    await db.feed.createMany({
+      data: Array.from({ length: 497 }, (_, i) => ({
+        id: `f${i}`,
+        url: `https://f${i}.example.com/`,
+      })),
+    })
+    await db.subscription.createMany({
+      data: Array.from({ length: 497 }, (_, i) => ({
+        userId: "u1",
+        feedId: `f${i}`,
+      })),
+    })
+    await feed("d", "Delta", [])
+    const release = await holdLock(
+      (tx) => tx.$queryRaw`SELECT id FROM "user" WHERE id = 'u1' FOR UPDATE`
+    )
+    const first = subscribe("u1", { url: "https://c.example.com/feed.xml" })
+    await lockWaiters(1)
+    const second = subscribe("u1", { url: "https://d.example.com/feed.xml" })
+    await lockWaiters(2)
+    await release()
+    const results = await Promise.all([first, second])
+    expect(results.map((r) => r.ok).sort()).toEqual([false, true])
+    expect(results.find((r) => !r.ok)).toEqual({ ok: false, code: "limit" })
+    expect(await db.subscription.count({ where: { userId: "u1" } })).toBe(500)
+  })
+
+  test("the last two subscribers leaving at once delete the feed", async () => {
+    const release = await holdLock(lockFeed("a"))
+    const first = unsubscribe("u1", "a")
+    await lockWaiters(1)
+    const second = unsubscribe("u2", "a")
+    await lockWaiters(2)
+    await release()
+    await Promise.all([first, second])
+    expect(await db.feed.count({ where: { id: "a" } })).toBe(0)
+    expect(await db.entry.count({ where: { feedId: "a" } })).toBe(0)
+  })
+
+  test("subscribe before the last unsubscribe: the feed stays", async () => {
+    const release = await holdLock(lockFeed("b"))
+    const sub = subscribe("u2", { url: "https://b.example.com/feed.xml" })
+    await lockWaiters(1)
+    const unsub = unsubscribe("u1", "b")
+    await lockWaiters(2)
+    await release()
+    expect(await sub).toEqual({ ok: true, feedId: "b", existed: false })
+    await unsub
+    expect(
+      await db.subscription.findMany({
+        where: { feedId: "b" },
+        select: { userId: true },
+      })
+    ).toEqual([{ userId: "u2" }])
+  })
+
+  test("the last unsubscribe before subscribe: the feed is new again", async () => {
+    const release = await holdLock(lockFeed("b"))
+    const unsub = unsubscribe("u1", "b")
+    await lockWaiters(1)
+    const sub = subscribe("u2", { url: "https://b.example.com/feed.xml" })
+    await lockWaiters(2)
+    await release()
+    await unsub
+    expect(await sub).toEqual({ ok: false, code: "not_supported" })
+    expect(await db.feed.count({ where: { id: "b" } })).toBe(0)
+    expect(await db.subscription.count({ where: { feedId: "b" } })).toBe(0)
+  })
+})

@@ -254,8 +254,14 @@ export async function markAllRead(
 
 // The last subscriber takes the feed with it, cascading its entries and read
 // marks, in the same transaction so no orphan feed is left to poll.
+//
+// Locks, always in this order: the user row, then the feed row. The feed lock
+// serialises every subscribe and unsubscribe of one feed, so two last
+// subscribers leaving at once cannot both see the other still there, and a
+// subscribe never lands on a feed that is being deleted.
 export async function unsubscribe(userId: string, feedId: string) {
   await db.$transaction(async (tx) => {
+    await tx.$queryRaw`SELECT id FROM "Feed" WHERE id = ${feedId} FOR UPDATE`
     const { count } = await tx.subscription.deleteMany({
       where: { userId, feedId },
     })
@@ -298,19 +304,27 @@ export async function subscribe(
   userId: string,
   { url: input }: { url: string }
 ): Promise<SubscribeResult> {
-  const count = await db.subscription.count({ where: { userId } })
-  if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
-  const url = normaliseUrl(input)
-  if (!url) return { ok: false, code: "invalid_url" }
-  // A known feed is polled on its own schedule, so subscribing never fetches.
-  const feed = await db.feed.findUnique({
-    where: { url },
-    select: { id: true },
-  })
-  if (!feed) return subscribeNewFeed()
-  const { count: created } = await db.subscription.createMany({
-    data: { userId, feedId: feed.id },
-    skipDuplicates: true,
-  })
-  return { ok: true, feedId: feed.id, existed: created === 0 }
+  const result = await db.$transaction(
+    async (tx): Promise<SubscribeResult | null> => {
+      // The user lock makes the cap count and the insert one step per user.
+      await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`
+      const count = await tx.subscription.count({ where: { userId } })
+      if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
+      const url = normaliseUrl(input)
+      if (!url) return { ok: false, code: "invalid_url" }
+      // A feed deleted by a last unsubscribe while we waited for its lock
+      // is skipped by FOR UPDATE, so it reads as not existing.
+      const [feed] = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Feed" WHERE url = ${url} FOR UPDATE`
+      if (!feed) return null
+      // A known feed is polled on its own schedule, so subscribing never
+      // fetches.
+      const { count: created } = await tx.subscription.createMany({
+        data: { userId, feedId: feed.id },
+        skipDuplicates: true,
+      })
+      return { ok: true, feedId: feed.id, existed: created === 0 }
+    }
+  )
+  return result ?? subscribeNewFeed()
 }
