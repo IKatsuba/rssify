@@ -1,4 +1,5 @@
 import { beforeEach } from "bun:test"
+import { parse } from "pg-connection-string"
 
 import { db } from "@/lib/db"
 
@@ -7,12 +8,18 @@ import { db } from "@/lib/db"
 // local throwaway one.
 export function assertTestDatabaseUrl(url: string | undefined) {
   if (!url) throw new Error("Refusing to run: DATABASE_URL is not set")
-  const { hostname, pathname } = new URL(url)
-  if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-    throw new Error(`Refusing to run: database host is ${hostname}`)
+  const { protocol } = new URL(url)
+  if (protocol !== "postgresql:" && protocol !== "postgres:") {
+    throw new Error(`Refusing to run: protocol is ${protocol}`)
   }
-  if (pathname !== "/rssify_test") {
-    throw new Error(`Refusing to run: database is ${pathname.slice(1)}`)
+  // The driver's own parser: query parameters such as ?host= override the
+  // URL's host, so checking URL.hostname alone would let them through.
+  const { host, database } = parse(url)
+  if (host !== "localhost" && host !== "127.0.0.1") {
+    throw new Error(`Refusing to run: database host is ${host}`)
+  }
+  if (database !== "rssify_test") {
+    throw new Error(`Refusing to run: database is ${database}`)
   }
 }
 

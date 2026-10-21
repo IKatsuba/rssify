@@ -24,6 +24,28 @@ describe("assertTestDatabaseUrl", () => {
     ).toThrow(/host/)
   })
 
+  test("refuses a host overridden by a query parameter", () => {
+    expect(() =>
+      assertTestDatabaseUrl(
+        "postgresql://rssify@localhost:54329/rssify_test?host=db.example.com"
+      )
+    ).toThrow(/host is db.example.com/)
+  })
+
+  test("refuses a Unix socket host", () => {
+    expect(() =>
+      assertTestDatabaseUrl(
+        "postgresql://rssify@localhost/rssify_test?host=/tmp"
+      )
+    ).toThrow(/host/)
+  })
+
+  test("refuses a non-Postgres protocol", () => {
+    expect(() =>
+      assertTestDatabaseUrl("socket://localhost/rssify_test")
+    ).toThrow(/protocol/)
+  })
+
   test("refuses the dev database", () => {
     expect(() =>
       assertTestDatabaseUrl("postgresql://rssify@localhost:54329/rssify")
