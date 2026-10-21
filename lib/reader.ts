@@ -255,7 +255,8 @@ export async function markAllRead(
 // The last subscriber takes the feed with it, cascading its entries and read
 // marks, in the same transaction so no orphan feed is left to poll.
 //
-// Locks, always in this order: the user row, then the feed row. The feed lock
+// Unsubscribe locks only the feed row; subscribe locks the user row, then
+// the feed row, so there is no lock cycle. The feed lock
 // serialises every subscribe and unsubscribe of one feed, so two last
 // subscribers leaving at once cannot both see the other still there, and a
 // subscribe never lands on a feed that is being deleted.
