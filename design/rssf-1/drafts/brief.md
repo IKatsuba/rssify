@@ -1,4 +1,4 @@
-# RSS-1 brief: rssify v1, a simple serverless RSS reader
+# RSSF-1 brief: rssify v1, a simple serverless RSS reader
 
 Lead's brief for the ingest, interface and state architects and the critic.
 The owner's word for everything below: keep it as simple as possible, don't

@@ -1,4 +1,4 @@
-# RSS-1 state draft: data model, storage, auth, tests
+# RSSF-1 state draft: data model, storage, auth, tests
 
 State architect's answers to the brief's state questions 1–6 and the shared
 items, with the owner's settled answers folded in (Vercel Pro, multi-user,

@@ -1,4 +1,4 @@
-# RSS-1 design: rssify v1, a simple serverless RSS reader
+# RSSF-1 design: rssify v1, a simple serverless RSS reader
 
 The merged design for rssify v1. It replaces the Deno/Hono Atom service with
 a multi-user RSS reader on Next.js (App Router) + shadcn/ui, Neon Postgres
@@ -20,7 +20,7 @@ Contents: 1 What a person sees · 2 Screens and states · 3 Keys ·
 4 Sentences · 5 Routes, server actions, API · 6 Cron, queue, ingest ·
 7 Source plugins · 8 Prisma schema · 9 Auth and API keys · 10 Local stack,
 config, deploy · 11 Failure cases · 12 Test plan · 13 Build units ·
-14 Decisions and options · 15 Critic findings · 16 Owner questions.
+14 Decisions and options · 15 Critic findings · 16 Owner's answers.
 
 ---
 
@@ -48,7 +48,7 @@ config, deploy · 11 Failure cases · 12 Test plan · 13 Build units ·
 
 Not in v1: folders/tags, search, stars, sharing, OPML, push, full-text
 extraction of RSS entries, per-feed intervals, image proxy, public Atom
-output (owner question O2), read-only API keys.
+output (dropped, owner answer O2), read-only API keys.
 
 ## 2. Screens and their states
 
@@ -123,7 +123,7 @@ previous *in the list it came from*); **Mark as read/unread** (`m`);
 **Open original** (`v`, `target="_blank" rel="noopener noreferrer"`;
 disabled when the entry has no valid `url`). Below 640 px icon-only with
 `sr-only` labels. Body: `<article>`, meta line, `h1`, content in a `prose`
-container (owner question O5) at most 65ch.
+container (`@tailwindcss/typography`, owner answer O5) at most 65ch.
 
 | State | Capture |
 | --- | --- |
@@ -153,8 +153,10 @@ or a "Subscribed" `Badge`.
 | error under the field (`FieldError`) | `desktop-add-error.png` |
 | added / already subscribed | dialog closes, goes to `/feeds/[feedId]`, toast |
 
-The built-in item's note follows owner question O1 (the capture's
-"claude.com/blog — no feed of its own" is a placeholder).
+The Claude Code item reads "claude.dev — the Claude Code blog's own feed"
+(owner answer O1; the capture's "claude.com/blog — no feed of its own"
+is superseded). The Cursor item reads "cursor.com/blog — no feed of its
+own".
 
 ### 2.5 Settings (`/settings`)
 
@@ -710,7 +712,7 @@ Two separate things:
 ```ts
 // sources/builtin.ts: what the add dialog lists and { source } maps
 export const builtinSources = [
-  { id: 'claude-code', title: 'Claude Code blog', url: 'https://claude.dev/rss.xml', note: '…' }, // O1
+  { id: 'claude-code', title: 'Claude Code blog', url: 'https://claude.dev/rss.xml', note: 'claude.dev — the Claude Code blog's own feed' }, // O1 (a)
   { id: 'cursor-blog', title: 'Cursor blog', url: 'https://cursor.com/blog', note: 'No feed of its own' },
 ] as const;
 
@@ -739,7 +741,7 @@ export const plugins: Record<string, SourcePlugin> = { 'cursor-blog': cursorBlog
 - **Claude Code**: `claude.com/blog` now redirects to `/resources/articles`
   and the old selectors match nothing; the Claude Code blog publishes real
   RSS at `https://claude.dev/rss.xml`. Default: plain feed, no plugin
-  (owner question O1).
+  (owner answer O1).
 - **No headless browser in v1**: every field of both sources is in the
   static HTML. Astral, deno-dom, Turndown and Redis go with Deno; entries
   are stored as sanitised HTML, not Markdown.
@@ -1152,7 +1154,8 @@ model OauthClientAssertion {
 - Storage estimate: feed HTML is typically 5–20 KB per entry (measured
   range in the ingest draft), so 100 feeds × 500 entries ≈ 0.25–1 GB at
   the limit; the 200 KB cap is a ceiling, not the norm. Read marks are
-  bounded by entries through the cascade. See O4.
+  bounded by entries through the cascade. O4: the owner upgrades the
+  Neon plan if it runs short.
 - Migrations are additive in v1; dropping or renaming takes two releases.
 
 ## 9. Auth and API keys
@@ -1192,7 +1195,10 @@ export const auth = betterAuth({
   Env: `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`, `BETTER_AUTH_SECRET`,
   `BETTER_AUTH_URL`. A Vercel App holds a list of "Authorization Callback
   URLs" (Vercel docs, sign-in-with-vercel/authorization-server-api), so one
-  App can serve both; see O6.
+  App can serve both, but the owner chose two Apps (O6): a dev App with
+  the `http://localhost:3210/api/auth/callback/vercel` callback, whose id
+  and secret go in `.env.local`, and a production App whose credentials
+  live only in Vercel's env.
 - **Registration switch**: `registrationGate` in
   `databaseHooks.user.create.before`, on every user creation. Open
   (`REGISTRATION_ENABLED === 'true'`) → allow. Closed → allow only a
@@ -1284,9 +1290,11 @@ volumes:
   `REGISTRATION_ENABLED=false`, `CRON_SECRET`. Queue credentials come from
   Vercel's OIDC on deploy; none locally.
 - **Migrations**: `bunx prisma migrate dev` locally, committed.
-  `"vercel-build": "prisma generate && if [ \"$VERCEL_ENV\" = production ]; then prisma migrate deploy; fi && next build"`:
-  a failed production migration fails the build; other environments skip
-  it (previews: O3).
+  `"vercel-build": "prisma generate && if [ \"$VERCEL_ENV\" = production ] || [ \"$VERCEL_ENV\" = preview ]; then prisma migrate deploy; fi && next build"`:
+  a failed migration fails the build. Each preview has its own Neon branch
+  through the Neon–Vercel integration and migrates it (O3); previews have
+  no sign-in in v1 (no callback is registered for preview URLs, so the
+  button ends on the sign-in error state).
 - **Queue and cron locally**: neither runs locally (crons do not run under
   `next dev`; the queue SDK needs `vercel link`/`env pull`, which are the
   owner's). `bun scripts/refresh.ts` runs a whole cycle against the docker
@@ -1415,7 +1423,8 @@ Each unit is one shippable change with its tests.
    route, `vercel.json`, `@vercel/queue`.
 8. **`cursor-blog` plugin** and `sources/builtin.ts`.
 9. **Reader UI, read-only**: layout, sidebar, lists, entry, every state,
-   `min-w-0`, reduced motion, typography (O5).
+   `min-w-0`, reduced motion, `@tailwindcss/typography` (`prose
+   dark:prose-invert`, O5).
 10. **Reader actions UI**: mark, mark all, add dialog, unsubscribe, toasts.
 11. **Keys**: listener, guard, cursor, `?` dialog, tooltips, switch, `d`.
 12. **Settings, API keys UI and `/api/v1`**, on `lib/reader-schemas.ts` (the zod inputs shared by actions, API and MCP).
@@ -1427,8 +1436,7 @@ Each unit is one shippable change with its tests.
 Dependencies added: `next`, `react`, shadcn preset deps, `better-auth`,
 `@better-auth/api-key`, `prisma`, `@prisma/client`, `@prisma/adapter-neon`,
 `@prisma/adapter-pg`, `@vercel/queue`, `@rowanmanning/feed-parser`,
-`sanitize-html`, `cheerio`, `undici`, `ipaddr.js`, `@better-auth/mcp`, `@better-auth/cimd`, `@modelcontextprotocol/server`, `zod` 4 (and
-`@tailwindcss/typography` if O5 says so).
+`sanitize-html`, `cheerio`, `undici`, `ipaddr.js`, `@better-auth/mcp`, `@better-auth/cimd`, `@modelcontextprotocol/server`, `zod` 4, and `@tailwindcss/typography` (dev).
 
 ## 14. Decisions, with the options considered
 
@@ -1436,7 +1444,7 @@ Dependencies added: `next`, `react`, shadcn preset deps, `better-auth`,
 | --- | --- | --- |
 | Queue config | Next.js native integration; `vercel.json` `experimentalTriggers` | `vercel.json`: the only App Router path in `@vercel/queue` 0.8.0 and the docs |
 | Cron registration | `vercel.json` `crons`; `@vercel/schedules` | `crons`: schedules is alpha with no docs |
-| Cron cadence (Pro) | `*/5`; `*/15`; hourly | `*/15`: a feed is ≤ 15 min late; `*/5` keeps Neon awake around the clock (O4) |
+| Cron cadence (Pro) | `*/5`; `*/15`; hourly | `*/15`: a feed is ≤ 15 min late; `*/5` keeps Neon awake around the clock; the owner keeps `*/15` and upgrades Neon if needed (O4) |
 | Polling | fixed interval + backoff; adaptive (ttl, Cache-Control) | fixed 60 min + exponential backoff to 24 h, stop on 410 |
 | Claim | fan-out claim; consumer claim; both | fan-out only (lease 30 min); consumer skips duplicates by `lastFetchedAt`. Both together never fetched |
 | Local/test queue | fake queue; `vercel dev` broker; function seam | function seam (`fanOut(enqueue)`, `refreshFeed`): nothing to maintain, no `vercel link` |
@@ -1490,9 +1498,9 @@ Dependencies added: `next`, `react`, shadcn preset deps, `better-auth`,
 10. Time budgets — **accepted**: one deadline across redirects, plugin
     deadline, `maxDuration` on every path, fan-out stop at 240 s (§6).
 11. Orphans and storage — **accepted**: orphan delete, 500-subscription
-    cap, storage estimate (§6.7, §8); Neon plan is O4.
+    cap, storage estimate (§6.7, §8); Neon plan: O4 (owner upgrades if short).
 12. Built-in vs plugin registry — **accepted**: descriptors separate from
-    plugins, lazy rows (§7); Claude scope stays O1.
+    plugins, lazy rows (§7); Claude scope: O1 (claude.dev/rss.xml).
 13. Auth fail-closed branches and tests — **accepted**: key-only API,
     `valid === false` branches, `CRON_SECRET` unset refused, negative tests
     (§9, §12).
@@ -1532,38 +1540,26 @@ Dependencies added: `next`, `react`, shadcn preset deps, `better-auth`,
 State also noted `DELETE /subscriptions/:id` vs the action's `feedId`:
 fixed to `:feedId`.
 
-## 16. Questions for the owner
+## 16. Owner's answers
 
-- **O1. Which Claude source is the built-in "claude-code"?** (a)
-  `https://claude.dev/rss.xml`, the Claude Code blog's real RSS, no
-  scraping — **recommended**; (b) a plugin for `claude.com/resources/articles`
-  (where `claude.com/blog` now redirects: product, partner and customer
-  posts; hashed CSS-module class names; 12 cards with duplicates); (c)
-  both.
-- **O2. The old public Atom output (`/:namespace/:route`).** (a) drop it —
-  **recommended** for v1; (b) public Atom for built-in sources from stored
-  entries (one route, the `feed` npm generator, `revalidate`); (c) a
-  per-user Atom export behind an API key (most feed readers cannot send
-  headers, so the key goes in the URL and leaks into logs). (b) and (c)
-  can be added later without changing the model.
-- **O3. Preview deployments.** (a) a Neon branch per preview through the
-  Neon–Vercel integration, migrated by its build — **recommended**, costs
-  Neon branch usage; (b) previews share production's DB without migrating
-  (unsafe once a preview carries a migration); (c) previews have no DB.
-  And: sign-in on previews needs better-auth's `oAuthProxy` or a callback
-  per preview URL — **recommended**: no sign-in on previews in v1.
-- **O4. Neon plan.** `*/15` keeps a scale-to-zero compute awake roughly 40%
-  of the time (estimate ~73 CU-hours/month at 0.25 CU, before readers;
-  Free includes 100), and storage is ~0.25–1 GB per 100 feeds at full
-  retention. Which Neon plan? If it is Free and cost matters more than
-  freshness, the cron moves to hourly (one-line change).
-- **O5. Article typography.** shadcn/ui has none. (a)
-  `@tailwindcss/typography` (`prose dark:prose-invert`, no client JS) —
-  **recommended**, as in the captures; (b) ~30 lines of our own CSS; (c)
-  unstyled.
-- **O6. Vercel Apps for sign-in.** (a) two Apps, one with the
-  `http://localhost:3210/api/auth/callback/vercel` callback for
-  development, one for production — **recommended**, so the production
-  client secret never sits on a laptop; (b) one App with both callback
-  URLs (the docs allow a list), simplest. The owner creates them and holds
-  the secrets.
+All as recommended (recorded on the board, RSSF-1):
+
+- **O1 (a).** The built-in "claude-code" source is
+  `https://claude.dev/rss.xml`, a plain feed; no Claude scraper plugin.
+- **O2 (a).** The old public Atom output (`/:namespace/:route`) is dropped
+  in v1. A public or per-user Atom export can come later without changing
+  the model.
+- **O3 (a).** A Neon branch per preview through the Neon–Vercel
+  integration, migrated by the preview's build (§10). No sign-in on
+  previews in v1.
+- **O4.** The cron stays `*/15`. If Neon's plan runs short, the owner
+  upgrades the plan rather than slowing the cron.
+- **O5 (a).** `@tailwindcss/typography` for entry content (unit 9).
+- **O6 (a).** Two Vercel Apps, development (localhost callback) and
+  production; the owner creates them and holds the secrets (§9).
+
+Also accepted as designed: fetching an entry through the API or MCP does
+not mark it read; clients mark it explicitly (§5.4).
+
+Nothing is left open for the owner. The questions as they were put are in
+the history of this file.

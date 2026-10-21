@@ -1,4 +1,4 @@
-# RSS-1 ingest draft: fetching, parsing and refreshing feeds
+# RSSF-1 ingest draft: fetching, parsing and refreshing feeds
 
 Ingest architect's answer to the brief's ingest questions 1–8, plus the shared
 items. Plan: Vercel Pro (owner's answer). Feeds are shared rows across users'

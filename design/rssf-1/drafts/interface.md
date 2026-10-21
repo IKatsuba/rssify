@@ -1,4 +1,4 @@
-# RSS-1 interface draft: screens, states, keys
+# RSSF-1 interface draft: screens, states, keys
 
 Interface architect's answer to the brief's interface questions 1–6 and the
 shared items. It also covers the owner's settled answers: multi-user, sign-in
