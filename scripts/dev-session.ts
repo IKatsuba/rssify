@@ -6,11 +6,9 @@
 import { serializeSignedCookie } from "better-call"
 
 import { auth } from "@/lib/auth"
+import { assertLocalDatabaseUrl } from "@/lib/local-database"
 
-const { hostname } = new URL(process.env.DATABASE_URL ?? "postgresql://none")
-if (hostname !== "localhost" && hostname !== "127.0.0.1") {
-  throw new Error(`Refusing to run: database host is ${hostname}`)
-}
+assertLocalDatabaseUrl(process.env.DATABASE_URL)
 
 const email = process.argv[2] ?? "reader@example.com"
 const ctx = await auth.$context
