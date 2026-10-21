@@ -169,7 +169,9 @@ export async function refreshFeed(
 
   let parsed
   try {
-    parsed = parseFeed(response.text, feed.url)
+    // Relative links belong to the document as served, after redirects;
+    // the stored URL stays what we poll.
+    parsed = parseFeed(response.text, response.url)
   } catch (error) {
     if (!(error instanceof FeedParseError)) throw error
     return fail(LAST_ERROR.notAFeed)

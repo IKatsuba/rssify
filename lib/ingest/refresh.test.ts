@@ -144,6 +144,31 @@ describe("refreshFeed", () => {
     ])
   })
 
+  test("relative links resolve against the redirected URL; the stored URL stays", async () => {
+    await feed()
+    const body =
+      `<?xml version="1.0"?><rss version="2.0"><channel><title>Moved</title>` +
+      `<link>/</link><item><guid>g</guid><title>t</title><link>posts/1</link>` +
+      `<description>&lt;a href="/a"&gt;a&lt;/a&gt;&lt;img src="/i.png"&gt;</description>` +
+      `</item></channel></rss>`
+    const fetch: SafeFetch = async () => ({
+      status: 200,
+      url: "https://new.example/news/feed.xml",
+      headers: new Headers(),
+      text: body,
+      kind: "xml",
+    })
+    await refreshFeed("f1", { fetch, now: NOW })
+    expect(await row()).toMatchObject({
+      url: URL,
+      siteUrl: "https://new.example/",
+    })
+    const entry = await db.entry.findFirstOrThrow()
+    expect(entry.url).toBe("https://new.example/news/posts/1")
+    expect(entry.contentHtml).toContain('href="https://new.example/a"')
+    expect(entry.contentHtml).toContain('src="https://new.example/i.png"')
+  })
+
   test("undated and future entries sort at now", async () => {
     await feed()
     const { fetch } = answer(
