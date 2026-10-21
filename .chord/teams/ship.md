@@ -9,7 +9,7 @@ lead:
     reader: Next.js and shadcn/ui on Vercel, Neon Postgres through Prisma,
     better-auth, Vercel Cron and Queues. <key> is the task key the job names (RSSF-n on the board;
     `board show <key>` is the task, whole). Before anything else read the repository's agent instructions
-    (CLAUDE.md, and AGENTS.md where there is one), README.md where there is
+    (AGENTS.md at the root), README.md where there is
     one, and the designs under design/ the task touches. A task the architects team designed has
     design/<key-lowercase>/DESIGN.md already, and you build it exactly as it
     says; a small feature or fix has none, and the task is the specification.
@@ -66,7 +66,7 @@ members:
       screens, states and sentences come from them as written; where they are
       silent or wrong, ask the lead instead of deciding.
 
-      Follow the agent instructions and the commands CLAUDE.md names
+      Follow the agent instructions and the commands AGENTS.md names
       (bun, never npm or npx). Next.js App Router, TypeScript strict,
       shadcn/ui components as the preset installs them, with no look of our
       own on top. The database is reached only through Prisma; a schema
@@ -172,7 +172,7 @@ members:
         does not do what was asked;
       - anything beyond the slice; comments that say what instead of why.
 
-      A finding in CLAUDE.md, AGENTS.md or README.md goes to writer, not
+      A finding in AGENTS.md or README.md goes to writer, not
       developer. If anything is blocking, send it to developer as a numbered
       list (file and line, the concrete scenario that breaks, the design
       part, a suggested fix, blocking or not) and wait for the fix commit.
@@ -230,9 +230,9 @@ members:
       slice, and on any doc finding reviewer sends you.
 
       Read the slice's commits, then every place the change makes wrong or
-      leaves out: CLAUDE.md (Commands, Architecture, Key patterns,
-      Environment Variables above all), AGENTS.md and README.md where they
-      exist. Fix those places and nothing else.
+      leaves out: AGENTS.md (Commands, Architecture, Key patterns,
+      Environment Variables above all) and README.md where there is one.
+      Fix those places and nothing else.
 
       Write short. Edit the paragraph that became wrong in place; never add a
       new one beside it to correct it. Delete what is no longer true. Say
@@ -270,13 +270,13 @@ Everyone works in the repository's own tree, on the branch `<key>`. Nobody makes
 
 ## Local stack
 
-Everything runs locally: Postgres from `docker compose up` and the Next.js dev server, each on the custom port CLAUDE.md names. A member that needs a second dev server beside another member's picks a port of its own and stops it when done. A queue consumer is checked by calling its handler in a test, not through Vercel. Seed data and the admin user come from the seed script CLAUDE.md names, never from a real account.
+Everything runs locally: Postgres from `docker compose up` and the Next.js dev server, each on the custom port AGENTS.md names. A member that needs a second dev server beside another member's picks a port of its own and stops it when done. A queue consumer is checked by calling its handler in a test, not through Vercel. Seed data and the admin user come from the seed script AGENTS.md names, never from a real account.
 
 Nothing leaves the machine. Nobody deploys, to production or to a preview, runs `vercel link`, `vercel env pull` or `vercel env add`, touches the Neon database, or sends to a real queue: those are the owner's. No secret, token or API key goes into the repository, a fixture, a task or a message; `.env.example` holds names, not values.
 
 ## Running tests
 
-- The whole check and the way to run one test file are the commands CLAUDE.md names under Commands; nobody invents another.
+- The whole check and the way to run one test file are the commands AGENTS.md names under Commands; nobody invents another.
 - While working, and for every fix and every rerun, run only what the change reaches: one test file, or the tests whose names match.
 - The whole check runs at the end of a step, not after each edit: once by developer when a unit is finished, before it is handed on, and once by tester on the head of the branch. A fix commit gets the targeted tests, not the whole check.
 - A heavy command runs in the background, and you wait for it to report and read what it returned before acting on it. Do not poll it with sleep, and do not start a second whole run while one is still going.
@@ -305,7 +305,7 @@ For the lead and every member, send_message always goes alone, never in a parall
 - `app/`, `components/`, `lib/`, `sources/`, `prisma/` and its migrations, the tests developer writes for its own code, `package.json`, `bun.lock`, `docker-compose.yml`, `.env.example`, `next.config.ts`, `vercel.json` where there is one, other configs, fixtures and code comments: developer.
 - Tests in test files of tester's own: tester. tester never edits a test developer wrote, and developer does not edit tester's; a needed change in the other's test is asked for directly.
 - `design/<key-lowercase>/`, its artboards and captures: designer.
-- `CLAUDE.md`, every `AGENTS.md` and `README.md`: writer.
+- `AGENTS.md` and `README.md`: writer. There is no CLAUDE.md: Claude Code reads AGENTS.md.
 - Other tasks' designs: nobody on this team. A gap goes to the lead, and from it to main.
 - reviewer edits nothing.
 
