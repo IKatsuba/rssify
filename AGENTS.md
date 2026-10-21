@@ -6,8 +6,8 @@ rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
-no UI, action or route callers yet. Ingest has a guarded HTTP helper;
-refresh, add-feed and plugins are pending.
+no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing
+and sanitising helpers; refresh, add-feed and plugins are pending.
 
 ## Commands
 
@@ -79,6 +79,25 @@ Postgres host; its default user is `reader@example.com`.
   Content-Type, BOM, XML prolog, then UTF-8. Non-2xx statuses return with
   headers and empty text. Failures throw `SafeFetchError` with code
   `invalid_url`, `blocked`, `unreachable` or `too_large`.
+- `lib/ingest/parse.ts`: `parseFeed(text, feedUrl)` reads RSS/Atom/RDF
+  with `@rowanmanning/feed-parser` and maps JSON Feed directly. It returns
+  feed metadata and normalised `IngestedEntry` values in document order;
+  nothing calls it yet. `FeedParseError` codes are `not_a_feed` and
+  `invalid_feed`. `normaliseEntry` chooses guid from nonblank id, safe
+  absolute URL, then SHA-1 of title + ISO publishedAt (empty when undated).
+  `publishedAt` uses valid published, then updated, then null, never now.
+  Titles and summaries are plain text; summaries cap at 300 code points.
+  Missing titles use the first 80 summary code points, then `(untitled)`.
+  Atom text constructs and JSON Feed plain text stay literal text.
+- `lib/ingest/sanitize.ts`: `sanitizeContent(html, baseUrl)` uses
+  `sanitize-html` defaults plus media tags and an attribute allowlist.
+  It resolves href/src, allows HTTP(S)/mailto, drops active markup,
+  style and srcset, and forces `rel="noopener noreferrer nofollow"` and
+  `target="_blank"` on links. Output caps at 200 KiB of UTF-8 with tags
+  closed and code points intact; empty output is null. `plainText`
+  strips markup and collapses whitespace; `safeUrl` resolves URLs and
+  allows HTTP(S) only. Feed fixtures in `test/fixtures/feeds/` are local;
+  tests never fetch them.
 - `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, feed,
   entry, subscription and read-mark storage. Generated Prisma code lives
   in gitignored `lib/generated/prisma/`; regenerate it rather than edit it.
