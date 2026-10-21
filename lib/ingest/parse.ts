@@ -61,7 +61,7 @@ function text(value: string | null | undefined): string | null {
   return trimmed ? trimmed : null
 }
 
-function escapeHtml(value: string): string {
+export function escapeHtml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
