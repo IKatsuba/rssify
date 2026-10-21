@@ -693,6 +693,19 @@ describe("refreshFeed with a source plugin", () => {
     expect((await row()).lastFetchedAt).toBeNull()
   })
 
+  test("a database error in known() throws even when the plugin returns", async () => {
+    await pluginFeed()
+    const plugins = registry(async (c) => {
+      await c.known([42 as unknown as string]).catch(() => new Set())
+      return [entry("a")]
+    })
+    await expect(
+      refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).rejects.toThrow()
+    expect((await row()).lastFetchedAt).toBeNull()
+    expect(await db.entry.count()).toBe(0)
+  })
+
   test("a cursor-blog feed runs the registered plugin on saved pages", async () => {
     const CURSOR = "https://cursor.com/blog"
     await feed({ url: CURSOR, pluginId: "cursor-blog" })

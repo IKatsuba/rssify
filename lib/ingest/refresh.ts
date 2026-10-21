@@ -239,6 +239,7 @@ export async function refreshFeed(
       // can't read), not ours to redeliver.
       return fail(error instanceof Error ? error.message : String(error))
     }
+    if (dbError !== undefined) throw dbError
     // A plugin page has no validators.
     return store(entries, {})
   }
