@@ -2,9 +2,115 @@ import { beforeEach, describe, expect, test } from "bun:test"
 
 import { db } from "@/test/db"
 
-import { getNeighbours, listEntries, listSubscriptions } from "./reader"
+import {
+  getNeighbours,
+  listEntries,
+  listSubscriptions,
+  markAllRead,
+  markRead,
+  markUnread,
+  unsubscribe,
+} from "./reader"
 
 const sortAt = new Date("2026-01-01T00:00:00Z")
+
+describe("reader tester: write boundaries", () => {
+  test("concurrent read and repeated unread calls remain idempotent per user", async () => {
+    await Promise.all(
+      Array.from({ length: 12 }, () => markRead("reader", "entry-1"))
+    )
+    await markRead("other", "entry-1")
+    expect(await db.readMark.count({ where: { entryId: "entry-1" } })).toBe(2)
+    await Promise.all([
+      markUnread("reader", "entry-1"),
+      markUnread("reader", "entry-1"),
+    ])
+    expect(
+      await db.readMark.findMany({
+        where: { entryId: "entry-1" },
+        select: { userId: true },
+      })
+    ).toEqual([{ userId: "other" }])
+  })
+
+  test("mark-all includes upTo but excludes late backdated entries", async () => {
+    const upTo = new Date("2026-02-01T00:00:00Z")
+    await db.entry.updateMany({ data: { createdAt: upTo } })
+    await db.entry.update({
+      where: { id: "entry-1" },
+      data: { createdAt: new Date(upTo.getTime() + 1) },
+    })
+    expect(await markAllRead("reader", { feedId: "a", upTo })).toEqual({
+      marked: 2,
+    })
+    expect(await markAllRead("reader", { feedId: "a", upTo })).toEqual({
+      marked: 0,
+    })
+    expect(
+      (
+        await listEntries("reader", { feedId: "a", unreadOnly: true })
+      ).entries.map((entry) => entry.id)
+    ).toEqual(["entry-1"])
+    expect(await db.readMark.count({ where: { userId: "other" } })).toBe(0)
+    expect(await db.readMark.count({ where: { entry: { feedId: "b" } } })).toBe(
+      0
+    )
+  })
+
+  test("shared feed and other user's marks survive until final unsubscribe", async () => {
+    await markRead("other", "entry-1")
+    await unsubscribe("reader", "a")
+    expect(await db.feed.findUnique({ where: { id: "a" } })).not.toBeNull()
+    expect(await db.readMark.count({ where: { entryId: "entry-1" } })).toBe(1)
+    await expect(markRead("reader", "entry-1")).rejects.toMatchObject({
+      code: "not_found",
+    })
+    await expect(markUnread("reader", "entry-1")).rejects.toMatchObject({
+      code: "not_found",
+    })
+    await unsubscribe("other", "a")
+    expect(await db.feed.findUnique({ where: { id: "a" } })).toBeNull()
+    expect(await db.entry.count({ where: { feedId: "a" } })).toBe(0)
+    expect(await db.readMark.count({ where: { entryId: "entry-1" } })).toBe(0)
+  })
+
+  test("pruning after visibility check maps failed insert to not_found", async () => {
+    let release!: () => void
+    const released = new Promise<void>((resolve) => (release = resolve))
+    let deleted!: () => void
+    const isDeleted = new Promise<void>((resolve) => (deleted = resolve))
+    const pruning = db.$transaction(
+      async (tx) => {
+        await tx.entry.delete({ where: { id: "entry-1" } })
+        deleted()
+        await released
+      },
+      { timeout: 10_000 }
+    )
+    await isDeleted
+    // The visibility query sees the old row; its FK insert waits for this delete.
+    const marking = markRead("reader", "entry-1").then(
+      () => null,
+      (error: unknown) => error
+    )
+    try {
+      const deadline = Date.now() + 3_000
+      for (;;) {
+        const [{ count }] = await db.$queryRaw<{ count: number }[]>`
+          SELECT count(*)::int AS count FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'`
+        if (count > 0) break
+        if (Date.now() > deadline) throw new Error("mark insert never waited")
+        await Bun.sleep(10)
+      }
+    } finally {
+      release()
+      await pruning
+    }
+    expect(await marking).toMatchObject({ code: "not_found" })
+    expect(await db.readMark.count({ where: { entryId: "entry-1" } })).toBe(0)
+  })
+})
 
 beforeEach(async () => {
   await db.user.createMany({
