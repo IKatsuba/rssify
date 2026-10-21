@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 
@@ -12,6 +13,8 @@ import {
 import { auth } from "@/lib/auth"
 
 import { signOut } from "./actions"
+
+export const metadata: Metadata = { title: "rssify" }
 
 export default async function Page() {
   const session = await auth.api.getSession({ headers: await headers() })
