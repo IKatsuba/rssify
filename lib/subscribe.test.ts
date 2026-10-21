@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 
 import { beforeEach, describe, expect, test } from "bun:test"
 
-import type { SourcePlugin } from "@/sources/types"
+import { SourceStatusError, type SourcePlugin } from "@/sources/types"
 import { db } from "@/test/db"
 
 import type { IngestedEntry } from "./ingest/parse"
@@ -546,6 +546,24 @@ describe("subscribe to a new feed", () => {
         "not_found",
       ],
       ["0 entries → not_found", async () => [], "not_found"],
+      ...(
+        [
+          [404, "not_found"],
+          [410, "not_found"],
+          [429, "unreachable"],
+          [500, "unreachable"],
+          [503, "unreachable"],
+        ] as const
+      ).map(
+        ([status, code]) =>
+          [
+            `a list page answering ${status} → ${code}`,
+            async () => {
+              throw new SourceStatusError(status, new Headers())
+            },
+            code,
+          ] as [string, SourcePlugin["fetchEntries"], string]
+      ),
     ]
     for (const [name, fetchEntries, code] of failures) {
       test(name, async () => {

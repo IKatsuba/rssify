@@ -1,6 +1,6 @@
 import { builtinSources } from "@/sources/builtin"
 import { pluginFor, plugins as registeredPlugins } from "@/sources/index"
-import type { SourcePlugin } from "@/sources/types"
+import { SourceStatusError, type SourcePlugin } from "@/sources/types"
 
 import { discoverFeeds } from "./discover"
 import { FeedParseError, parseFeed, type IngestedEntry } from "./parse"
@@ -34,6 +34,10 @@ export type FetchedForAdd =
   | { kind: "error"; code: AddErrorCode }
 
 const failed = (code: AddErrorCode) => ({ kind: "error", code }) as const
+
+// A non-2xx answer, from a feed or from a plugin's list page.
+const answered = (status: number) =>
+  failed(status === 404 || status === 410 ? "not_found" : "unreachable")
 
 // Discovery only reads an HTML page. The body is sniffed, as Content-Type
 // is often missing or wrong, and an HTML Content-Type counts as well. The
@@ -81,11 +85,8 @@ export async function fetchForAdd(
     if (!(error instanceof SafeFetchError)) throw error
     return failed(error.code)
   }
-  if (response.status === 404 || response.status === 410) {
-    return failed("not_found")
-  }
   if (response.status < 200 || response.status >= 300) {
-    return failed("unreachable")
+    return answered(response.status)
   }
 
   try {
@@ -124,9 +125,12 @@ async function runPlugin(
     })
   } catch (error) {
     // Whatever a plugin throws is the source failing, not us: a fetch
-    // error keeps its code, anything else (a page it can't read) and an
-    // empty result below are not_found.
-    return failed(error instanceof SafeFetchError ? error.code : "not_found")
+    // error keeps its code, a list page's status reads as a feed's would,
+    // anything else (a page it can't read) and an empty result below are
+    // not_found.
+    if (error instanceof SafeFetchError) return failed(error.code)
+    if (error instanceof SourceStatusError) return answered(error.status)
+    return failed("not_found")
   }
   if (entries.length === 0) return failed("not_found")
   return {
