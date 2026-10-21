@@ -1,9 +1,9 @@
 import { STATUS_CODES } from "node:http"
 
 import { db } from "@/lib/db"
-import type { FeedStatus } from "@/lib/generated/prisma/client"
+import type { FeedStatus, Prisma } from "@/lib/generated/prisma/client"
 
-import { FeedParseError, parseFeed } from "./parse"
+import { FeedParseError, parseFeed, type IngestedEntry } from "./parse"
 import { safeFetch, SafeFetchError, type SafeFetch } from "./safe-fetch"
 
 const MINUTE = 60_000
@@ -69,6 +69,52 @@ export function retryAfterMs(value: string | null, now: Date): number | null {
   return Number.isNaN(date) ? null : Math.max(date - now.getTime(), 0)
 }
 
+// The polling fields of a successful fetch; the add path writes the same.
+export function successFields(now: Date) {
+  return {
+    lastFetchedAt: now,
+    lastSuccessAt: now,
+    nextFetchAt: new Date(now.getTime() + INTERVAL),
+    failureCount: 0,
+    status: "ok" as const,
+    lastError: null,
+  }
+}
+
+// Stores a fetch's entries and prunes past retention, inside the caller's
+// transaction. Returns how many entries were new.
+export async function storeEntries(
+  tx: Prisma.TransactionClient,
+  feedId: string,
+  entries: IngestedEntry[],
+  now: Date
+): Promise<number> {
+  // Undated and future-dated entries sort as "now"; sort is stable, so
+  // equal times keep document order.
+  const ranked = entries
+    .map((entry) => ({
+      ...entry,
+      sortAt: new Date(
+        Math.min(entry.publishedAt?.getTime() ?? now.getTime(), now.getTime())
+      ),
+    }))
+    .sort((a, b) => b.sortAt.getTime() - a.sortAt.getTime())
+    .slice(0, TAKE_PER_FETCH)
+
+  // skipDuplicates on (feedId, guid): the first version of an entry wins.
+  const { count } = await tx.entry.createMany({
+    data: ranked.map((entry) => ({ ...entry, feedId, createdAt: now })),
+    skipDuplicates: true,
+  })
+  await tx.$executeRaw`
+    DELETE FROM "Entry" WHERE id IN (
+      SELECT id FROM "Entry" WHERE "feedId" = ${feedId}
+      ORDER BY "sortAt" DESC, id DESC
+      OFFSET ${KEEP_PER_FEED}
+    )`
+  return count
+}
+
 export async function refreshFeed(
   feedId: string,
   {
@@ -129,14 +175,7 @@ export async function refreshFeed(
     return fail(fetchErrorText(error, deadline.aborted))
   }
 
-  const success = {
-    lastFetchedAt: now,
-    lastSuccessAt: now,
-    nextFetchAt: new Date(now.getTime() + INTERVAL),
-    failureCount: 0,
-    status: "ok" as const,
-    lastError: null,
-  }
+  const success = successFields(now)
 
   if (response.status === 304) {
     await db.feed.update({
@@ -177,36 +216,10 @@ export async function refreshFeed(
     return fail(LAST_ERROR.notAFeed)
   }
 
-  // Undated and future-dated entries sort as "now"; sort is stable, so
-  // equal times keep document order.
-  const ranked = parsed.entries
-    .map((entry) => ({
-      ...entry,
-      sortAt: new Date(
-        Math.min(entry.publishedAt?.getTime() ?? now.getTime(), now.getTime())
-      ),
-    }))
-    .sort((a, b) => b.sortAt.getTime() - a.sortAt.getTime())
-    .slice(0, TAKE_PER_FETCH)
-
   // One transaction, so a database error leaves lastFetchedAt unwritten
   // and the queue's redelivery is not skipped as a duplicate.
   const stored = await db.$transaction(async (tx) => {
-    // skipDuplicates on (feedId, guid): the first version of an entry wins.
-    const { count } = await tx.entry.createMany({
-      data: ranked.map((entry) => ({
-        ...entry,
-        feedId: feed.id,
-        createdAt: now,
-      })),
-      skipDuplicates: true,
-    })
-    await tx.$executeRaw`
-      DELETE FROM "Entry" WHERE id IN (
-        SELECT id FROM "Entry" WHERE "feedId" = ${feed.id}
-        ORDER BY "sortAt" DESC, id DESC
-        OFFSET ${KEEP_PER_FEED}
-      )`
+    const count = await storeEntries(tx, feed.id, parsed.entries, now)
     await tx.feed.update({
       where: { id: feed.id },
       data: {
