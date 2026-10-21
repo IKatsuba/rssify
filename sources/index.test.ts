@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test"
 
 import { builtinSource, builtinSources } from "./builtin"
+import { cursorBlog } from "./cursor-blog"
 import { pluginFor, plugins } from "./index"
 import type { SourcePlugin } from "./types"
 
@@ -11,16 +12,21 @@ const fake: SourcePlugin = {
 }
 
 describe("builtinSources", () => {
-  test("holds the Claude Code blog as a plain feed", () => {
-    expect(builtinSources.map((s) => s.id)).toEqual(["claude-code"])
+  test("holds the Claude Code feed and the Cursor blog page", () => {
+    expect(builtinSources.map((s) => s.id)).toEqual([
+      "claude-code",
+      "cursor-blog",
+    ])
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
+    expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
     expect(builtinSource("nope")).toBeUndefined()
   })
 })
 
 describe("pluginFor", () => {
-  test("no plugin is registered yet", () => {
-    expect(plugins).toEqual({})
+  test("cursor-blog is the one registered plugin", () => {
+    expect(plugins).toEqual({ "cursor-blog": cursorBlog })
+    expect(pluginFor("https://cursor.com/blog")).toBe(cursorBlog)
     expect(pluginFor("https://claude.dev/rss.xml")).toBeUndefined()
   })
 

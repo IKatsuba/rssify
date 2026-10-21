@@ -427,6 +427,68 @@ describe("subscribe to a new feed", () => {
     })
   })
 
+  describe("cursor-blog through the registered plugin", () => {
+    const LIST = "https://cursor.com/blog"
+    const saved: Record<string, string> = {
+      [LIST]: fixture("cursor-blog.html"),
+      [`${LIST}/projects`]: readFileSync(
+        "test/fixtures/cursor-blog/projects.html",
+        "utf8"
+      ),
+      [`${LIST}/git-at-any-scale`]: readFileSync(
+        "test/fixtures/cursor-blog/git-at-any-scale.html",
+        "utf8"
+      ),
+    }
+    // Saved pages answer; the other posts are skipped as 404s.
+    const fetch: SafeFetch = async (url) => ({
+      status: saved[url] === undefined ? 404 : 200,
+      url,
+      headers: new Headers(),
+      text: saved[url] ?? "",
+      kind: "unknown",
+    })
+
+    async function expectCursorFeed() {
+      const feed = await db.feed.findUniqueOrThrow({ where: { url: LIST } })
+      expect(feed).toMatchObject({
+        pluginId: "cursor-blog",
+        title: "Cursor blog",
+        siteUrl: LIST,
+        etag: null,
+        lastModified: null,
+        lastSuccessAt: NOW,
+      })
+      const entries = await db.entry.findMany({
+        where: { feedId: feed.id },
+        orderBy: { guid: "asc" },
+      })
+      expect(entries.map((e) => [e.guid, e.title])).toEqual([
+        [`${LIST}/git-at-any-scale`, "Git at any scale"],
+        [`${LIST}/projects`, "Introducing Projects"],
+      ])
+      expect(await db.subscription.count({ where: { feedId: feed.id } })).toBe(
+        1
+      )
+    }
+
+    test("the built-in source subscribes through the plugin", async () => {
+      const result = await subscribe(
+        "u1",
+        { source: "cursor-blog" },
+        { fetch, now: NOW }
+      )
+      expect(result).toMatchObject({ ok: true, existed: false })
+      await expectCursorFeed()
+    })
+
+    test("its list URL matches the plugin", async () => {
+      const result = await subscribe("u1", { url: LIST }, { fetch, now: NOW })
+      expect(result).toMatchObject({ ok: true, existed: false })
+      await expectCursorFeed()
+    })
+  })
+
   describe("a URL a plugin matches runs the plugin", () => {
     const LIST = "https://scrape.example.com/blog"
     const post: IngestedEntry = {
