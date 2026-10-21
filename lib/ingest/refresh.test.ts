@@ -1,6 +1,11 @@
+import { readFileSync } from "node:fs"
+
 import { describe, expect, test } from "bun:test"
 
+import { SourceStatusError, type SourcePlugin } from "@/sources/types"
 import { db } from "@/test/db"
+
+import type { IngestedEntry } from "./parse"
 
 import {
   backoff,
@@ -472,16 +477,263 @@ describe("refreshFeed", () => {
         .outcome
     ).toBe("ok")
   })
+})
 
-  // Pinned on purpose: RSSF-9 replaces this stub with the plugin run.
-  test("a plugin feed throws without fetching or writing", async () => {
-    await feed({ pluginId: "cursor-blog" })
-    const { fetch, calls } = answer(200, rss([{ guid: "a" }]))
-    await expect(refreshFeed("f1", { fetch, now: NOW })).rejects.toThrow(
-      "Source plugins are not supported yet"
+describe("refreshFeed with a source plugin", () => {
+  const LIST = "https://scrape.example.com/blog"
+  const entry = (slug: string, hours = 1): IngestedEntry => ({
+    guid: `${LIST}/${slug}`,
+    url: `${LIST}/${slug}`,
+    title: slug,
+    author: null,
+    publishedAt: hoursAgo(hours),
+    summary: null,
+    contentHtml: `<p>${slug}</p>`,
+  })
+  type Ctx = Parameters<SourcePlugin["fetchEntries"]>[0]
+  const registry = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
+    scrape: { id: "scrape", matches: LIST, fetchEntries },
+  })
+  const pluginFeed = (data: Record<string, unknown> = {}) =>
+    feed({ url: LIST, pluginId: "scrape", ...data })
+  const throwingPlugin = (error: unknown) =>
+    registry(async () => {
+      throw error
+    })
+  const noFetch: SafeFetch = async (url) => {
+    throw new Error(`unexpected fetch of ${url}`)
+  }
+
+  test("stores the plugin's entries with the success fields and no validators", async () => {
+    await pluginFeed({
+      status: "failing",
+      failureCount: 4,
+      lastError: "the page layout changed",
+      title: "Scrape blog",
+    })
+    let ctx: Ctx | undefined
+    const plugins = registry(async (c) => {
+      ctx = c
+      return [entry("a", 2), entry("b", 1)]
+    })
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).toEqual({ outcome: "ok", stored: 2 })
+    expect(ctx?.fetch).toBe(noFetch)
+    expect(ctx?.deadline).toBeInstanceOf(AbortSignal)
+    expect(ctx?.deadline.aborted).toBe(false)
+    expect(await row()).toMatchObject({
+      url: LIST,
+      title: "Scrape blog",
+      status: "ok",
+      failureCount: 0,
+      lastError: null,
+      lastFetchedAt: NOW,
+      lastSuccessAt: NOW,
+      nextFetchAt: at(HOUR),
+      etag: null,
+      lastModified: null,
+    })
+    const entries = await db.entry.findMany({ orderBy: { sortAt: "desc" } })
+    expect(entries.map((e) => [e.guid, e.sortAt, e.createdAt])).toEqual([
+      [`${LIST}/b`, hoursAgo(1), NOW],
+      [`${LIST}/a`, hoursAgo(2), NOW],
+    ])
+  })
+
+  test("known() names this feed's stored guids among the asked URLs", async () => {
+    await pluginFeed()
+    await db.feed.create({ data: { id: "f2", url: URL } })
+    await db.entry.createMany({
+      data: [
+        { ...entry("a"), feedId: "f1", sortAt: NOW },
+        { ...entry("b"), feedId: "f2", sortAt: NOW },
+      ],
+    })
+    let known: Set<string> | undefined
+    const plugins = registry(async (c) => {
+      known = await c.known([`${LIST}/a`, `${LIST}/b`, `${LIST}/c`])
+      return [entry("a"), entry("c")]
+    })
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).toEqual({ outcome: "ok", stored: 1 })
+    expect(known).toEqual(new Set([`${LIST}/a`]))
+  })
+
+  test("no new posts is still a success", async () => {
+    await pluginFeed({ failureCount: 1 })
+    const plugins = registry(async () => [])
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).toEqual({ outcome: "ok", stored: 0 })
+    expect(await row()).toMatchObject({
+      failureCount: 0,
+      nextFetchAt: at(HOUR),
+    })
+  })
+
+  test("an id the registry lacks is a source failure with backoff", async () => {
+    for (const pluginId of ["retired", "constructor"]) {
+      await db.feed.deleteMany()
+      await pluginFeed({ pluginId })
+      expect(
+        await refreshFeed("f1", { fetch: noFetch, plugins: {}, now: NOW })
+      ).toEqual({
+        outcome: "failed",
+        error: "the source isn’t supported any more",
+      })
+      expect(await row()).toMatchObject({
+        failureCount: 1,
+        nextFetchAt: at(2 * HOUR),
+        lastFetchedAt: NOW,
+        lastError: "the source isn’t supported any more",
+      })
+    }
+  })
+
+  test("a plugin's fetch errors become their sentences", async () => {
+    await pluginFeed()
+    const cases = [
+      ["blocked", "the address isn’t allowed"],
+      ["too_large", "the feed is over 10 MB"],
+      ["unreachable", "the address couldn’t be found"],
+    ] as const
+    for (const [code, text] of cases) {
+      const plugins = throwingPlugin(new SafeFetchError(code, "x"))
+      expect(
+        await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+      ).toEqual({ outcome: "failed", error: text })
+    }
+    expect(await row()).toMatchObject({ failureCount: 3, status: "failing" })
+  })
+
+  test("a list page's 410 marks the feed gone", async () => {
+    await pluginFeed()
+    const plugins = throwingPlugin(new SourceStatusError(410, new Headers()))
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).toEqual({ outcome: "gone" })
+    expect(await row()).toMatchObject({
+      status: "gone",
+      nextFetchAt: null,
+      lastFetchedAt: NOW,
+    })
+  })
+
+  test("a list page's 429 honours Retry-After; other statuses back off", async () => {
+    await pluginFeed()
+    const limited = throwingPlugin(
+      new SourceStatusError(429, new Headers({ "retry-after": "18000" }))
     )
-    expect(calls).toHaveLength(0)
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins: limited, now: NOW })
+    ).toEqual({
+      outcome: "failed",
+      error: "the site answered 429 Too Many Requests",
+    })
+    expect(await row()).toMatchObject({
+      failureCount: 1,
+      nextFetchAt: at(5 * HOUR),
+    })
+    const broken = throwingPlugin(
+      new SourceStatusError(500, new Headers({ "retry-after": "36000" }))
+    )
+    await refreshFeed("f1", { fetch: noFetch, plugins: broken, now: NOW })
+    expect(await row()).toMatchObject({
+      failureCount: 2,
+      nextFetchAt: at(4 * HOUR),
+      lastError: "the site answered 500 Internal Server Error",
+    })
+  })
+
+  test("any other plugin throw is a failure with its message", async () => {
+    await pluginFeed()
+    const plugins = throwingPlugin(new Error("the page layout changed"))
+    expect(
+      await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).toEqual({ outcome: "failed", error: "the page layout changed" })
+    expect(await row()).toMatchObject({
+      failureCount: 1,
+      lastError: "the page layout changed",
+    })
+  })
+
+  test("a database error throws and writes nothing", async () => {
+    await pluginFeed()
+    await db.$executeRawUnsafe(`
+      CREATE OR REPLACE FUNCTION refresh_test_fail() RETURNS trigger AS $$
+      BEGIN RAISE EXCEPTION 'refresh test failure'; END $$ LANGUAGE plpgsql`)
+    await db.$executeRawUnsafe(`
+      CREATE TRIGGER refresh_test_fail BEFORE UPDATE ON "Feed"
+      FOR EACH ROW EXECUTE FUNCTION refresh_test_fail()`)
+    try {
+      const plugins = registry(async () => [entry("a")])
+      await expect(
+        refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+      ).rejects.toThrow()
+    } finally {
+      await db.$executeRawUnsafe(`DROP TRIGGER refresh_test_fail ON "Feed"`)
+      await db.$executeRawUnsafe(`DROP FUNCTION refresh_test_fail()`)
+    }
     expect((await row()).lastFetchedAt).toBeNull()
+    expect(await db.entry.count()).toBe(0)
+  })
+
+  test("a database error in known() throws even when the plugin catches it", async () => {
+    await pluginFeed()
+    const plugins = registry(async (c) => {
+      // An argument Prisma rejects stands in for a failing query.
+      await c.known([42 as unknown as string]).catch(() => {})
+      throw new Error("the page layout changed")
+    })
+    await expect(
+      refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+    ).rejects.toThrow()
+    expect((await row()).lastFetchedAt).toBeNull()
+  })
+
+  test("a cursor-blog feed runs the registered plugin on saved pages", async () => {
+    const CURSOR = "https://cursor.com/blog"
+    await feed({ url: CURSOR, pluginId: "cursor-blog" })
+    const saved: Record<string, string> = {
+      [CURSOR]: readFileSync("test/fixtures/feeds/cursor-blog.html", "utf8"),
+      [`${CURSOR}/projects`]: readFileSync(
+        "test/fixtures/cursor-blog/projects.html",
+        "utf8"
+      ),
+    }
+    // Already stored posts are not fetched again.
+    await db.entry.create({
+      data: {
+        ...entry("x"),
+        guid: `${CURSOR}/joining-spacex`,
+        feedId: "f1",
+        sortAt: NOW,
+      },
+    })
+    const calls: string[] = []
+    const fetch: SafeFetch = async (url) => {
+      calls.push(url)
+      return {
+        status: saved[url] === undefined ? 404 : 200,
+        url,
+        headers: new Headers(),
+        text: saved[url] ?? "",
+        kind: "unknown",
+      }
+    }
+    expect(await refreshFeed("f1", { fetch, now: NOW })).toEqual({
+      outcome: "ok",
+      stored: 1,
+    })
+    expect(calls).toHaveLength(11)
+    expect(calls).not.toContain(`${CURSOR}/joining-spacex`)
+    expect(
+      await db.entry.findUniqueOrThrow({
+        where: { feedId_guid: { feedId: "f1", guid: `${CURSOR}/projects` } },
+      })
+    ).toMatchObject({ title: "Introducing Projects" })
   })
 })
 

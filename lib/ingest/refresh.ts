@@ -2,6 +2,8 @@ import { STATUS_CODES } from "node:http"
 
 import { db } from "@/lib/db"
 import type { FeedStatus, Prisma } from "@/lib/generated/prisma/client"
+import { plugins as registeredPlugins } from "@/sources/index"
+import { SourceStatusError, type SourcePlugin } from "@/sources/types"
 
 import { FeedParseError, parseFeed, type IngestedEntry } from "./parse"
 import { safeFetch, SafeFetchError, type SafeFetch } from "./safe-fetch"
@@ -11,6 +13,7 @@ const HOUR = 60 * MINUTE
 const INTERVAL = HOUR
 const MAX_DELAY = 24 * HOUR
 const FETCH_TIMEOUT = 15_000
+const PLUGIN_TIMEOUT = 40_000
 const FAILING_AFTER = 3
 const TAKE_PER_FETCH = 100
 const KEEP_PER_FEED = 500
@@ -26,6 +29,7 @@ export type RefreshOutcome =
 export type RefreshOptions = {
   skipIfFreshWithin?: number
   fetch?: SafeFetch
+  plugins?: Record<string, SourcePlugin>
   now?: Date
 }
 
@@ -35,6 +39,7 @@ export const LAST_ERROR = {
   notAFeed: "the response wasn’t a feed",
   tooLarge: "the feed is over 10 MB",
   notAllowed: "the address isn’t allowed",
+  unknownSource: "the source isn’t supported any more",
 }
 
 export function answeredError(status: number): string {
@@ -120,6 +125,7 @@ export async function refreshFeed(
   {
     skipIfFreshWithin,
     fetch = safeFetch,
+    plugins = registeredPlugins,
     now = new Date(),
   }: RefreshOptions = {}
 ): Promise<RefreshOutcome> {
@@ -133,12 +139,6 @@ export async function refreshFeed(
     now.getTime() - feed.lastFetchedAt.getTime() < skipIfFreshWithin * 1000
   ) {
     return { outcome: "skipped" }
-  }
-
-  // Stub until the cursor-blog plugin unit (RSSF-9) replaces it with the
-  // plugin run; until then a plugin feed must not be fetched as a feed URL.
-  if (feed.pluginId) {
-    throw new Error(`Source plugins are not supported yet: ${feed.pluginId}`)
   }
 
   const fail = async (error: string, retryAfter: number | null = null) => {
@@ -162,6 +162,87 @@ export async function refreshFeed(
     return { outcome: "failed", error } as const
   }
 
+  // A non-2xx answer, from a feed or from a plugin's list page.
+  const answered = async (status: number, headers: Headers) => {
+    if (status === 410) {
+      await db.feed.update({
+        where: { id: feed.id },
+        data: { lastFetchedAt: now, nextFetchAt: null, status: "gone" },
+      })
+      return { outcome: "gone" } as const
+    }
+    const retryAfter =
+      status === 429 || status === 503
+        ? retryAfterMs(headers.get("retry-after"), now)
+        : null
+    return fail(answeredError(status), retryAfter)
+  }
+
+  const success = successFields(now)
+
+  // One transaction, so a database error leaves lastFetchedAt unwritten
+  // and the queue's redelivery is not skipped as a duplicate.
+  const store = async (
+    entries: IngestedEntry[],
+    data: Prisma.FeedUpdateInput
+  ) => {
+    const stored = await db.$transaction(async (tx) => {
+      const count = await storeEntries(tx, feed.id, entries, now)
+      await tx.feed.update({
+        where: { id: feed.id },
+        data: { ...success, ...data },
+      })
+      return count
+    })
+    return { outcome: "ok", stored } as const
+  }
+
+  if (feed.pluginId) {
+    // Own keys only, so a stored id like "constructor" is no plugin.
+    const plugin = Object.hasOwn(plugins, feed.pluginId)
+      ? plugins[feed.pluginId]
+      : undefined
+    if (!plugin) return fail(LAST_ERROR.unknownSource)
+
+    const deadline = AbortSignal.timeout(PLUGIN_TIMEOUT)
+    // A database error inside known() is ours, even if the plugin lets it
+    // through, so it throws for redelivery like any other.
+    let dbError: unknown
+    let entries
+    try {
+      entries = await plugin.fetchEntries({
+        fetch,
+        deadline,
+        // Plugins use the post URL as guid, so a stored guid is a known post.
+        known: async (urls) => {
+          try {
+            const rows = await db.entry.findMany({
+              where: { feedId: feed.id, guid: { in: urls } },
+              select: { guid: true },
+            })
+            return new Set(rows.map((row) => row.guid))
+          } catch (error) {
+            dbError ??= error
+            throw error
+          }
+        },
+      })
+    } catch (error) {
+      if (dbError !== undefined) throw dbError
+      if (error instanceof SafeFetchError) {
+        return fail(fetchErrorText(error, deadline.aborted))
+      }
+      if (error instanceof SourceStatusError) {
+        return answered(error.status, error.headers)
+      }
+      // Anything else a plugin throws is the source failing (a page it
+      // can't read), not ours to redeliver.
+      return fail(error instanceof Error ? error.message : String(error))
+    }
+    // A plugin page has no validators.
+    return store(entries, {})
+  }
+
   const deadline = AbortSignal.timeout(FETCH_TIMEOUT)
   let response
   try {
@@ -174,8 +255,6 @@ export async function refreshFeed(
     if (!(error instanceof SafeFetchError)) throw error
     return fail(fetchErrorText(error, deadline.aborted))
   }
-
-  const success = successFields(now)
 
   if (response.status === 304) {
     await db.feed.update({
@@ -190,20 +269,8 @@ export async function refreshFeed(
     return { outcome: "not_modified" }
   }
 
-  if (response.status === 410) {
-    await db.feed.update({
-      where: { id: feed.id },
-      data: { lastFetchedAt: now, nextFetchAt: null, status: "gone" },
-    })
-    return { outcome: "gone" }
-  }
-
   if (response.status < 200 || response.status >= 300) {
-    const retryAfter =
-      response.status === 429 || response.status === 503
-        ? retryAfterMs(response.headers.get("retry-after"), now)
-        : null
-    return fail(answeredError(response.status), retryAfter)
+    return answered(response.status, response.headers)
   }
 
   let parsed
@@ -216,21 +283,10 @@ export async function refreshFeed(
     return fail(LAST_ERROR.notAFeed)
   }
 
-  // One transaction, so a database error leaves lastFetchedAt unwritten
-  // and the queue's redelivery is not skipped as a duplicate.
-  const stored = await db.$transaction(async (tx) => {
-    const count = await storeEntries(tx, feed.id, parsed.entries, now)
-    await tx.feed.update({
-      where: { id: feed.id },
-      data: {
-        ...success,
-        title: parsed.title,
-        siteUrl: parsed.siteUrl,
-        etag: response.headers.get("etag"),
-        lastModified: response.headers.get("last-modified"),
-      },
-    })
-    return count
+  return store(parsed.entries, {
+    title: parsed.title,
+    siteUrl: parsed.siteUrl,
+    etag: response.headers.get("etag"),
+    lastModified: response.headers.get("last-modified"),
   })
-  return { outcome: "ok", stored }
 }
