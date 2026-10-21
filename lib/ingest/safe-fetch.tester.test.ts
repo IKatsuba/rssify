@@ -1,5 +1,12 @@
-import { afterAll, beforeAll, describe, expect, test } from "bun:test"
-import { createServer, type Server } from "node:http"
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  test,
+} from "bun:test"
+import { createServer, type RequestListener, type Server } from "node:http"
 import type { AddressInfo, LookupFunction } from "node:net"
 
 import { createSafeFetch, isPublicAddress, safeFetch } from "./safe-fetch"
@@ -13,14 +20,130 @@ const loopbackLookup = ((_host, _options, callback) => {
 let server: Server
 let port: number
 const requests: { host: string | undefined; url: string | undefined }[] = []
+let respond: RequestListener = (_req, res) => res.end("<rss/>")
+
+beforeEach(() => {
+  respond = (_req, res) => res.end("<rss/>")
+})
 
 beforeAll(async () => {
   server = createServer((req, res) => {
     requests.push({ host: req.headers.host, url: req.url })
-    res.end("<rss/>")
+    respond(req, res)
   })
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve))
   port = (server.address() as AddressInfo).port
+})
+
+describe("tester: response failures and redirect boundaries", () => {
+  const at = (path: string) => `http://feed.test:${port}${path}`
+  const fetch = (
+    path: string,
+    options?: Parameters<ReturnType<typeof createSafeFetch>>[1]
+  ) =>
+    createSafeFetch({
+      lookup: loopbackLookup,
+      ports: [port],
+      allowAddress: (address) => address === "127.0.0.1",
+    })(at(path), options)
+
+  test.each([303, 307, 308])(
+    "follows %i relative redirect and keeps GET",
+    async (status) => {
+      const methods: (string | undefined)[] = []
+      respond = (req, res) => {
+        methods.push(req.method)
+        if (req.url === "/dir/start") {
+          res.writeHead(status, { location: "../feed?from=redirect" })
+          res.end()
+        } else res.end('{"items":[]}')
+      }
+      expect(await fetch("/dir/start")).toMatchObject({
+        status: 200,
+        url: at("/feed?from=redirect"),
+        text: '{"items":[]}',
+        kind: "json",
+      })
+      expect(methods).toEqual(["GET", "GET"])
+    }
+  )
+
+  test("deadline aborts a body after headers and a partial chunk", async () => {
+    let received = false
+    respond = (_req, res) => {
+      received = true
+      res.writeHead(200, { "content-type": "application/rss+xml" })
+      res.write("<rss>")
+      // Deliberately never finish; cancellation must stop the reader.
+    }
+    await expect(
+      fetch("/stalled", { deadline: AbortSignal.timeout(200) })
+    ).rejects.toMatchObject({
+      code: "unreachable",
+      message: "the server took too long",
+    })
+    expect(received).toBe(true)
+  })
+
+  test("an already aborted deadline cannot send a request", async () => {
+    const before = requests.length
+    const controller = new AbortController()
+    controller.abort()
+    await expect(
+      fetch("/cancelled", { deadline: controller.signal })
+    ).rejects.toMatchObject({ code: "unreachable" })
+    expect(requests.length).toBe(before)
+  })
+
+  test.each([304, 403, 404, 410, 429, 500])(
+    "returns HTTP %i and headers without decoding its body",
+    async (status) => {
+      respond = (_req, res) => {
+        res.writeHead(status, { "retry-after": "60", etag: '"unchanged"' })
+        res.end("<html>not a feed</html>")
+      }
+      const result = await fetch("/status")
+      expect(result).toMatchObject({ status, text: "", kind: "unknown" })
+      expect(result.headers.get("retry-after")).toBe("60")
+      expect(result.headers.get("etag")).toBe('"unchanged"')
+    }
+  )
+
+  test("empty success remains a success with unknown body kind", async () => {
+    respond = (_req, res) => res.end()
+    expect(await fetch("/empty")).toMatchObject({
+      status: 200,
+      text: "",
+      kind: "unknown",
+    })
+  })
+
+  test("corrupt gzip response normalizes to unreachable", async () => {
+    respond = (_req, res) => {
+      res.writeHead(200, { "content-encoding": "gzip" })
+      res.end("not gzip bytes")
+    }
+    await expect(fetch("/corrupt")).rejects.toMatchObject({
+      code: "unreachable",
+    })
+  })
+
+  test("Content-Type charset wins over a conflicting UTF-8 BOM", async () => {
+    respond = (_req, res) => {
+      res.writeHead(200, {
+        "content-type": 'application/xml; charset="windows-1252"',
+      })
+      res.end(Buffer.from([0xef, 0xbb, 0xbf, 0xe9]))
+    }
+    expect((await fetch("/charset")).text).toBe("ï»¿é")
+  })
+
+  test("one decoded byte beyond the cap fails for multibyte text", async () => {
+    const body = Buffer.from("é".repeat(5 * 1024 * 1024) + "!")
+    respond = (_req, res) => res.end(body)
+    expect(body.byteLength).toBe(10 * 1024 * 1024 + 1)
+    await expect(fetch("/large")).rejects.toMatchObject({ code: "too_large" })
+  })
 })
 
 afterAll(() => {
