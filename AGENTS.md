@@ -4,9 +4,9 @@
 
 rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
-Bun is the package manager and test runner. Foundation currently provides
-Vercel sign-in and a signed-in placeholder; reader and ingest behavior are
-not implemented. The old Deno/Hono Atom feed routes are removed.
+Bun is the package manager and test runner. Vercel sign-in and a signed-in
+placeholder are wired up; actor and reader helpers are available but have
+no UI, action or route callers yet. Ingest is not implemented.
 
 ## Commands
 
@@ -54,6 +54,17 @@ Postgres host; its default user is `reader@example.com`.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
   sessions and API keys; `lib/auth-client.ts` starts browser sign-in.
+- `lib/actor.ts`: session-only user/admin guards and an `x-api-key` guard.
+  Keys never grant admin access or use session cookies; invalid keys return
+  401, and rate-limited keys return 429 with `Retry-After`.
+- `lib/reader.ts`: user-scoped subscriptions with unread counts, entry
+  queries ordered by `sortAt`/id descending with keyset paging, and scoped
+  neighbours. Reads do not mark entries read; read/unread writes are
+  idempotent, and mark-all uses the list's `asOf` as its `upTo` cutoff.
+  Inaccessible data returns `not_found`. Subscribe accepts stored feed URLs
+  only, with a 500-subscription cap; new-feed fetching and source inputs
+  are pending. Last unsubscribe deletes the feed, entries and read marks
+  in one transaction.
 - `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, feed,
   entry, subscription and read-mark storage. Generated Prisma code lives
   in gitignored `lib/generated/prisma/`; regenerate it rather than edit it.
