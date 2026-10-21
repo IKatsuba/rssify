@@ -1,19 +1,39 @@
-import { Button } from "@/components/ui/button"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
-export default function Page() {
+import { Button } from "@/components/ui/button"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
+import { auth } from "@/lib/auth"
+
+import { signOut } from "./actions"
+
+export default async function Page() {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (!session) redirect("/sign-in")
+
   return (
-    <div className="flex min-h-svh p-6">
-      <div className="flex max-w-md min-w-0 flex-col gap-4 text-sm leading-loose">
-        <div>
-          <h1 className="font-medium">Project ready!</h1>
-          <p>You may now add components and start building.</p>
-          <p>We&apos;ve already added the button component for you.</p>
-          <Button className="mt-2">Button</Button>
-        </div>
-        <div className="font-mono text-xs text-muted-foreground">
-          (Press <kbd>d</kbd> to toggle dark mode)
-        </div>
-      </div>
-    </div>
+    <main className="flex min-h-svh items-center justify-center p-6">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle>rssify</CardTitle>
+          <CardDescription>
+            Signed in as {session.user.name} ({session.user.email}).
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={signOut}>
+            <Button type="submit" variant="outline" className="w-full">
+              Sign out
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </main>
   )
 }
