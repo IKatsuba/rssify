@@ -1,5 +1,7 @@
 import { CircleAlertIcon } from "lucide-react"
 import type { Metadata } from "next"
+import { headers } from "next/headers"
+import { redirect } from "next/navigation"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
@@ -9,6 +11,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { auth } from "@/lib/auth"
 
 import { SignInButton } from "./sign-in-button"
 
@@ -19,6 +22,8 @@ export default async function SignInPage({
 }: {
   searchParams: Promise<{ error?: string | string[] }>
 }) {
+  const session = await auth.api.getSession({ headers: await headers() })
+  if (session) redirect("/")
   const { error } = await searchParams
 
   return (
