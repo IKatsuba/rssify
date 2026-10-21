@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@tailwindcss/typography": "^0.5.20",
     "@types/bun": "^1.4.3",
     "@types/node": "^20",
     "@types/react": "^19",
