@@ -7,7 +7,8 @@ shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
 no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing,
-sanitising, refresh and add-feed helpers; scheduling and plugins are pending.
+sanitising, refresh and add-feed helpers, with cron and queue scheduling;
+plugins are pending.
 
 ## Commands
 
@@ -41,11 +42,15 @@ bun run build                        # Production build
 bun run start -p 3210              # Serve that build locally
 bun run format                       # Format TypeScript/TSX
 bun --env-file=.env.local scripts/dev-session.ts [email]
+bun --env-file=.env.local scripts/refresh.ts
 ```
 
 The session helper creates a local user and session without Vercel and
 prints a session cookie to set on localhost:3210. It accepts only a local
 Postgres host; its default user is `reader@example.com`.
+
+The refresh script accepts only a local Postgres host and runs one claim
+and refresh cycle inline, without a queue.
 
 ## Architecture
 
@@ -91,10 +96,34 @@ Postgres host; its default user is `reader@example.com`.
   guarded fetch, known-URL lookup and a shared deadline; `pluginFor` matches
   the URL exactly against `matches`. The plugin registry is empty; Cursor
   support is pending. Feed rows are created on subscribe, never seeded.
+- `lib/ingest/fan-out.ts`: `fanOut(enqueue)` claims up to 500 due,
+  subscribed feeds, oldest first, in one SQL statement with
+  `FOR UPDATE SKIP LOCKED`, setting `nextFetchAt` to a 30-minute lease.
+  Gone feeds have null `nextFetchAt` and are not claimed. It enqueues 50
+  at a time with `Promise.allSettled`, logs failed sends and leaves them
+  leased. It stops starting chunks after 240 s; unsent feeds stay leased
+  too. Lost messages and failed sends come due again when the lease expires.
+  Returns `{ claimed, sent, failed }`.
+- `app/api/cron/refresh/route.ts`: GET with `maxDuration = 300`, using
+  `lib/ingest/cron.ts`. Unset or empty `CRON_SECRET` returns 500; a header
+  other than exactly `Authorization: Bearer ${CRON_SECRET}` returns 401.
+  It calls `fanOut` with `@vercel/queue` sends to `feed-refresh`, body
+  `{ feedId }` and ``idempotencyKey: `${feedId}:${tick}```, where `tick` is
+  the run start floored to 15 minutes as an ISO timestamp. Returns counts.
+- `app/api/queues/refresh-feed/route.ts`: POST via `handleCallback`, with
+  `maxDuration = 60`. `lib/ingest/consumer.ts` calls `refreshFeed` with
+  `skipIfFreshWithin: 120`; malformed messages without a string `feedId`
+  are logged and acknowledged. Missing feeds and source failures are
+  acknowledged; DB errors throw for redelivery. The consumer has no auth
+  code of its own: it assumes Vercel keeps trigger consumers private
+  (design §5.6). The owner must verify this on the first deploy.
+- `vercel.json`: `crons` runs `/api/cron/refresh` on `*/15 * * * *`;
+  `experimentalTriggers` binds the consumer to `queue/v2beta`, topic
+  `feed-refresh`, with `maxDeliveries: 3`.
 - `lib/ingest/refresh.ts`: `refreshFeed(feedId, { skipIfFreshWithin, fetch,
   now })` uses conditional `safeFetch` with a 15 s deadline, then parses
-  against the final response URL without changing the stored URL. Nothing
-  calls it yet. Missing feeds return; `skipIfFreshWithin` skips recent
+  against the final response URL without changing the stored URL.
+  Missing feeds return; `skipIfFreshWithin` skips recent
   fetches (seconds); plugin feeds throw until plugins are implemented.
   Shared `storeEntries` takes the newest 100 items by `sortAt`, with document
   order breaking ties and `sortAt = min(publishedAt ?? now, now)`.
@@ -159,6 +188,7 @@ Postgres host; its default user is `reader@example.com`.
   prefix and a default limit of 120 requests per minute.
 - Keep safe-fetch's `undici/index.js` import: `bun test` substitutes a shim
   for bare `undici` that ignores the custom Agent and bypasses the guard.
+  Next's build bundles `undici/index.js` into the consumer route.
   `createSafeFetch({ lookup, allowAddress, ports })` is the test seam; only
   test files may pass `allowAddress` or `ports`. There is no env or flag
   bypass. Safe-fetch tests use fake resolvers and only 127.0.0.1 sockets.
@@ -167,6 +197,9 @@ Postgres host; its default user is `reader@example.com`.
   requires a Postgres URL whose driver-parsed host is `localhost` or
   `127.0.0.1` and database is `rssify_test`, including query overrides.
   Keep tests serial; never use a real account or contact live services.
+- Fan-out and cron tests inject the enqueue seam; consumer tests call
+  `refreshFromMessage` with guarded fetch fixtures. Tests never import
+  `@vercel/queue` or send to a real queue.
 - Keep Prisma migrations committed. Use explicit `--env-file=.env.local`
   for dev Prisma commands; bare `bunx` and package scripts do not reliably
   load that file. Tests set both database URL variables themselves.
@@ -187,7 +220,7 @@ commits, fixtures and messages.
 - `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`: Vercel OAuth credentials.
 - `ADMIN_EMAIL`: verified admin email; unset means no admin.
 - `REGISTRATION_ENABLED`: defaults to `false`.
-- `CRON_SECRET`: reserved for the refresh loop; unused by Foundation.
+- `CRON_SECRET`: required bearer secret for the refresh cron route.
 - `VERCEL_ENV`: supplied by Vercel; `vercel-build` generates Prisma,
   deploys migrations on production/preview, then builds Next.js.
 
