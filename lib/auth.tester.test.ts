@@ -51,18 +51,24 @@ describe("registration boundary cases", () => {
 
   test("closed registration allows creating the verified admin only", async () => {
     const ctx = await auth.$context
-    const admin = await ctx.internalAdapter.createUser({
-      name: "Admin",
-      email: "admin@example.invalid",
-      emailVerified: true,
-    })
+    const admin = await ctx.internalAdapter.createUser(
+      {
+        name: "Admin",
+        email: "admin@example.invalid",
+        emailVerified: true,
+      },
+      { method: "oauth", oauth: { providerId: "vercel" } }
+    )
     expect(admin.emailVerified).toBe(true)
     await expect(
-      ctx.internalAdapter.createUser({
-        name: "Unverified",
-        email: "ADMIN@example.invalid",
-        emailVerified: false,
-      })
+      ctx.internalAdapter.createUser(
+        {
+          name: "Unverified",
+          email: "ADMIN@example.invalid",
+          emailVerified: false,
+        },
+        { method: "oauth", oauth: { providerId: "vercel" } }
+      )
     ).rejects.toMatchObject({ body: { code: "signup_disabled" } })
     expect(await db.user.count()).toBe(1)
   })
@@ -70,11 +76,14 @@ describe("registration boundary cases", () => {
   test("opening registration creates an ordinary user; closing does not invalidate its session", async () => {
     process.env.REGISTRATION_ENABLED = "true"
     const ctx = await auth.$context
-    const user = await ctx.internalAdapter.createUser({
-      name: "Reader",
-      email: "reader@example.invalid",
-      emailVerified: false,
-    })
+    const user = await ctx.internalAdapter.createUser(
+      {
+        name: "Reader",
+        email: "reader@example.invalid",
+        emailVerified: false,
+      },
+      { method: "oauth", oauth: { providerId: "vercel" } }
+    )
     const session = await ctx.internalAdapter.createSession(user.id)
     process.env.REGISTRATION_ENABLED = "false"
     const signature = createHmac("sha256", ctx.secret)
