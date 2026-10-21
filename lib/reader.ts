@@ -131,19 +131,47 @@ function toListEntry<
   return { ...entry, feedTitle: feed.title, read: readMarks.length > 0 }
 }
 
+// cursor pages older than a position (nextCursor), before pages newer
+// (prevCursor), so a list can step both ways; before wins if both are given.
 export async function listEntries(
   userId: string,
   {
     limit = 50,
     cursor,
+    before,
     ...scope
-  }: EntryScope & { limit?: number; cursor?: string } = {}
+  }: EntryScope & { limit?: number; cursor?: string; before?: string } = {}
 ) {
   // asOf is taken before the read so markAllRead({ upTo: asOf }) never
   // touches an entry that arrived after this list was produced.
   const asOf = new Date()
   const take = Math.min(Math.max(Math.trunc(limit), 1), 100)
   const where = await scopeWhere(userId, scope)
+  if (before !== undefined) {
+    const newer = await db.entry.findMany({
+      where: { AND: [where, newerThan(decodeCursor(before))] },
+      orderBy: [{ sortAt: "asc" }, { id: "asc" }],
+      take: take + 1,
+      select: entrySelect(userId),
+    })
+    // With a page or less above, the answer is the first page itself, so
+    // stepping back up lands on the same pages as stepping down did.
+    if (newer.length > take) {
+      const page = newer.slice(0, take).reverse()
+      const last = page[take - 1]
+      const older = await db.entry.findFirst({
+        where: { AND: [where, olderThan(last)] },
+        select: { id: true },
+      })
+      return {
+        entries: page.map(toListEntry),
+        nextCursor: older ? encodeCursor(last) : null,
+        prevCursor: encodeCursor(page[0]),
+        asOf,
+      }
+    }
+    cursor = undefined
+  }
   const rows = await db.entry.findMany({
     where: cursor ? { AND: [where, olderThan(decodeCursor(cursor))] } : where,
     orderBy: [{ sortAt: "desc" }, { id: "desc" }],
@@ -154,6 +182,9 @@ export async function listEntries(
   return {
     entries: page.map(toListEntry),
     nextCursor: rows.length > take ? encodeCursor(page[take - 1]) : null,
+    // Past the first page there is something above; an empty page past the
+    // end steps back up from its own cursor.
+    prevCursor: cursor ? (page[0] ? encodeCursor(page[0]) : cursor) : null,
     asOf,
   }
 }

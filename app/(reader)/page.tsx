@@ -1,5 +1,7 @@
-import { ListHeader } from "./list-header"
+import { currentUser } from "./data"
+import { EntryList } from "./entry-list"
 
-export default function AllFeedsPage() {
-  return <ListHeader title="All feeds" />
+export default async function AllFeedsPage({ searchParams }: PageProps<"/">) {
+  const { userId } = await currentUser()
+  return <EntryList userId={userId} searchParams={await searchParams} />
 }

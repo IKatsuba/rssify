@@ -5,7 +5,7 @@ export function ListHeader({
   title,
   children,
 }: {
-  title: string
+  title: React.ReactNode
   children?: React.ReactNode
 }) {
   return (
