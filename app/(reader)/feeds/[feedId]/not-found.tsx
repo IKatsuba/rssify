@@ -14,7 +14,7 @@ import { ListHeader } from "../../list-header"
 export default function FeedNotFound() {
   return (
     <>
-      <ListHeader title="" />
+      <ListHeader />
       <Empty>
         <EmptyHeader>
           <EmptyTitle>Feed not found</EmptyTitle>

@@ -30,7 +30,7 @@ export default function ReaderError({
 
   return (
     <>
-      <ListHeader title={pathname === "/" ? "All feeds" : ""} />
+      <ListHeader title={pathname === "/" ? "All feeds" : undefined} />
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">
