@@ -82,7 +82,8 @@ export function sanitizeContent(html: string, baseUrl: string): string | null {
 }
 
 // Block ends and breaks become a space, so "<p>a</p><p>b</p>" reads "a b".
-const BLOCK_END = /<(?:br|\/(?:p|div|li|h[1-6]|blockquote|tr|td|th|pre))\b[^>]*>/gi
+const BLOCK_END =
+  /<(?:br|\/(?:p|div|li|h[1-6]|blockquote|tr|td|th|pre))\b[^>]*>/gi
 
 export function plainText(html: string, max: number): string {
   const escaped = sanitizeHtml(html.replace(BLOCK_END, "$& "), {
