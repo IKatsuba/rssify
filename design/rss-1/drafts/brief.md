@@ -4,6 +4,27 @@ Lead's brief for the ingest, interface and state architects and the critic.
 The owner's word for everything below: keep it as simple as possible, don't
 get clever.
 
+## Owner's answers (settled, not open)
+
+1. **Plan is Vercel Pro.** Crons may run as often as the design needs.
+   Ingest's question 3 is no longer a choice for the owner: pick the cron
+   interval and say why (freshness vs cost of invocations and queue
+   messages). Where this brief says "Hobby", read Pro.
+2. **Multi-user by design.** Registration is switched on/off by an env
+   variable; the admin is named by an env email. Each user has their own
+   subscriptions and read state. State's question 1 is no longer an owner
+   choice: design the model for it, say what the admin can do beyond a user
+   (keep it minimal), and what an API key reaches.
+3. **Sign-in is through Vercel.** "Sign in with Vercel" as better-auth's
+   social/OAuth provider. State checks what better-auth offers for Vercel
+   today (a built-in provider or the generic OAuth plugin), the env
+   variables it needs, and how it works locally. Default: no
+   email/password, Vercel only. The registration flag governs whether a new
+   Vercel account may create a user; the admin email matches the Vercel
+   account's email. The API key plugin stays required. Interface: there is
+   no sign-up form; sign-in is one "Sign in with Vercel" button, with a
+   "registration closed" state.
+
 ## Problem
 
 Today rssify is a Deno/Hono service (`main.ts`, `lib/`, `providers/`) that
@@ -21,7 +42,8 @@ be scraped (list page → links, titles, dates; post page → summary from
 
 ## What a person sees and does
 
-- Signs in (and signs up, when registration is switched on).
+- Signs in with Vercel (a new account is let in only when registration is
+  switched on).
 - Adds a feed by URL (an RSS/Atom URL, or a site URL whose feed is
   discovered), or picks a built-in source (the claude-code and cursor blogs).
 - Sees a list of subscriptions with unread counts, and a list of entries
