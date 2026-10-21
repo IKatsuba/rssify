@@ -287,6 +287,32 @@ describe("parseFeed: hand-made edge cases", () => {
     ])
   })
 
+  test("Atom text constructs keep literal tags as text", () => {
+    const feed = parseFeed(
+      fixture("handmade-text-constructs.atom.xml"),
+      "https://ex.com/feed.atom"
+    )
+    expect(feed.title).toBe("Notes on <tag>")
+    const [plain, explicit, html, noIdA, noIdB] = feed.entries
+    expect(plain).toMatchObject({
+      title: "Use <tag>",
+      summary: "Use <script>alert(1)</script> & more",
+      contentHtml: "Use &lt;script&gt;alert(1)&lt;/script&gt; &amp; more",
+    })
+    expect(explicit).toMatchObject({
+      title: "Explicit <b>text</b>",
+      summary: "A <summary>",
+      contentHtml: "A &lt;summary&gt;",
+    })
+    expect(html).toMatchObject({
+      title: "Bold html",
+      summary: "Real markup",
+      contentHtml: "<p>Real <em>markup</em></p>",
+    })
+    expect(noIdA.guid).toBe(sha1("No id <a>"))
+    expect(noIdB.guid).toBe(sha1("No id <b>"))
+  })
+
   test("links, guids, dates and titles fall back as specified", () => {
     const feed = parseFeed(
       fixture("handmade-edge-cases.rss.xml"),

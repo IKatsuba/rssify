@@ -98,8 +98,29 @@ export function normaliseEntry(raw: RawEntry, base: string): IngestedEntry {
   }
 }
 
+type XmlFeed = ReturnType<typeof parseXmlFeed>
+type XmlElement = XmlFeed["element"]
+
+// Atom text constructs are plain text unless typed html/xhtml (RFC 4287
+// §3.1), and the parser hands them back decoded; escape them so
+// normaliseEntry, which reads HTML, keeps "<tag>" as text. RSS fields are
+// HTML in practice and pass as they are.
+function atomHtml(
+  atom: boolean,
+  parent: XmlElement,
+  name: string,
+  value: string | null
+): string | null {
+  const element = parent.findElementWithName(name)
+  if (!atom || value === null || !element) return value
+  const type = element.getAttribute("type")?.trim().toLowerCase()
+  return !type || type === "text" || type === "text/plain"
+    ? escapeHtml(value)
+    : value
+}
+
 function parseXml(body: string, feedUrl: string): ParsedFeed {
-  let feed: ReturnType<typeof parseXmlFeed>
+  let feed: XmlFeed
   try {
     feed = parseXmlFeed(body)
   } catch (error) {
@@ -109,20 +130,25 @@ function parseXml(body: string, feedUrl: string): ParsedFeed {
       throw new FeedParseError("not_a_feed", "The body is not a feed")
     throw new FeedParseError("invalid_feed", "The feed could not be parsed")
   }
+  const atom = feed.meta.type === "atom"
   return {
-    title: plainText(feed.title ?? "", Infinity) || null,
+    title:
+      plainText(
+        atomHtml(atom, feed.element, "title", feed.title) ?? "",
+        Infinity
+      ) || null,
     siteUrl: safeUrl(feed.url, feedUrl),
     entries: feed.items.map((item) =>
       normaliseEntry(
         {
           id: item.id,
           url: item.url,
-          title: item.title,
+          title: atomHtml(atom, item.element, "title", item.title),
           author: item.authors[0]?.name,
           published: item.published,
           updated: item.updated,
-          summary: item.description,
-          content: item.content,
+          summary: atomHtml(atom, item.element, "summary", item.description),
+          content: atomHtml(atom, item.element, "content", item.content),
         },
         feedUrl
       )

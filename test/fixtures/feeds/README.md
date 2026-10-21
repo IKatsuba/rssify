@@ -29,3 +29,7 @@ Hand-made files start with `handmade-`:
   a blank guid, bad dates, empty titles.
 - `handmade-content-text.feed.json`: `content_text` with `<tag>`, a numeric
   id, a bad date, `date_modified` only, an item with neither id nor url.
+- `handmade-text-constructs.atom.xml`: Atom title, summary and content with
+  the default and explicit `type="text"` holding literal `<tag>` text, one
+  `type="html"` entry, and two entries with neither id nor link that differ
+  only by a literal tag.

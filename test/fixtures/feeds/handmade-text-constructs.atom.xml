@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Notes on &lt;tag&gt;</title>
+  <link href="https://ex.com/" rel="alternate"/>
+  <id>urn:example:text</id>
+  <updated>2026-10-01T00:00:00Z</updated>
+  <entry>
+    <title>Use &lt;tag&gt;</title>
+    <id>urn:example:default</id>
+    <updated>2026-10-01T00:00:00Z</updated>
+    <content>Use &lt;script&gt;alert(1)&lt;/script&gt; &amp; more</content>
+  </entry>
+  <entry>
+    <title type="text">Explicit &lt;b&gt;text&lt;/b&gt;</title>
+    <id>urn:example:explicit</id>
+    <updated>2026-10-01T00:00:00Z</updated>
+    <summary type="text">A &lt;summary&gt;</summary>
+  </entry>
+  <entry>
+    <title type="html">&lt;b&gt;Bold&lt;/b&gt; html</title>
+    <id>urn:example:html</id>
+    <updated>2026-10-01T00:00:00Z</updated>
+    <content type="html">&lt;p&gt;Real &lt;em&gt;markup&lt;/em&gt;&lt;/p&gt;</content>
+  </entry>
+  <entry>
+    <title>No id &lt;a&gt;</title>
+  </entry>
+  <entry>
+    <title>No id &lt;b&gt;</title>
+  </entry>
+</feed>
