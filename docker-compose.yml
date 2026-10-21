@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    ports:
+      - '127.0.0.1:54329:5432'
+    environment:
+      POSTGRES_USER: rssify
+      POSTGRES_DB: rssify
+      POSTGRES_HOST_AUTH_METHOD: trust
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'rssify']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  pg-data:
