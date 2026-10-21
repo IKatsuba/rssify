@@ -772,6 +772,771 @@ functions over the database (ingest's seam):
 6. Read, mark unread, mark all read, and the keys. Open two tabs and mark
    in one, then reload the other.
 
+## 7. MCP
+
+The owner's settled requirement: rssify is used three ways, all
+first-class in v1: the web UI, the HTTP API (API key) and an MCP server.
+This section is written against DESIGN.md (key-only `/api/v1`,
+`Feed.status`, `nextFetchAt`, `contentHtml`, synchronous subscribe, orphan
+feeds deleted on last unsubscribe).
+
+Versions read on 2026-10-21 (npm registry, package tarballs):
+
+| Package | Version | Role |
+| --- | --- | --- |
+| `@better-auth/mcp` | 1.7.12 | `mcp()` plugin, `requireMcpAuth` |
+| `@better-auth/oauth-provider` | 1.7.12 | the OAuth 2.1 provider `mcp()` is built on (dependency of the above; also `oauthProviderClient`, well-known helpers) |
+| `@better-auth/cimd` | 1.7.12 | Client ID Metadata Documents |
+| `better-auth` | 1.7.12 | `jwt()` plugin (signing keys, `/jwks`) |
+| `@modelcontextprotocol/server` | 2.3.1 | the official MCP TypeScript SDK v2: `McpServer`, `createMcpHandler` |
+| `zod` | 4.6.7 | the SDK needs `^4.2.0` |
+| `mcp-handler` (Vercel) | 2.3.0 | considered, not used (§7.2) |
+| `@modelcontextprotocol/sdk` | 1.32.1 | the v1 SDK line, replaced by the v2 packages; not used |
+
+The MCP spec revision is **2026-07-28**
+(https://modelcontextprotocol.io/specification/2026-07-28/basic/authorization).
+
+### 7.1 Authorization: better-auth's MCP support today
+
+**What replaced the legacy plugin.** `better-auth` 1.6.33 shipped
+`better-auth/plugins` `mcp` and `oidc-provider` (both are in
+`dist/plugins/` of 1.6.33). In 1.7.12 both are gone from `dist/plugins/`.
+They are replaced by two packages:
+
+- `@better-auth/oauth-provider`, an OAuth 2.1 / OIDC provider;
+- `@better-auth/mcp`, whose `mcp()` *is* that provider, configured for MCP.
+
+Sources: `@better-auth/mcp` 1.7.12 `README.md` and `dist/index.mjs`;
+https://www.better-auth.com/docs/plugins/mcp;
+https://www.better-auth.com/docs/plugins/oauth-provider. We use `mcp()`;
+the docs say not to add a separate `oauthProvider()` beside it.
+
+**How it implements MCP authorization** (`@better-auth/mcp` 1.7.12
+`dist/index.mjs`, `@better-auth/core` 1.7.12 `dist/oauth2/verify.mjs`, the
+two docs pages above):
+
+| MCP requirement (2026-07-28) | How better-auth does it |
+| --- | --- |
+| Protected resource metadata (RFC 9728) | `mcp()`'s `onRequest` serves `/.well-known/oauth-protected-resource` and `/.well-known/oauth-protected-resource<resource path>`: `{ resource, authorization_servers: [issuer], bearer_methods_supported: ['header'], scopes_supported, dpop_signing_alg_values_supported }`. OIDC scopes (`openid`, `profile`, `email`, `offline_access`) are filtered out of `scopes_supported`. |
+| `WWW-Authenticate` on 401 | `requireMcpAuth` answers a JSON-RPC 401 whose header carries `resource_metadata="<origin>/.well-known/oauth-protected-resource<resource path>"` (`resource-challenge-*.mjs`). A token without a required scope gets a 403 `insufficient_scope` naming the scopes (step-up). |
+| Authorization server metadata (RFC 8414) and OIDC discovery | The provider serves `{issuer}/.well-known/oauth-authorization-server`, `/.well-known/oauth-authorization-server/<issuer path>` and `{issuer}/.well-known/openid-configuration`. For routes the framework does not forward, it exports `oauthProviderAuthServerMetadata(auth)` and `oauthProviderOpenIdConfigMetadata(auth)`. |
+| Client registration | **CIMD** through `cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' })`: the client's `client_id` is an HTTPS URL of its metadata document, fetched by `@better-auth/cimd/node`'s pinned-address, no-redirect transport. **DCR** (`/oauth2/register`) is off unless `allowDynamicClientRegistration` and `allowUnauthenticatedClientRegistration` are set; the spec marks DCR deprecated. |
+| PKCE | Authorization code + PKCE, `code_challenge_methods_supported: ['S256']` (`oidcServerMetadata` type in `dist/index.d.mts`). |
+| Resource indicators (RFC 8707), audience | `mcp({ resource })` adds the resource to `resources` and to every registered client. A token request carrying `resource` gets a **JWT** access token with `aud = resource`. |
+| Token verification on the MCP route | `requireMcpAuth(auth, handler, { resource, requiredScopes })` verifies signature (JWKS), `iss`, `aud`, `exp` and requires an `azp` claim, enforces DPoP when the token is DPoP-bound, and hands the verified claims to the handler. No database round trip for a bearer token. |
+| Refresh tokens | Opaque, stored, rotated; `mcp()` sets a 30 s reuse window so a retried refresh gets the same answer. Access token 1 h, refresh token 30 days (provider defaults, oauth-provider docs, "Expirations"). |
+| Consent | The provider redirects to `consentPage` with a signed query. Our page checks it with `verifyOAuthQueryParams(query, (await auth.$context).secret)` and calls `authClient.oauth2.consent({ accept })`. |
+
+**The JWKS is fetched over HTTP, from ourselves.** `requireMcpAuth`
+passes `jwksUrl` as a string (default `<baseURL>/jwks`, i.e.
+`<BETTER_AUTH_URL>/api/auth/jwks`), and `verify.mjs` fetches it with
+`fetchRefusingRedirects` and caches it per instance for 5 minutes (kid
+miss: one refetch, 30 s cooldown). So a cold instance makes one request
+to its own deployment before its first MCP call. That is accepted: it
+costs one small function invocation per instance per 5 minutes and needs
+no code of ours. There is no option to pass the key set in-process to
+`requireMcpAuth`.
+
+**Configuration** (`lib/auth.ts`, added to DESIGN.md §9):
+
+```ts
+import { jwt } from 'better-auth/plugins';
+import { mcp } from '@better-auth/mcp';
+import { cimd } from '@better-auth/cimd';
+import { fetchClientMetadataResource } from '@better-auth/cimd/node';
+
+const baseURL = process.env.BETTER_AUTH_URL!; // e.g. http://localhost:3210
+export const MCP_RESOURCE = `${baseURL}/api/mcp`;
+export const MCP_SCOPE = 'reader';
+
+export const auth = betterAuth({
+  // …everything in DESIGN.md §9…
+  disabledPaths: ['/token'], // jwt()'s session → JWT endpoint; not needed (oauth-provider docs, Installation)
+  plugins: [
+    jwt(),
+    mcp({
+      loginPage: '/sign-in',
+      consentPage: '/consent',
+      resource: MCP_RESOURCE,
+      scopes: ['openid', 'profile', 'email', 'offline_access', MCP_SCOPE],
+      // Prisma on Postgres cannot store a resource without allowedScopes
+      // (oauth-provider docs, "Resources", warning box).
+      resources: [{ identifier: MCP_RESOURCE, name: 'rssify MCP', allowedScopes: ['openid', 'profile', 'email', 'offline_access', MCP_SCOPE] }],
+      clientRegistrationDefaultScopes: ['openid', 'offline_access', MCP_SCOPE],
+      // DCR fallback: owner question M2. Recommended: on.
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      clientRegistrationDefaultApplicationType: 'infer',
+    }),
+    cimd({ fetchClientMetadataResource, metadataProfile: 'mcp-2026-07-28' }),
+    apiKey({ defaultPrefix: 'rss_', rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 } }),
+    nextCookies(),
+  ],
+});
+```
+
+- One custom scope, `reader`. Every MCP tool needs it
+  (`requiredScopes: ['reader']`). Like API keys, all MCP grants carry the
+  same rights in v1; a read-only scope is listed for later. One scope
+  rather than none, so that protected resource metadata advertises
+  something for clients to request, and the challenge names it.
+- `resource` is HTTPS in production. `http://localhost:3210/api/mcp` is
+  allowed locally, because `validateMcpResource` accepts HTTP on loopback
+  hosts only.
+- The ship team confirms the scope wiring for CIMD and DCR clients with
+  the end-to-end test in §7.5. If a CIMD client's document carries no
+  `scope`, the default may differ from `clientRegistrationDefaultScopes`;
+  the test shows it.
+
+**Prisma models it adds.** These come from `@better-auth/oauth-provider`
+1.7.12 `dist/authorize-*.mjs` (`const schema`) and `better-auth` 1.7.12
+`dist/plugins/jwt/schema.mjs`. `@better-auth/cimd` adds no table; it
+stores discovered clients in `oauthClient` with `clientDiscoveryId:
+'cimd'`. DPoP replay records go in the existing `verification` table
+(`createDpopReplayStore` in `@better-auth/core` `dist/oauth2/dpop.mjs`).
+
+The docs' schema section lists only five tables; the 1.7.12 source has
+seven plus `jwks`. As for the rest of the auth models, `bunx
+@better-auth/cli generate` output wins over this listing. A better-auth
+reference without `onDelete` is `cascade` (`dist/db/get-migration.mjs`),
+and the models below say so explicitly.
+
+```prisma
+// ---------- better-auth 1.7.12 jwt() ----------
+
+model Jwks {
+  id         String    @id
+  publicKey  String
+  privateKey String // encrypted with BETTER_AUTH_SECRET
+  createdAt  DateTime
+  expiresAt  DateTime?
+  alg        String?
+  crv        String?
+
+  @@map("jwks")
+}
+
+// ---------- @better-auth/oauth-provider 1.7.12 (via @better-auth/mcp) ----------
+
+model OauthClient {
+  id                               String    @id
+  clientId                         String    @unique
+  clientSecret                     String?
+  clientDiscoveryId                String? // 'cimd' for CIMD clients, null for DCR/managed
+  disabled                         Boolean?  @default(false)
+  skipConsent                      Boolean?
+  enableEndSession                 Boolean?
+  subjectType                      String?
+  scopes                           String[]
+  clientCredentialsScopes          String[]  @default([])
+  userId                           String?
+  user                             User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt                        DateTime?
+  updatedAt                        DateTime?
+  name                             String?
+  uri                              String?
+  icon                             String?
+  contacts                         String[]
+  tos                              String?
+  policy                           String?
+  softwareId                       String?
+  softwareVersion                  String?
+  softwareStatement                String?
+  redirectUris                     String[]
+  postLogoutRedirectUris           String[]
+  backchannelLogoutUri             String?
+  backchannelLogoutSessionRequired Boolean?
+  tokenEndpointAuthMethod          String?
+  applicationType                  String?
+  jwks                             String?
+  jwksUri                          String?
+  grantTypes                       String[]
+  responseTypes                    String[]
+  requirePKCE                      Boolean?
+  dpopBoundAccessTokens            Boolean?  @default(false)
+  referenceId                      String?
+  metadata                         Json?
+
+  resources     OauthClientResource[]
+  refreshTokens OauthRefreshToken[]
+  accessTokens  OauthAccessToken[]
+  consents      OauthConsent[]
+
+  @@index([userId])
+  @@map("oauthClient")
+}
+
+model OauthResource {
+  id                            String    @id
+  identifier                    String    @unique // the RFC 8707 resource, = MCP_RESOURCE
+  name                          String
+  accessTokenTtl                Int?
+  refreshTokenTtl               Int?
+  signingAlgorithm              String?
+  signingKeyId                  String?
+  allowedScopes                 String[]
+  customClaims                  Json?
+  dpopBoundAccessTokensRequired Boolean?  @default(false)
+  disabled                      Boolean?  @default(false)
+  createdAt                     DateTime?
+  updatedAt                     DateTime?
+  policyVersion                 Int?      @default(1)
+  metadata                      Json?
+
+  clients OauthClientResource[]
+
+  @@map("oauthResource")
+}
+
+model OauthClientResource {
+  id         String        @id
+  clientId   String
+  client     OauthClient   @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  resourceId String
+  resource   OauthResource @relation(fields: [resourceId], references: [identifier], onDelete: Cascade)
+  metadata   Json?
+  createdAt  DateTime?
+
+  @@unique([clientId, resourceId])
+  @@index([clientId])
+  @@index([resourceId])
+  @@map("oauthClientResource")
+}
+
+model OauthRefreshToken {
+  id                      String      @id
+  token                   String      @unique // hashed by default (docs, "Storage")
+  clientId                String
+  client                  OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?    @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String
+  user                    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  expiresAt               DateTime
+  createdAt               DateTime
+  revoked                 DateTime?
+  rotatedAt               DateTime?
+  rotationReplayResponse  String?
+  rotationReplayExpiresAt DateTime?
+  authTime                DateTime?
+  confirmation            Json?
+  scopes                  String[]
+
+  accessTokens OauthAccessToken[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@map("oauthRefreshToken")
+}
+
+// Opaque access tokens only (issued when a request names no resource).
+// MCP tokens are JWTs and are not stored.
+model OauthAccessToken {
+  id                      String             @id
+  token                   String             @unique
+  clientId                String
+  client                  OauthClient        @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  sessionId               String?
+  session                 Session?           @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  userId                  String?
+  user                    User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  authorizationCodeId     String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  refreshId               String?
+  refresh                 OauthRefreshToken? @relation(fields: [refreshId], references: [id], onDelete: Cascade)
+  expiresAt               DateTime
+  createdAt               DateTime
+  revoked                 DateTime?
+  confirmation            Json?
+  scopes                  String[]
+
+  @@index([clientId])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([authorizationCodeId])
+  @@index([refreshId])
+  @@map("oauthAccessToken")
+}
+
+model OauthConsent {
+  id                      String      @id
+  clientId                String
+  client                  OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId                  String?
+  user                    User?       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  referenceId             String?
+  resources               String[]
+  requestedUserInfoClaims String[]
+  scopes                  String[]
+  createdAt               DateTime
+  updatedAt               DateTime
+
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauthConsent")
+}
+
+model OauthClientAssertion {
+  id        String   @id // digest of the private_key_jwt jti
+  expiresAt DateTime
+
+  @@map("oauthClientAssertion")
+}
+```
+
+`User` gains `oauthClients OauthClient[]`, `oauthRefreshTokens
+OauthRefreshToken[]`, `oauthAccessTokens OauthAccessToken[]` and
+`oauthConsents OauthConsent[]`. `Session` gains `oauthRefreshTokens` and
+`oauthAccessTokens`. The migration is additive (§3); deleting a user
+deletes their consents and tokens by cascade.
+
+**Routes it mounts** (all under the existing
+`app/api/auth/[...all]/route.ts`, base path `/api/auth`, so the issuer is
+`<BETTER_AUTH_URL>/api/auth`):
+
+- `/oauth2/authorize`, `/oauth2/token`, `/oauth2/register` (only when DCR
+  is on), `/oauth2/consent`, `/oauth2/continue`, `/oauth2/userinfo`,
+  `/oauth2/revoke`, `/oauth2/introspect`, `/oauth2/end-session`;
+- client and consent management (`/oauth2/get-consents`,
+  `/oauth2/delete-consent`, `/oauth2/get-client`, `/oauth2/public-client`,
+  …, and `/admin/oauth2/*`, which needs server-side calls);
+- `/jwks` (from `jwt()`);
+- `/.well-known/openid-configuration` and
+  `/.well-known/oauth-authorization-server` under the issuer path.
+
+Source: the `createAuthEndpoint` paths in `@better-auth/oauth-provider`
+1.7.12 `dist/*.mjs`.
+
+**Next.js route files we add** (the catch-all only sees `/api/auth/*`;
+the root well-known URLs must reach better-auth too):
+
+| File | Serves | Body |
+| --- | --- | --- |
+| `app/.well-known/oauth-protected-resource/[[...path]]/route.ts` | `/.well-known/oauth-protected-resource` and `…/api/mcp` (RFC 9728) | `export const GET = (req: Request) => auth.handler(req);` (`mcp()`'s `onRequest` answers) |
+| `app/.well-known/oauth-authorization-server/[[...path]]/route.ts` | `/.well-known/oauth-authorization-server/api/auth` (RFC 8414 path insertion) | `export const GET = oauthProviderAuthServerMetadata(auth);` |
+| `app/.well-known/openid-configuration/[[...path]]/route.ts` | `/.well-known/openid-configuration/api/auth`, which some clients try | `export const GET = oauthProviderOpenIdConfigMetadata(auth);` |
+| `app/api/mcp/route.ts` | the MCP endpoint (§7.2) | |
+| `app/consent/page.tsx` | the consent screen | interface's; contract below |
+
+**Env.** No new variables. The resource is derived from `BETTER_AUTH_URL`.
+The signing key lives in `jwks`, encrypted with `BETTER_AUTH_SECRET`, so
+that secret must stay stable (it already must, for sessions). No new
+service, no paid plan.
+
+**Sign in with Vercel during the MCP flow.**
+
+1. The MCP client opens `/api/auth/oauth2/authorize?…`.
+2. With no session, the provider redirects to `/sign-in?<signed query>`.
+3. The existing "Sign in with Vercel" button works unchanged once
+   `lib/auth-client.ts` adds `oauthProviderClient()`. That client plugin
+   copies `window.location.search` into the `oauth_query` body of the
+   `POST /sign-in/social` (`@better-auth/oauth-provider` `dist/client.mjs`).
+4. The provider's `before` hook verifies the signature and stores the
+   query in the OAuth state for `/sign-in/social`.
+5. When the Vercel callback sets the session cookie, its `after` hook
+   resumes `/oauth2/authorize` (`dist/authorize-*.mjs`, `hooks`). The
+   browser goes on to `/consent`, then back to the client's redirect URI
+   with a code.
+
+A user who is already signed in goes straight to consent.
+
+**The registration gate holds unchanged.** A new Vercel account while
+registration is closed fails in `databaseHooks.user.create.before`, as it
+does today. The flow ends on `/sign-in?error=signup_disabled` and the MCP
+client never gets a code. The admin is not special in MCP: no tool is an
+admin tool, and an MCP grant never carries admin rights, as an API key
+doesn't.
+
+**Consent page contract** (for interface):
+
+- The server component reads `searchParams` and returns `notFound()`
+  unless `verifyOAuthQueryParams` passes.
+- It requires a session; with none, it redirects to `/sign-in` with the
+  same query.
+- It shows the client's `client_name` and `uri` (from
+  `auth.api.getOAuthClientPublic`) and one sentence for the `reader`
+  scope.
+- Allow and Deny call `authClient.oauth2.consent({ accept: true | false })`
+  and follow the returned redirect.
+- Consent is never skipped: CIMD and DCR clients are anyone's.
+
+### 7.2 Serving MCP from the App Router on Vercel
+
+**Chosen: the official SDK v2, `@modelcontextprotocol/server` 2.3.1,
+directly.** Options:
+
+- **`@modelcontextprotocol/server` 2.3.1.** Its `createMcpHandler(factory,
+  options)` returns `{ fetch(request, { authInfo }) }`, a Web-standard
+  handler. Per request it serves the 2026-07-28 protocol (stateless, no
+  sessions), and by default (`legacy: 'stateless'`) it answers 2025-era
+  Streamable HTTP clients statelessly from the same factory (GET and
+  DELETE get `405`). Source: `dist/createMcpHandler-*.d.mts`,
+  `CreateMcpHandlerOptions`. It is the package better-auth's MCP docs
+  wire `requireMcpAuth` to.
+- **Vercel's `mcp-handler` 2.3.0.** It is maintained (published
+  2026-10-07, Vercel Labs), but 2.x is a wrapper over the same SDK v2
+  (peer `@modelcontextprotocol/server ^2.0.0`; README: "Built on MCP SDK
+  v2"). Its extras, `withMcpAuth` and `protectedResourceHandler`, are what
+  better-auth already gives. One more dependency for nothing we need.
+- **`@modelcontextprotocol/sdk` 1.32.1** is the v1 line; the v2 README says
+  v2 "replaces the single `@modelcontextprotocol/sdk` package".
+
+**Transport:** Streamable HTTP, one `POST /api/mcp`. No SSE endpoint, no
+Redis, no session store. `responseMode` stays `'auto'`: JSON unless a tool
+emits a notification first, which ours don't. `subscriptions/listen` is
+not offered, so the in-process event bus is never used across instances.
+
+**Legacy era: `legacy: 'stateless'` (the default), not `'reject'`.**
+better-auth's example uses `'reject'`. We keep the default so clients
+still on the 2025-11-25 protocol work today. It holds no state either way.
+
+**Statelessness on serverless.** The factory builds a fresh `McpServer`
+per request, and the actor arrives through `authInfo`. Nothing lives
+between requests except Postgres. Any instance can serve any request.
+
+`app/api/mcp/route.ts`:
+
+```ts
+import { createMcpHandler, originValidationResponse } from '@modelcontextprotocol/server';
+import { requireMcpAuth } from '@better-auth/mcp';
+import { auth, MCP_RESOURCE, MCP_SCOPE } from '@/lib/auth';
+import { actorFromApiKey, actorFromMcpClaims } from '@/lib/actor';
+import { buildMcpServer } from '@/lib/mcp/server';
+
+export const maxDuration = 60; // subscribe may fetch a feed (15 s) or run a plugin (40 s)
+
+const mcp = createMcpHandler(({ authInfo }) => buildMcpServer(authInfo!.extra!.userId as string));
+const appHost = new URL(MCP_RESOURCE).hostname;
+
+const viaOAuth = requireMcpAuth(auth, async (req, claims) => {
+  const actor = await actorFromMcpClaims(claims); // null → 401 (below)
+  if (!actor) return unauthorized();
+  return mcp.fetch(req, { authInfo: toAuthInfo(claims, actor) });
+}, { resource: MCP_RESOURCE, requiredScopes: [MCP_SCOPE] });
+
+export async function POST(req: Request) {
+  const badOrigin = originValidationResponse(req, [appHost]); // a present, foreign Origin → 403
+  if (badOrigin) return badOrigin;
+  if (req.headers.has('x-api-key')) {
+    const r = await actorFromApiKey(req.headers); // same as /api/v1: 401 / 429
+    if (!r.ok) return r.response;
+    return mcp.fetch(req, { authInfo: { token: 'api-key', clientId: 'api-key', scopes: [MCP_SCOPE], extra: { userId: r.actor.userId } } });
+  }
+  return viaOAuth(req);
+}
+```
+
+Only `POST` is exported, so Next.js answers other methods with `405`.
+
+**`actorFromMcpClaims(claims)`** (`lib/actor.ts`) runs one indexed query:
+does an `oauthConsent` row exist for (`userId = sub`, `clientId = azp`)
+whose user exists? If yes it returns `{ userId: sub, isAdmin: false }`,
+otherwise `null`. JWT verification alone has no database check. This
+query makes two things take effect at once rather than at token expiry
+(up to 1 h): deleting a user, and disconnecting an app (§7.7). Our
+clients never have `skipConsent`, so every valid grant has a consent row.
+
+**Origin.** The SDK leaves Origin and Host validation to the caller.
+`originValidationResponse` with our own host refuses a browser request
+from a foreign page. MCP clients that are not browsers send no `Origin`
+and pass. No cookie is ever read on this route, so there is no ambient
+authority to protect beyond that.
+
+**Rate limits.** An API key on MCP keeps its 120 requests per minute.
+OAuth calls have no per-token limit in v1 (only signed-in users can get a
+token; small scale). better-auth's per-IP limits apply to `/oauth2/*`
+(`/oauth2/register` 5 per minute, `/oauth2/token` 20 per minute;
+oauth-provider docs, "Rate Limiting"). Like the rest of better-auth's
+limiter, these are per instance in memory.
+
+### 7.3 API keys on MCP
+
+**Recommended, and drawn so: an `x-api-key` header also authenticates
+`/api/mcp`.** It is the same check as `/api/v1`, with the same 401/429
+and the same rate limit. A request with the header never enters the
+OAuth path.
+
+- It costs one branch, and makes MCP usable from clients that take a
+  static header (`claude mcp add --transport http … --header "x-api-key:
+  rss_…"`, Cursor and others), from scripts, and in the by-hand checks
+  without a browser.
+- OAuth stays the default and the path MCP clients discover. The spec
+  requires a server to reject OAuth tokens not issued for it ("MUST NOT
+  accept or transit any other tokens"). An API key is not an OAuth token
+  and travels in its own header. `Authorization: Bearer rss_…` is not
+  accepted: there, a key would be read as a broken JWT.
+- The alternative of API key only, with no OAuth at all, is much simpler
+  (no `jwt`, `mcp` or `cimd` plugin, eight fewer tables, no consent page).
+  But clients that can only run the OAuth flow could not connect. That
+  choice is the owner's: **M1**.
+
+### 7.4 Tools, actions and API: one implementation, three adapters
+
+All three call `lib/reader.ts` with a `userId`. Inputs are parsed by the
+same zod schemas in `lib/reader-schemas.ts`: the server actions parse
+their arguments, `/api/v1` parses query and body, and the MCP SDK takes
+them as `inputSchema`. Outputs are the `/api/v1` JSON shapes (DESIGN.md
+§5.3). An MCP tool returns them as `structuredContent` (with an
+`outputSchema`), and also as one JSON `text` block for clients without
+structured output.
+
+```ts
+// lib/reader-schemas.ts
+import * as z from 'zod';
+import { builtinSources } from '@/sources/builtin';
+
+export const Id = z.string().min(1).max(64);
+export const SubscribeInput = z
+  .object({
+    url: z.url().max(2048).optional().describe('A feed URL or a website address'),
+    source: z.enum(builtinSources.map((s) => s.id) as [string, ...string[]]).optional().describe('A built-in source id'),
+  })
+  .refine((v) => (v.url ? 1 : 0) + (v.source ? 1 : 0) === 1, 'Give exactly one of url or source');
+export const UnsubscribeInput = z.object({ feedId: Id });
+export const ListEntriesInput = z.object({
+  feedId: Id.optional().describe('Only this feed; all feeds when absent'),
+  unreadOnly: z.boolean().default(false),
+  limit: z.number().int().min(1).max(100).default(50),
+  cursor: z.string().max(200).optional().describe('nextCursor from the previous page'),
+});
+export const EntryInput = z.object({ entryId: Id });
+export const MarkAllReadInput = z.object({
+  feedId: Id.optional(),
+  upTo: z.iso.datetime().describe('asOf from list_entries; later entries stay unread'),
+});
+```
+
+The `lib/reader.ts` signatures, and the types exported from it:
+
+```ts
+listSubscriptions(userId): Promise<{ subscriptions: SubscriptionView[] }>
+subscribe(userId, input: SubscribeInput): Promise<SubscribeResult> // { ok: true, subscription, existed } | { ok: false, code, choices? }
+unsubscribe(userId, feedId): Promise<void>                          // throws NotFound
+listEntries(userId, input: ListEntriesInput): Promise<{ entries: EntryListItem[]; nextCursor: string | null; asOf: string }>
+getEntry(userId, entryId): Promise<{ entry: EntryView }>          // throws NotFound
+markRead(userId, entryId): Promise<void>                            // idempotent; NotFound
+markUnread(userId, entryId): Promise<void>
+markAllRead(userId, input: MarkAllReadInput): Promise<{ marked: number }>
+```
+
+| `lib/reader.ts` | Server action (DESIGN.md §5.2) | `/api/v1` (DESIGN.md §5.3) | MCP tool | Tool input (zod) | Tool output | Annotations |
+| --- | --- | --- | --- | --- | --- | --- |
+| `listSubscriptions` | (layout loader, not an action) | `GET /subscriptions` | `list_feeds` | `{}` | `{ subscriptions: [{ id, createdAt, unreadCount, feed: { id, url, title, siteUrl, sourceId, status, lastError, lastSuccessAt } }] }` | readOnly |
+| `subscribe` | `subscribe({ url } \| { source })` | `POST /subscriptions` | `subscribe` | `SubscribeInput` | `{ subscription, existed }` | openWorld (fetches the URL) |
+| `unsubscribe` | `unsubscribe(feedId)` | `DELETE /subscriptions/:feedId` (see lead question 1) | `unsubscribe` | `UnsubscribeInput` | `{ ok: true }` | destructive (the last subscriber's leaving deletes the feed and its entries) |
+| `listEntries` | (page loader) | `GET /entries?feedId=&unread=&limit=&cursor=` | `list_entries` | `ListEntriesInput` | `{ entries: [{ id, feedId, feedTitle, title, url, author, summary, publishedAt, sortAt, read }], nextCursor, asOf }` | readOnly |
+| `getEntry` | (page loader) | `GET /entries/:id` | `get_entry` | `EntryInput` | `{ entry: { …, contentHtml } }`; does **not** mark read (DESIGN.md §5.4) | readOnly |
+| `markRead` | `markRead(entryId)` | `PUT /entries/:id/read` | `mark_read` | `EntryInput` | `{ ok: true }` | idempotent |
+| `markUnread` | `markUnread(entryId)` | `DELETE /entries/:id/read` | `mark_unread` | `EntryInput` | `{ ok: true }` | idempotent |
+| `markAllRead` | `markAllRead({ feedId?, upTo })` | `POST /entries/read` | `mark_all_read` | `MarkAllReadInput` | `{ marked }` | idempotent |
+
+- **Errors.** `lib/reader.ts` throws `ReaderError { code }`; `NotFound` is
+  `not_found`, and subscribe returns the §4 codes. Each adapter maps the
+  same codes:
+  - a server action returns `{ ok: false, code }`, which becomes a toast
+    or a form error;
+  - `/api/v1` answers 404 or 422 with `{ error: { code, message } }`;
+  - an MCP tool returns `isError: true` with the text `"<code>: <the §4
+    sentence>"`, so the model reads the reason. A JSON-RPC error is used
+    only for protocol faults, and the SDK raises those itself, such as an
+    input that fails zod.
+  - Anything not the caller's is `not_found` on all three, never
+    "forbidden".
+- `lib/mcp/server.ts` exports `buildMcpServer(userId)`. It returns a
+  `new McpServer({ name: 'rssify', version })` with the eight
+  `registerTool` calls. Each is three lines: parse (SDK), call
+  `lib/reader.ts`, wrap. Tool descriptions say what the API docs say,
+  including "pass `asOf` from `list_entries` as `upTo`".
+- **Size.** `get_entry` can return up to 200 KB of HTML (the ingest cap).
+  The tool description tells the model so. A plain-text variant is listed
+  for later.
+- **No MCP resources or prompts in v1;** tools only.
+
+### 7.5 Tests for MCP (no network, no Vercel)
+
+They run in `bun test` against `rssify_test`, as in §6.
+
+**Seams:**
+
+- Handlers are called as functions: `POST(new Request('http://localhost:3210/api/mcp', { method: 'POST', headers, body }))`, and the well-known `GET`s the same way.
+- The self-fetched JWKS (§7.1) is answered in process. `test/jwks.ts`
+  wraps `globalThis.fetch` for the run: a request to
+  `http://localhost:3210/api/auth/jwks` goes to `auth.handler(request)`,
+  and any other URL throws, so a test that tries the network fails loudly.
+- Valid tokens are real ones, minted in process by `test/mcp-token.ts`
+  through `auth.handler`:
+  1. insert a user and a session;
+  2. create a public client with `auth.api.adminCreateOAuthClient`
+     (`token_endpoint_auth_method: 'none'`, redirect
+     `http://127.0.0.1:9/cb`, nothing listens there);
+  3. `GET /api/auth/oauth2/authorize` with the session cookie, PKCE S256,
+     `resource=MCP_RESOURCE` and `scope=openid offline_access reader`;
+  4. `POST /api/auth/oauth2/consent` with `accept: true`;
+  5. read the code from `Location`;
+  6. `POST /api/auth/oauth2/token` with `code_verifier` and `resource`.
+
+  This also proves the configuration: the Prisma list columns, resource
+  binding, scopes.
+- Bad tokens are minted with `jose` 6 (already in the tree through
+  `@better-auth/mcp`), from a key pair the test generates.
+
+**`app/api/mcp/route.test.ts`, token verification, negative cases:**
+
+- no `Authorization` and no `x-api-key` → `401`; the body is a JSON-RPC
+  error; `WWW-Authenticate` carries
+  `resource_metadata="http://localhost:3210/.well-known/oauth-protected-resource/api/mcp"`;
+- `Authorization: Bearer not-a-jwt` → `401`;
+- `Authorization: Basic …` → `401`;
+- a JWT signed by a foreign key (right `iss`, `aud`) → `401`;
+- a JWT from our key with the wrong `aud` (another resource) → `401`;
+- the wrong `iss` → `401`;
+- expired → `401`;
+- no `azp` → `401`;
+- a valid token without `reader` → `403`; `WWW-Authenticate` has
+  `error="insufficient_scope"` and `scope="reader"`;
+- a valid token after its consent is deleted (app disconnected) → `401`;
+- a valid token after the user is deleted → `401`;
+- the token in the query string (`?access_token=`) is ignored → `401`;
+- `Authorization: Bearer rss_…` (a key in the wrong header) → `401`;
+- `x-api-key`: revoked → `401`; expired → `401`; the 121st call in a
+  minute → `429` with `Retry-After`;
+- a foreign `Origin` → `403`; no `Origin` passes;
+- `GET` and `DELETE` → `405`.
+
+**Positive and tool cases** (with a valid token, and once with an API key):
+
+- `tools/list` returns exactly the eight tools, with input schemas;
+- the 2025-era `initialize` handshake gets a stateless answer too
+  (`legacy: 'stateless'`);
+- `list_feeds` returns only the caller's subscriptions, with unread counts;
+- `subscribe` to an existing feed makes no fetch and returns
+  `existed: true`; with neither or both of `url` and `source` → input
+  error;
+- `list_entries` pages with `nextCursor` and `unreadOnly`;
+- `get_entry` of another user's entry → `isError`, `not_found`;
+- `get_entry` does not mark read;
+- `mark_read` and `mark_unread` are idempotent;
+- `mark_all_read` respects `upTo`;
+- `unsubscribe` of the last subscriber deletes the feed.
+
+**Parity, `lib/adapters.test.ts`:** one scenario run through a server
+action, `/api/v1` and an MCP tool gives the same data, so the three
+adapters cannot drift.
+
+**Well-known, `app/.well-known/*.test.ts`:**
+
+- protected resource metadata, at both paths: `resource =
+  http://localhost:3210/api/mcp`, `authorization_servers =
+  ['http://localhost:3210/api/auth']`, `scopes_supported = ['reader']`;
+- authorization server metadata: `issuer`,
+  `code_challenge_methods_supported` contains `S256`,
+  `client_id_metadata_document_supported: true`, `registration_endpoint`
+  present only when DCR is on;
+- OIDC configuration answers.
+
+**`lib/mcp-clients.test.ts`:**
+
+- disconnect deletes the consent and revokes that client's refresh
+  tokens; other clients are untouched;
+- the cleanup (§7.7) removes expired rows and unused DCR clients only.
+
+**By hand only** (local dev server on 3210, dev Vercel App):
+
+1. `claude mcp add --transport http rssify http://localhost:3210/api/mcp`,
+   then `/mcp` in Claude Code to authenticate. The browser goes to
+   `/sign-in`, then Vercel, then `/consent` (Allow), then back to Claude
+   Code. Ask it to list feeds, read an entry, mark it read, and see the
+   UI agree after a reload.
+2. The same with a fresh Vercel account while registration is closed: the
+   flow ends on "Registration is closed".
+3. A CIMD client (one whose `client_id` is an HTTPS URL; this needs the
+   dev server to fetch it from the internet). Then a DCR client, if M2
+   keeps DCR on.
+4. Disconnect the app in Settings; the next tool call gets `401`, and the
+   client asks to sign in again.
+5. `claude mcp add --transport http rssify-key http://localhost:3210/api/mcp --header "x-api-key: rss_…"`:
+   tools work with no browser. Revoke the key, and calls fail.
+6. The MCP Inspector (`npx @modelcontextprotocol/inspector`) against the
+   same URL, to see the challenge and the metadata documents.
+
+### 7.6 Races and failures
+
+| Case | What happens |
+| --- | --- |
+| Two MCP calls at once from one client | Independent requests; the same rules as §3a (marks idempotent, subscribe `ON CONFLICT`). |
+| Mark read over MCP while the UI marks unread | Last writer wins, per row; both idempotent. The UI shows the state on its next render. |
+| The access token expires mid-conversation | `401` with the challenge; the client refreshes and retries. |
+| Two refreshes with one refresh token (client retry) | The 30 s reuse window in `mcp()` returns the same new pair; after it, the old token is refused. |
+| The user deletes their account, or the admin deletes the user | Cascade deletes consents and refresh tokens. The next MCP call fails the consent check → `401`. |
+| An app disconnected in Settings | Consent deleted, refresh tokens revoked, in one transaction. The next call → `401`. |
+| The JWKS self-fetch fails (cold instance, deploy in progress) | `verify.mjs` throws a JOSE infrastructure error, which is not a 401. The route answers `500`; the client retries. |
+| CIMD document unreachable or invalid | The authorization request fails closed; no client row is written or changed (cimd docs, "Persistence and refresh"). |
+| DCR spam | 5 registrations per minute per IP per instance. Unused DCR clients are pruned by the cron cleanup (§7.7). |
+| Registration closed, new account in the MCP flow | `signup_disabled`, as in §3a; no code is issued. |
+| `BETTER_AUTH_URL` wrong on a deploy | Tokens' `aud`/`iss` don't match the route, so everything is `401`. The by-hand step 1 catches it. |
+| `subscribe` over MCP takes longer than the client's timeout | The server finishes within `maxDuration = 60`. A retry finds the feed and returns `existed: true`. |
+| An older build without the MCP tables is still serving during rollout | It never touches them; the migration is additive. |
+
+### 7.7 Connected apps and cleanup
+
+- `lib/mcp-clients.ts`:
+  - `listConnectedApps(userId)` joins `oauthConsent` and `oauthClient` and
+    gives `{ clientId, name, uri, createdAt }`;
+  - `disconnectApp(userId, clientId)` deletes the consent and sets
+    `revoked = now()` on that user's refresh tokens for the client, in one
+    transaction.
+
+  Deleting a consent through better-auth's own `/oauth2/delete-consent`
+  does not touch refresh tokens (`dist/authorize-*.mjs`), hence our
+  function. The Settings screen lists these beside API keys; that is
+  interface's question 7 below.
+- **Cleanup** in `lib/auth-cleanup.ts`, called at the end of every run
+  of the cron route (ingest's). Four `deleteMany` calls, each on a small
+  table:
+  - `oauthRefreshToken` with `expiresAt < now()`;
+  - `oauthAccessToken` with `expiresAt < now()`;
+  - `oauthClientAssertion` with `expiresAt < now()`;
+  - `oauthClient` with `clientDiscoveryId` null, `userId` null, created
+    more than a day ago, and no consent and no refresh token (DCR clients
+    that never finished a flow).
+
+  There is no new cron and no new job. `verification` rows are left to
+  better-auth.
+
+### 7.8 Build units
+
+These slot into DESIGN.md §13 after unit 12 (Settings, API keys UI and
+`/api/v1`), because MCP reuses `lib/reader.ts` (unit 2), add-feed (unit
+6) and `lib/actor.ts`. Admin and CI move to 15 and 16.
+
+13. **OAuth provider for MCP.**
+    - `jwt()`, `mcp()`, `cimd()` in `lib/auth.ts`, plus `disabledPaths`;
+    - `oauthProviderClient()` in `lib/auth-client.ts`;
+    - the schema additions and their migration;
+    - the three `app/.well-known/*` routes;
+    - `/consent`;
+    - `actorFromMcpClaims`;
+    - `lib/mcp-clients.ts` and "Connected apps" in Settings;
+    - `lib/auth-cleanup.ts` in the cron route;
+    - tests: well-known, the token minting helpers, disconnect, cleanup.
+14. **MCP server.**
+    - `lib/reader-schemas.ts`; the actions and `/api/v1` switch to it, a
+      refactor with no change in behaviour;
+    - `lib/mcp/server.ts` with the eight tools;
+    - `app/api/mcp/route.ts`, with OAuth and `x-api-key`;
+    - tests: the route's negative cases, the tools, parity.
+
+    Dependencies: `@better-auth/mcp`, `@better-auth/cimd`,
+    `@modelcontextprotocol/server`, `zod`.
+
 ## Build units (order for the ship team)
 
 1. **Foundation.** Remove the Deno files (`main.ts`, `main_test.ts`,
@@ -792,8 +1557,10 @@ functions over the database (ingest's seam):
 4. **Reader UI** (interface's units), on the server actions over
    `lib/reader.ts`.
 5. **API keys UI and `/api/v1`** route handlers, with smoke tests.
-6. **Admin page.**
-7. **CI workflow.**
+6. **OAuth provider for MCP** (§7.8, unit 13 there).
+7. **MCP server** and its eight tools (§7.8, unit 14 there).
+8. **Admin page.**
+9. **CI workflow.**
 
 ## Decisions made
 
@@ -818,6 +1585,23 @@ functions over the database (ingest's seam):
 - Postgres on 54329 with trust auth locally; dev server on 3210; test
   database `rssify_test` in the same container.
 - `bun test`, against the docker database, with handlers called directly.
+- MCP authorization through `@better-auth/mcp` 1.7.12 (`mcp()`, built on
+  `@better-auth/oauth-provider`), with `jwt()` and `cimd()`; the legacy
+  `better-auth/plugins` `mcp` is not used (it is gone in 1.7). Login page
+  `/sign-in` (Sign in with Vercel, unchanged), consent page `/consent`,
+  one scope `reader`. No new env variable.
+- The MCP server is `@modelcontextprotocol/server` 2.3.1 `createMcpHandler`
+  at `POST /api/mcp`: stateless, Streamable HTTP, `legacy: 'stateless'`
+  so 2025-era clients work, `maxDuration = 60`. Not Vercel's `mcp-handler`
+  (a wrapper over the same SDK).
+- `x-api-key` also authenticates `/api/mcp`, with the same checks as
+  `/api/v1`.
+- Eight MCP tools, one per `lib/reader.ts` function. Shared zod schemas in
+  `lib/reader-schemas.ts`. Outputs are the `/api/v1` shapes.
+- Each MCP call checks that the consent and the user still exist, so
+  disconnecting an app or deleting a user takes effect at once.
+- Expired OAuth rows and unused DCR clients are pruned at the end of the
+  cron route; there is no new job.
 
 ## Questions for the owner
 
@@ -836,6 +1620,23 @@ functions over the database (ingest's seam):
    with Vercel: OK? The owner creates them and holds the secrets.
 3. **CI on GitHub Actions** as in §6: wanted in v1?
 4. **Retention of 500 entries per feed:** the right number?
+5. **M1. How MCP clients authenticate.**
+   - (a) OAuth (better-auth `mcp()` + CIMD) and also `x-api-key`:
+     **recommended**. Any MCP client can connect: those that only run the
+     OAuth flow, and those configured with a static header.
+   - (b) `x-api-key` only. This is far simpler: no `jwt`/`mcp`/`cimd`
+     plugins, eight fewer tables, no `/consent`, no well-known routes,
+     no connected-apps list. Clients that can only do OAuth (a URL and
+     nothing else) cannot connect.
+   - (c) OAuth only.
+6. **M2. Dynamic Client Registration as a fallback to CIMD.** The
+   2026-07-28 spec deprecates DCR and better-auth leaves it off by
+   default, but its docs name Cursor and older Claude Code releases as
+   clients that still register by DCR.
+   - (a) CIMD + DCR: **recommended**, for compatibility. Anyone can create
+     a client row, at 5 per minute per IP; unused ones are pruned.
+   - (b) CIMD only: fewer moving parts, but some clients cannot connect
+     until they adopt CIMD.
 
 ## Questions for ingest
 
@@ -865,3 +1666,22 @@ functions over the database (ingest's seam):
 5. The API keys screen: show `start` (the first 6 characters), name,
    created, last used (`lastRequest`) and expiry. Show the full key once, at
    creation.
+6. A `/consent` page for the MCP OAuth flow, to the contract in §7.1:
+   client name and site, one sentence for `reader`, Allow and Deny, its
+   error and expired-link states. `/sign-in` keeps its query string and
+   uses `oauthProviderClient()`; the button itself is unchanged.
+7. "Connected apps" in Settings, beside API keys: name, site, connected
+   on, [Disconnect] with a confirm (`lib/mcp-clients.ts`). The API keys
+   hint gains the MCP form: `claude mcp add --transport http rssify
+   <origin>/api/mcp --header "x-api-key: …"`.
+
+## Questions for the lead
+
+1. **Unsubscribe ids do not line up.** DESIGN.md §5.2 has
+   `unsubscribe(feedId)`, and §5.3 has `DELETE /api/v1/subscriptions/:id`
+   with a subscription id. Proposal: `:feedId` in the API path, as the
+   action and the MCP tool use. `(userId, feedId)` is unique, and every
+   other call (entries filter, mark all) already speaks in `feedId`.
+2. DESIGN.md §5.4 refers to "the MCP tools in §5.6", which does not exist
+   yet; §7.4 here is its content. §9 gains the plugins and the well-known
+   routes of §7.1, §8 the models, §12 the tests of §7.5, §13 units 13–14.
