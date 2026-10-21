@@ -1,5 +1,5 @@
 import { db } from "@/lib/db"
-import type { Prisma } from "@/lib/generated/prisma/client"
+import { Prisma } from "@/lib/generated/prisma/client"
 
 // Every function takes the caller's userId and derives ownership from it;
 // anything not the caller's is not_found, never forbidden, so ids of other
@@ -197,4 +197,120 @@ export async function getNeighbours(
     }),
   ])
   return { previousId: newer?.id ?? null, nextId: older?.id ?? null }
+}
+
+const visibleEntry = (userId: string, entryId: string) =>
+  db.entry.findFirst({
+    where: { id: entryId, feed: { subscriptions: { some: { userId } } } },
+    select: { id: true },
+  })
+
+// Idempotent. An entry pruned between the check and the insert fails the
+// foreign key, which is the same not_found as an unknown one.
+export async function markRead(userId: string, entryId: string) {
+  if (!(await visibleEntry(userId, entryId))) {
+    throw new ReaderError("not_found")
+  }
+  try {
+    await db.readMark.createMany({
+      data: { userId, entryId },
+      skipDuplicates: true,
+    })
+  } catch (e) {
+    if (
+      e instanceof Prisma.PrismaClientKnownRequestError &&
+      e.code === "P2003"
+    ) {
+      throw new ReaderError("not_found")
+    }
+    throw e
+  }
+}
+
+export async function markUnread(userId: string, entryId: string) {
+  if (!(await visibleEntry(userId, entryId))) {
+    throw new ReaderError("not_found")
+  }
+  await db.readMark.deleteMany({ where: { userId, entryId } })
+}
+
+// upTo is the list's asOf: entries first seen after the person looked stay
+// unread. createdAt, not sortAt, because a late entry can carry an old date.
+export async function markAllRead(
+  userId: string,
+  { feedId, upTo }: { feedId?: string; upTo: Date }
+) {
+  if (feedId) await scopeWhere(userId, { feedId })
+  const marked = await db.$executeRaw`
+    INSERT INTO "ReadMark" ("userId", "entryId")
+    SELECT ${userId}, e.id
+    FROM "Entry" e
+    JOIN "Subscription" s ON s."feedId" = e."feedId" AND s."userId" = ${userId}
+    WHERE e."createdAt" <= ${upTo}
+      ${feedId ? Prisma.sql`AND e."feedId" = ${feedId}` : Prisma.empty}
+    ON CONFLICT DO NOTHING`
+  return { marked }
+}
+
+// The last subscriber takes the feed with it, cascading its entries and read
+// marks, in the same transaction so no orphan feed is left to poll.
+export async function unsubscribe(userId: string, feedId: string) {
+  await db.$transaction(async (tx) => {
+    const { count } = await tx.subscription.deleteMany({
+      where: { userId, feedId },
+    })
+    if (count === 0) throw new ReaderError("not_found")
+    await tx.$executeRaw`
+      DELETE FROM "Feed" f
+      WHERE f.id = ${feedId}
+        AND NOT EXISTS (SELECT 1 FROM "Subscription" s WHERE s."feedId" = f.id)`
+  })
+}
+
+export const SUBSCRIPTION_LIMIT = 500
+
+export type SubscribeResult =
+  | { ok: true; feedId: string; existed: boolean }
+  | { ok: false; code: string; choices?: string[] }
+
+// Minimal for now: a WHATWG parse, http(s) only, no fragment. The ingest
+// unit owns any richer rule.
+export function normaliseUrl(input: string) {
+  let url: URL
+  try {
+    url = new URL(input.trim())
+  } catch {
+    return null
+  }
+  if (url.protocol !== "http:" && url.protocol !== "https:") return null
+  url.hash = ""
+  return url.href
+}
+
+// SEAM (build unit 6, "Add feed"): fetch, discovery and the new-feed
+// transaction replace this, taking (userId, url). Until then a URL with no
+// Feed row is refused with a code instead of being fetched.
+async function subscribeNewFeed(): Promise<SubscribeResult> {
+  return { ok: false, code: "not_supported" }
+}
+
+export async function subscribe(
+  userId: string,
+  { url: input }: { url: string }
+): Promise<SubscribeResult> {
+  const count = await db.subscription.count({ where: { userId } })
+  if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
+  const url = normaliseUrl(input)
+  if (!url) return { ok: false, code: "invalid_url" }
+  // A known feed is polled on its own schedule, so subscribing never fetches.
+  const feed = await db.feed.findUnique({
+    where: { url },
+    select: { id: true },
+  })
+  if (!feed) return subscribeNewFeed()
+  const { count: created } = await db.subscription.createMany({
+    data: { userId, feedId: feed.id },
+    skipDuplicates: true,
+  })
+  return { ok: true, feedId: feed.id, existed: created === 0 }
 }

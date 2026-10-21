@@ -7,7 +7,12 @@ import {
   getNeighbours,
   listEntries,
   listSubscriptions,
+  markAllRead,
+  markRead,
+  markUnread,
   ReaderError,
+  subscribe,
+  unsubscribe,
 } from "./reader"
 
 const T = (minute: number) => new Date(Date.UTC(2026, 0, 1, 0, minute))
@@ -226,5 +231,137 @@ describe("getNeighbours", () => {
     expect(await code(getNeighbours("u1", "a1", { feedId: "b" }))).toBe(
       "not_found"
     )
+  })
+})
+
+describe("markRead / markUnread", () => {
+  test("idempotent both ways, per user", async () => {
+    await markRead("u1", "a1")
+    await markRead("u1", "a1")
+    expect(await db.readMark.count({ where: { userId: "u1" } })).toBe(1)
+    expect((await getEntry("u2", "a1")).read).toBe(false)
+    await markUnread("u1", "a1")
+    await markUnread("u1", "a1")
+    expect(await db.readMark.count()).toBe(0)
+  })
+
+  test("unknown, pruned or not-followed entries are not_found", async () => {
+    expect(await code(markRead("u1", "missing"))).toBe("not_found")
+    expect(await code(markRead("u1", "c1"))).toBe("not_found")
+    expect(await code(markUnread("u1", "c1"))).toBe("not_found")
+    await db.entry.delete({ where: { id: "a1" } })
+    expect(await code(markRead("u1", "a1"))).toBe("not_found")
+  })
+})
+
+describe("markAllRead", () => {
+  test("marks only the user's entries first seen up to upTo", async () => {
+    await db.entry.update({ where: { id: "a1" }, data: { createdAt: T(1) } })
+    await db.entry.update({ where: { id: "a2" }, data: { createdAt: T(2) } })
+    await db.entry.update({ where: { id: "b1" }, data: { createdAt: T(3) } })
+    await read("u1", "a1")
+    expect(await markAllRead("u1", { upTo: T(2) })).toEqual({ marked: 1 })
+    expect(
+      (await listEntries("u1")).entries.map((e) => [e.id, e.read])
+    ).toEqual([
+      ["b1", false],
+      ["a2", true],
+      ["a1", true],
+    ])
+    expect(await db.readMark.count({ where: { userId: "u2" } })).toBe(0)
+  })
+
+  test("scoped to one feed", async () => {
+    expect(await markAllRead("u1", { feedId: "b", upTo: new Date() })).toEqual({
+      marked: 1,
+    })
+    const marks = await db.readMark.findMany({ select: { entryId: true } })
+    expect(marks).toEqual([{ entryId: "b1" }])
+  })
+
+  test("a feed the user does not follow is not_found", async () => {
+    expect(
+      await code(markAllRead("u1", { feedId: "c", upTo: new Date() }))
+    ).toBe("not_found")
+    expect(await db.readMark.count()).toBe(0)
+  })
+})
+
+describe("unsubscribe", () => {
+  test("a shared feed stays for its other subscriber", async () => {
+    await read("u1", "a1")
+    await unsubscribe("u1", "a")
+    expect(await db.feed.count({ where: { id: "a" } })).toBe(1)
+    expect((await listSubscriptions("u1")).map((s) => s.feed.id)).toEqual(["b"])
+  })
+
+  test("the last subscriber deletes the feed, its entries and read marks", async () => {
+    await read("u1", "b1")
+    await unsubscribe("u1", "b")
+    expect(await db.feed.count({ where: { id: "b" } })).toBe(0)
+    expect(await db.entry.count({ where: { feedId: "b" } })).toBe(0)
+    expect(await db.readMark.count()).toBe(0)
+  })
+
+  test("another user's or an unknown feed is not_found and deletes nothing", async () => {
+    expect(await code(unsubscribe("u1", "c"))).toBe("not_found")
+    expect(await code(unsubscribe("u1", "nope"))).toBe("not_found")
+    expect(await db.feed.count({ where: { id: "c" } })).toBe(1)
+  })
+})
+
+describe("subscribe", () => {
+  test("an existing feed: subscribes without a fetch, then reports existed", async () => {
+    const url = "https://c.example.com/feed.xml"
+    expect(await subscribe("u1", { url })).toEqual({
+      ok: true,
+      feedId: "c",
+      existed: false,
+    })
+    expect(await subscribe("u1", { url: ` ${url}#top` })).toEqual({
+      ok: true,
+      feedId: "c",
+      existed: true,
+    })
+    expect(await db.subscription.count({ where: { userId: "u1" } })).toBe(3)
+  })
+
+  test("not http(s) or not a URL → invalid_url", async () => {
+    for (const url of [
+      "ftp://c.example.com/feed.xml",
+      "javascript:alert(1)",
+      "nope",
+    ]) {
+      expect(await subscribe("u1", { url })).toEqual({
+        ok: false,
+        code: "invalid_url",
+      })
+    }
+  })
+
+  test("a URL with no Feed row is refused, writing nothing (unit 6 fetches)", async () => {
+    expect(
+      await subscribe("u1", { url: "https://new.example.com/feed.xml" })
+    ).toEqual({ ok: false, code: "not_supported" })
+    expect(await db.feed.count()).toBe(3)
+  })
+
+  test("at 500 subscriptions → limit", async () => {
+    await db.feed.createMany({
+      data: Array.from({ length: 498 }, (_, i) => ({
+        id: `f${i}`,
+        url: `https://f${i}.example.com/`,
+      })),
+    })
+    await db.subscription.createMany({
+      data: Array.from({ length: 498 }, (_, i) => ({
+        userId: "u1",
+        feedId: `f${i}`,
+      })),
+    })
+    expect(
+      await subscribe("u1", { url: "https://c.example.com/feed.xml" })
+    ).toEqual({ ok: false, code: "limit" })
+    expect(await db.subscription.count({ where: { userId: "u1" } })).toBe(500)
   })
 })
