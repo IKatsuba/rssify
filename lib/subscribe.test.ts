@@ -249,6 +249,50 @@ describe("subscribe to a new feed", () => {
     expect(await db.feed.count()).toBe(1)
   })
 
+  describe("an HTML body is sniffed past what precedes its root", () => {
+    const discovered = "https://blog.example.com/rss.xml"
+    const link =
+      '<link rel="alternate" type="application/rss+xml" href="/rss.xml">'
+    const bodies: [string, string, Headers][] = [
+      [
+        "leading comments, no Content-Type",
+        `\uFEFF <!-- generated -->\n<!-- by x -->\n<!doctype html><html><head>${link}</head></html>`,
+        new Headers(),
+      ],
+      [
+        "XHTML with a prolog and a wrong Content-Type",
+        `<?xml version="1.0" encoding="utf-8"?>\n<!-- c --><html xmlns="http://www.w3.org/1999/xhtml"><head>${link}</head></html>`,
+        new Headers({ "content-type": "application/octet-stream" }),
+      ],
+    ]
+    for (const [name, text, headers] of bodies) {
+      test(name, async () => {
+        const { fetch, calls } = site({
+          [PAGE]: { text, headers },
+          [discovered]: { text: rss([]) },
+        })
+        expect(
+          await subscribe("u1", { url: PAGE }, { fetch, now: NOW })
+        ).toMatchObject({ ok: true })
+        expect(calls.map((c) => c.url)).toEqual([PAGE, discovered])
+      })
+    }
+
+    test("an unclosed comment or a non-HTML root is not a page", async () => {
+      for (const text of [
+        `<!-- never closed <html>${link}`,
+        `<!-- c --><note>${link}</note>`,
+      ]) {
+        const { fetch, calls } = site({ [PAGE]: { text } })
+        expect(
+          await subscribe("u1", { url: PAGE }, { fetch, now: NOW })
+        ).toEqual({ ok: false, code: "not_found" })
+        expect(calls).toHaveLength(1)
+      }
+      await nothingWritten()
+    })
+  })
+
   test("discovery runs on an HTML Content-Type without a doctype", async () => {
     const discovered = "https://blog.example.com/rss.xml"
     const { fetch } = site({
