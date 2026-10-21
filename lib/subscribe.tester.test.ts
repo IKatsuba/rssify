@@ -236,6 +236,42 @@ describe("subscribe tester acceptance edges", () => {
     expect(await db.subscription.count()).toBe(1)
   })
 
+  test.each([304, 404, 410, 429, 500, 503])(
+    "registered Cursor list answers %i: add returns mapped error without writes",
+    async (status) => {
+      const calls: string[] = []
+      const fetch: SafeFetch = async (url) => {
+        calls.push(url)
+        return {
+          ...response(url, '<a href="/blog/projects"><article></article></a>'),
+          status,
+          headers: new Headers({ "retry-after": "86400" }),
+        }
+      }
+      expect(
+        await subscribe("tester", { source: "cursor-blog" }, { fetch })
+      ).toEqual({
+        ok: false,
+        code: status === 404 || status === 410 ? "not_found" : "unreachable",
+      })
+      expect(calls).toEqual(["https://cursor.com/blog"])
+      await assertEmpty()
+    }
+  )
+
+  test.each(["invalid_url", "blocked", "unreachable", "too_large"] as const)(
+    "registered Cursor list throws %s: preserves fetch error without writes",
+    async (code) => {
+      const fetch: SafeFetch = async () => {
+        throw new SafeFetchError(code, "fixture failure")
+      }
+      expect(
+        await subscribe("tester", { source: "cursor-blog" }, { fetch })
+      ).toEqual({ ok: false, code })
+      await assertEmpty()
+    }
+  )
+
   test("registered Cursor layout failure writes nothing", async () => {
     const calls: string[] = []
     const fetch: SafeFetch = async (url) => {
