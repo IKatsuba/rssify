@@ -174,8 +174,13 @@ export async function getNeighbours(
   scope: EntryScope = {}
 ) {
   const where = await scopeWhere(userId, scope)
+  // The anchor must be in the list's feed, but not under its unread filter.
   const anchor = await db.entry.findFirst({
-    where: { id: entryId, feed: { subscriptions: { some: { userId } } } },
+    where: {
+      id: entryId,
+      feed: { subscriptions: { some: { userId } } },
+      ...(scope.feedId && { feedId: scope.feedId }),
+    },
     select: { sortAt: true, id: true },
   })
   if (!anchor) throw new ReaderError("not_found")

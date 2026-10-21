@@ -221,4 +221,10 @@ describe("getNeighbours", () => {
       "not_found"
     )
   })
+
+  test("an entry outside the requested feed is not_found", async () => {
+    expect(await code(getNeighbours("u1", "a1", { feedId: "b" }))).toBe(
+      "not_found"
+    )
+  })
 })
