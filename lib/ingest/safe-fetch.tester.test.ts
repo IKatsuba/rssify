@@ -6,8 +6,12 @@ import {
   expect,
   test,
 } from "bun:test"
+import { spawn, execFileSync } from "node:child_process"
+import { mkdtempSync, rmSync } from "node:fs"
 import { createServer, type RequestListener, type Server } from "node:http"
 import type { AddressInfo, LookupFunction } from "node:net"
+import { tmpdir } from "node:os"
+import { join } from "node:path"
 
 import { createSafeFetch, isPublicAddress, safeFetch } from "./safe-fetch"
 
@@ -243,3 +247,100 @@ describe("tester: local guarded transport", () => {
     expect(requests.length).toBe(before)
   })
 })
+
+// Node supplies an independent TLS endpoint because Bun's server did not
+// expose SNICallback in the manual probe. The fetch client stays in Bun.
+test("tester: TLS preserves SNI and refuses an untrusted certificate", async () => {
+  const directory = mkdtempSync(join(tmpdir(), "rssify-tester-tls-"))
+  let child: ReturnType<typeof spawn> | undefined
+  try {
+    // Disposable key material stays in tmp and is removed below.
+    execFileSync(
+      "openssl",
+      [
+        "req",
+        "-x509",
+        "-newkey",
+        "rsa:2048",
+        "-nodes",
+        "-keyout",
+        join(directory, "key.pem"),
+        "-out",
+        join(directory, "cert.pem"),
+        "-subj",
+        "/CN=feed.test",
+        "-addext",
+        "subjectAltName=DNS:feed.test",
+        "-days",
+        "1",
+      ],
+      { stdio: "ignore" }
+    )
+    child = spawn(
+      "node",
+      [
+        "--input-type=module",
+        "-e",
+        `
+      import { createServer } from 'node:https'
+      import { createSecureContext } from 'node:tls'
+      import { readFileSync } from 'node:fs'
+      import { join } from 'node:path'
+      const directory = process.argv[1]
+      const key = readFileSync(join(directory, 'key.pem'))
+      const cert = readFileSync(join(directory, 'cert.pem'))
+      let sni = null, requests = 0
+      const server = createServer({ key, cert, SNICallback(name, callback) {
+        sni = name
+        callback(null, createSecureContext({ key, cert }))
+      } }, (_req, res) => { requests++; res.end('<rss/>') })
+      const timer = setTimeout(() => process.exit(1), 5000)
+      server.on('tlsClientError', (_error, socket) => {
+        socket.destroy()
+        console.log(JSON.stringify({ sni, requests }))
+        server.close(() => clearTimeout(timer))
+      })
+      server.listen(0, '127.0.0.1', () => {
+        console.log(JSON.stringify({ port: server.address().port }))
+      })
+    `,
+        directory,
+      ],
+      { stdio: ["ignore", "pipe", "pipe"] }
+    )
+    const fixture = child
+    let output = ""
+    const exited = new Promise<number | null>((resolve, reject) => {
+      fixture.once("error", reject)
+      fixture.once("exit", resolve)
+    })
+    const ready = new Promise<number>((resolve, reject) => {
+      fixture.stdout!.on("data", (chunk) => {
+        output += chunk.toString()
+        if (output.includes("\n"))
+          resolve(JSON.parse(output.split("\n")[0]).port)
+      })
+      fixture.once("error", reject)
+      fixture.once("exit", () =>
+        reject(new Error("TLS fixture exited before readiness"))
+      )
+    })
+    const tlsPort = await ready
+    const fetch = createSafeFetch({
+      lookup: loopbackLookup,
+      ports: [tlsPort],
+      allowAddress: (address) => address === "127.0.0.1",
+    })
+    await expect(
+      fetch(`https://feed.test:${tlsPort}/feed`)
+    ).rejects.toMatchObject({ name: "SafeFetchError", code: "unreachable" })
+    expect(await exited).toBe(0)
+    expect(JSON.parse(output.trim().split("\n").at(-1)!)).toEqual({
+      sni: "feed.test",
+      requests: 0,
+    })
+  } finally {
+    if (child && child.exitCode === null) child.kill()
+    rmSync(directory, { recursive: true, force: true })
+  }
+}, 10_000)
