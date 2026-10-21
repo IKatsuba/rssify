@@ -4,7 +4,7 @@ import { isIP, type LookupFunction } from "node:net"
 import ipaddr from "ipaddr.js"
 // The subpath, not "undici": Bun maps the bare name to its built-in shim,
 // which ignores a custom Agent connect, so the guard would never run.
-import { Agent, buildConnector, fetch } from "undici/index.js"
+import { Agent, buildConnector, fetch, type Response } from "undici/index.js"
 
 export type SafeFetchErrorCode =
   "invalid_url" | "blocked" | "unreachable" | "too_large"
@@ -138,8 +138,67 @@ function findSafeFetchError(error: unknown): SafeFetchError | null {
   return null
 }
 
+const MAX_REDIRECTS = 5
+const MAX_BYTES = 10 * 1024 * 1024
+const REDIRECTS = new Set([301, 302, 303, 307, 308])
+
+const HEADERS = {
+  "user-agent": "rssify/1.0 (+https://github.com/IKatsuba/rssify)",
+  accept:
+    "application/feed+json, application/atom+xml, application/rss+xml, " +
+    "application/rdf+xml, application/xml;q=0.9, text/xml;q=0.9, " +
+    "text/html;q=0.8, */*;q=0.5",
+}
+
+// undici has already undone any Content-Encoding, so this counts decoded
+// bytes; the cap stops reading rather than trusting Content-Length.
+async function readCapped(body: NonNullable<Response["body"]>) {
+  const reader = body.getReader()
+  const chunks: Uint8Array[] = []
+  let size = 0
+  for (;;) {
+    const { done, value } = await reader.read()
+    if (done) return Buffer.concat(chunks)
+    size += value.byteLength
+    if (size > MAX_BYTES) {
+      await reader.cancel().catch(() => {})
+      throw new SafeFetchError("too_large", "the response is over 10 MB")
+    }
+    chunks.push(value)
+  }
+}
+
+function bomCharset(bytes: Uint8Array) {
+  if (bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf) {
+    return "utf-8"
+  }
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) return "utf-16be"
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return "utf-16le"
+  return null
+}
+
+// response.text() would always use UTF-8; feeds such as koi8-r ones declare
+// their charset only in the prolog. The header wins, as RFC 7303 says.
+export function decode(bytes: Uint8Array, contentType: string | null) {
+  const charset =
+    contentType?.match(/charset\s*=\s*"?([^";\s]+)/i)?.[1] ??
+    bomCharset(bytes) ??
+    new TextDecoder("latin1")
+      .decode(bytes.subarray(0, 1024))
+      .match(/^\s*<\?xml[^>]*?\sencoding\s*=\s*["']([^"']+)["']/)?.[1] ??
+    "utf-8"
+  let decoder: TextDecoder
+  try {
+    decoder = new TextDecoder(charset)
+  } catch {
+    decoder = new TextDecoder("utf-8")
+  }
+  return decoder.decode(bytes)
+}
+
 function sniff(text: string): SafeFetchResult["kind"] {
-  const first = text.replace(/^﻿/, "").trimStart()[0]
+  // trimStart also drops a BOM the decoder left in.
+  const first = text.trimStart()[0]
   return first === "{" ? "json" : first === "<" ? "xml" : "unknown"
 }
 
@@ -157,31 +216,71 @@ export function createSafeFetch({
   const guard = { allowAddress, ports }
   const dispatcher = guardedAgent(lookup, guard)
 
-  return async (input, { deadline = AbortSignal.timeout(15_000) } = {}) => {
-    const url = checkUrl(input, guard)
-    let response
+  return async (
+    input,
+    { etag, lastModified, deadline = AbortSignal.timeout(15_000) } = {}
+  ) => {
+    const headers: Record<string, string> = { ...HEADERS }
+    if (etag) headers["if-none-match"] = etag
+    if (lastModified) headers["if-modified-since"] = lastModified
+
     try {
-      response = await fetch(url, {
-        dispatcher,
-        redirect: "manual",
-        signal: deadline,
-      })
+      let target = input
+      for (let hop = 0; ; hop++) {
+        const url = checkUrl(target, guard)
+        const response = await fetch(url, {
+          dispatcher,
+          headers,
+          redirect: "manual",
+          signal: deadline,
+        })
+
+        if (REDIRECTS.has(response.status)) {
+          await response.body?.cancel()
+          if (hop === MAX_REDIRECTS) {
+            throw new SafeFetchError("unreachable", "too many redirects")
+          }
+          const location = response.headers.get("location")
+          if (!location) {
+            throw new SafeFetchError("invalid_url", "a redirect had no address")
+          }
+          try {
+            target = new URL(location, url).href
+          } catch {
+            throw new SafeFetchError(
+              "invalid_url",
+              "a redirect address isn’t valid"
+            )
+          }
+          continue
+        }
+
+        const ok = response.status >= 200 && response.status < 300
+        let text = ""
+        if (ok && response.body) {
+          const bytes = await readCapped(response.body)
+          text = decode(bytes, response.headers.get("content-type"))
+        } else {
+          await response.body?.cancel()
+        }
+        return {
+          status: response.status,
+          url: url.href,
+          headers: response.headers as unknown as Headers,
+          text,
+          kind: ok ? sniff(text) : "unknown",
+        }
+      }
     } catch (error) {
       throw (
         findSafeFetchError(error) ??
-        new SafeFetchError("unreachable", "the server couldn’t be reached")
+        new SafeFetchError(
+          "unreachable",
+          deadline.aborted
+            ? "the server took too long"
+            : "the server couldn’t be reached"
+        )
       )
-    }
-    const ok = response.status >= 200 && response.status < 300
-    let text = ""
-    if (ok) text = await response.text()
-    else await response.body?.cancel()
-    return {
-      status: response.status,
-      url: url.href,
-      headers: response.headers as unknown as Headers,
-      text,
-      kind: ok ? sniff(text) : "unknown",
     }
   }
 }
