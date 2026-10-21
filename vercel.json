@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [{ "path": "/api/cron/refresh", "schedule": "*/15 * * * *" }],
+  "functions": {
+    "app/api/queues/refresh-feed/route.ts": {
+      "experimentalTriggers": [
+        { "type": "queue/v2beta", "topic": "feed-refresh", "maxDeliveries": 3 }
+      ]
+    }
+  }
+}
