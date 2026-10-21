@@ -6,8 +6,8 @@ rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
-no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing
-and sanitising helpers; refresh, add-feed and plugins are pending.
+no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing,
+sanitising and refresh helpers; add-feed, scheduling and plugins are pending.
 
 ## Commands
 
@@ -67,8 +67,24 @@ Postgres host; its default user is `reader@example.com`.
   only, with a 500-subscription cap; new-feed fetching and source inputs
   are pending. Last unsubscribe deletes the feed, entries and read marks
   in one transaction.
-- `lib/ingest/safe-fetch.ts`: the only outbound HTTP path for ingest;
-  nothing calls it yet. `safeFetch(url, { etag, lastModified, deadline })`
+- `lib/ingest/refresh.ts`: `refreshFeed(feedId, { skipIfFreshWithin, fetch,
+  now })` uses conditional `safeFetch` with a 15 s deadline, then parses
+  against the final response URL without changing the stored URL. Nothing
+  calls it yet. Missing feeds return; `skipIfFreshWithin` skips recent
+  fetches (seconds); plugin feeds throw until plugins are implemented.
+  Parsed success stores the newest 100 items by `sortAt`, with document
+  order breaking ties and `sortAt = min(publishedAt ?? now, now)`.
+  `(feedId, guid)` duplicates keep the first version. In one transaction,
+  it inserts, retains the newest 500 by `(sortAt, id)` descending and
+  updates the feed; DB errors throw and roll back. Retained entries keep
+  read marks; pruning cascades them. Success (including 304) resets
+  failures and schedules +60 min. Failures use the incremented count for
+  `min(60 min × 2^failureCount, 24 h)` and set `failing` at 3; 429/503
+  honour longer `Retry-After` delays up to 24 h. HTTP 410 sets `gone`
+  with no next fetch. Each fetched outcome writes `lastFetchedAt` once;
+  source failures store `lastError` and return normally.
+- `lib/ingest/safe-fetch.ts`: the only outbound HTTP path for ingest.
+  `safeFetch(url, { etag, lastModified, deadline })`
   uses its own undici Agent, conditional GET and feed-preferring headers.
   Every hop requires HTTP(S), ports 80/443, no credentials and at most
   2,048 URL characters. All DNS answers must be public unicast addresses;
@@ -81,9 +97,9 @@ Postgres host; its default user is `reader@example.com`.
   `invalid_url`, `blocked`, `unreachable` or `too_large`.
 - `lib/ingest/parse.ts`: `parseFeed(text, feedUrl)` reads RSS/Atom/RDF
   with `@rowanmanning/feed-parser` and maps JSON Feed directly. It returns
-  feed metadata and normalised `IngestedEntry` values in document order;
-  nothing calls it yet. `FeedParseError` codes are `not_a_feed` and
-  `invalid_feed`. `normaliseEntry` chooses guid from nonblank id, safe
+  feed metadata and normalised `IngestedEntry` values in document order.
+  `FeedParseError` codes are `not_a_feed` and `invalid_feed`.
+  `normaliseEntry` chooses guid from nonblank id, safe
   absolute URL, then SHA-1 of title + ISO publishedAt (empty when undated).
   `publishedAt` uses valid published, then updated, then null, never now.
   Titles and summaries are plain text; summaries cap at 300 code points.
