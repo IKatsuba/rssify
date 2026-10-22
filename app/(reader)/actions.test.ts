@@ -4,9 +4,13 @@ import { db } from "@/test/db"
 import { createUserWithSession } from "@/test/mcp-token"
 
 // Outside Next there is no request; an empty one has no session cookie.
-// A test that needs a session sets the cookie here.
+// A test that needs a session sets the cookie here; better-auth may write
+// the session cache cookie back, which a test can drop.
 let requestHeaders = new Headers()
-mock.module("next/headers", () => ({ headers: async () => requestHeaders }))
+mock.module("next/headers", () => ({
+  headers: async () => requestHeaders,
+  cookies: async () => ({ get: () => undefined, set: () => {} }),
+}))
 // revalidatePath needs Next's request store, which a test does not have.
 mock.module("next/cache", () => ({ revalidatePath: () => {} }))
 
