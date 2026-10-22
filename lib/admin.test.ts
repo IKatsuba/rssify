@@ -116,12 +116,14 @@ describe("deleteUser", () => {
     await user("u2", "2026-01-01T00:00:00Z")
     let release!: () => void
     const held = new Promise<void>((resolve) => (release = resolve))
-    let locked!: () => void
-    const lockTaken = new Promise<void>((resolve) => (locked = resolve))
+    let locked!: (pid: number) => void
+    const lockTaken = new Promise<number>((resolve) => (locked = resolve))
     // Stands in for subscribe: it locks the user, then adds a feed.
     const subscribing = db.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "user" WHERE id = 'u2' FOR UPDATE`
-      locked()
+      const [{ pid }] = await tx.$queryRaw<{ pid: number }[]>`
+        SELECT pg_backend_pid() AS pid`
+      locked(pid)
       await held
       await tx.feed.create({
         data: {
@@ -131,12 +133,23 @@ describe("deleteUser", () => {
         },
       })
     })
-    await lockTaken
-    let done = false
-    const deleting = deleteUser("admin", "u2").then(() => (done = true))
-    await Bun.sleep(100)
-    expect(done).toBe(false)
-    release()
+    const heldPid = await lockTaken
+    const deleting = deleteUser("admin", "u2")
+    try {
+      // Release only once Postgres shows the delete blocked on the held
+      // transaction, so the order the test claims is the order that ran.
+      const deadline = Date.now() + 5000
+      for (;;) {
+        const [{ waiting }] = await db.$queryRaw<{ waiting: number }[]>`
+          SELECT count(*)::int AS waiting FROM pg_stat_activity
+          WHERE ${heldPid}::int = ANY(pg_blocking_pids(pid))`
+        if (waiting > 0) break
+        if (Date.now() > deadline) throw new Error("deleteUser never blocked")
+        await Bun.sleep(10)
+      }
+    } finally {
+      release()
+    }
     await subscribing
     await deleting
     expect(await db.user.count()).toBe(0)
