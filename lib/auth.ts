@@ -45,6 +45,9 @@ export const auth = betterAuth({
     vercel: {
       clientId: process.env.VERCEL_CLIENT_ID!,
       clientSecret: process.env.VERCEL_CLIENT_SECRET!,
+      // Vercel's userinfo returns only consented claims and the provider asks
+      // for no scopes by default; without `email` there is no user to create.
+      scope: ["openid", "email", "profile"],
     },
   },
   session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
