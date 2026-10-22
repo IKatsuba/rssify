@@ -20,6 +20,7 @@ describe("builtinSources", () => {
     expect(builtinSources.map((s) => s.id)).toEqual([
       "anthropic-engineering",
       "anthropic-news",
+      "bytes",
       "claude-code",
       "cursor-blog",
       "langchain-blog",
@@ -33,6 +34,7 @@ describe("builtinSources", () => {
     expect(builtinSource("anthropic-news")?.url).toBe(
       "https://www.anthropic.com/news"
     )
+    expect(builtinSource("bytes")?.url).toBe("https://bytes.dev/archives")
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
     expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
     expect(builtinSource("langchain-blog")?.url).toBe(
