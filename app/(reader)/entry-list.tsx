@@ -1,6 +1,7 @@
 import {
   CheckCheckIcon,
   CircleOffIcon,
+  PlusIcon,
   RssIcon,
   TriangleAlertIcon,
 } from "lucide-react"
@@ -37,6 +38,7 @@ import {
 import { shortAgo } from "@/lib/relative-time"
 
 import { subscriptionsOf } from "./data"
+import { AddFeedButton } from "./add-feed"
 import { ListActions } from "./list-actions"
 import { ListHeader } from "./list-header"
 
@@ -263,6 +265,14 @@ function EmptyList({ state, path }: { state: EmptyState; path: string }) {
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
+      {state === "no_feeds" && (
+        <EmptyContent>
+          <AddFeedButton>
+            <PlusIcon />
+            Add feed
+          </AddFeedButton>
+        </EmptyContent>
+      )}
       {state === "caught_up" && (
         <EmptyContent>
           <Button

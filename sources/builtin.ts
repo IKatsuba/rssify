@@ -10,7 +10,7 @@ export const builtinSources = [
     id: "cursor-blog",
     title: "Cursor blog",
     url: "https://cursor.com/blog",
-    note: "No feed of its own",
+    note: "cursor.com/blog — no feed of its own",
   },
 ] as const
 

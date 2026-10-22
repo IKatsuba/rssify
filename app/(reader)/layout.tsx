@@ -5,6 +5,10 @@ import { Suspense } from "react"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { normaliseUrl } from "@/lib/reader"
+import { builtinSources } from "@/sources/builtin"
+
+import { AddFeedProvider, type BuiltinChoice } from "./add-feed"
 
 import {
   AppSidebar,
@@ -14,7 +18,7 @@ import {
 } from "./app-sidebar"
 import { currentUser, subscriptionsOf, totalUnread } from "./data"
 
-// The add-feed actions (a later unit) run under this layout and fetch.
+// The add-feed action runs under this layout and fetches the feed.
 export const maxDuration = 60
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -34,20 +38,22 @@ export default async function ReaderLayout({
   const defaultOpen = (await cookies()).get("sidebar_state")?.value !== "false"
 
   return (
-    <TooltipProvider>
-      <SidebarProvider defaultOpen={defaultOpen}>
-        <AppSidebar email={email}>
-          <SidebarNavBoundary>
-            <Suspense fallback={<SidebarNavSkeleton />}>
-              <ReaderNav userId={userId} />
-            </Suspense>
-          </SidebarNavBoundary>
-        </AppSidebar>
-        {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
-        <SidebarInset className="min-w-0">{children}</SidebarInset>
-      </SidebarProvider>
-      <Toaster />
-    </TooltipProvider>
+    <AddFeedProvider sources={builtinChoices(userId)}>
+      <TooltipProvider>
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <AppSidebar email={email}>
+            <SidebarNavBoundary>
+              <Suspense fallback={<SidebarNavSkeleton />}>
+                <ReaderNav userId={userId} />
+              </Suspense>
+            </SidebarNavBoundary>
+          </AppSidebar>
+          {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
+          <SidebarInset className="min-w-0">{children}</SidebarInset>
+        </SidebarProvider>
+        <Toaster />
+      </TooltipProvider>
+    </AddFeedProvider>
   )
 }
 
@@ -64,4 +70,22 @@ async function ReaderNav({ userId }: { userId: string }) {
       }))}
     />
   )
+}
+
+// Streamed to the dialog, so the frame does not wait on the subscriptions.
+// A failed read lists every source as not yet followed; subscribing to one
+// already followed only says so.
+async function builtinChoices(userId: string): Promise<BuiltinChoice[]> {
+  const followed = new Set(
+    await subscriptionsOf(userId).then(
+      (subscriptions) => subscriptions.map((s) => s.feed.url),
+      () => []
+    )
+  )
+  return builtinSources.map(({ id, title, url, note }) => ({
+    id,
+    title,
+    note,
+    subscribed: followed.has(normaliseUrl(url) ?? url),
+  }))
 }
