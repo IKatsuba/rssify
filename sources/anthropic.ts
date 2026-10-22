@@ -124,3 +124,22 @@ export const anthropicEngineering = plugin(
     return [...posts.values()]
   }
 )
+
+// The news page is a featured grid and a table, with topic links mixed in.
+// The most fragile selector of the sources: it leans on the component half
+// of CSS-module class names (`FeaturedGrid-…__tileLink`,
+// `TableView-…__title-link`), not the hash. No path rule: launch pages
+// live at the root and features under /features.
+export const anthropicNews = plugin("anthropic-news", "/news", ($, pageUrl) => {
+  const posts = new Map<string, Post>()
+  $('a[href][class*="title-link"], a[href][class*="tileLink"]').each(
+    (_, link) => {
+      const url = postUrl($(link).attr("href"), pageUrl)
+      if (!url || posts.has(url)) return
+      // A tile's or row's date is in its nearest container with a time.
+      const time = $(link).closest(":has(time)").find("time").first()
+      posts.set(url, { url, listDate: listDate(time.text()) })
+    }
+  )
+  return [...posts.values()]
+})

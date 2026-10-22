@@ -5,7 +5,7 @@ import { describe, expect, test } from "bun:test"
 
 import type { SafeFetch } from "@/lib/ingest/safe-fetch"
 
-import { anthropicEngineering, listDate } from "./anthropic"
+import { anthropicEngineering, anthropicNews, listDate } from "./anthropic"
 import type { SourcePlugin } from "./types"
 
 const FIXTURES = join(import.meta.dir, "../test/fixtures")
@@ -39,7 +39,7 @@ async function read(
   const s = site(pages)
   const asked: string[][] = []
   const entries = await plugin.fetchEntries({
-    url: `${ORIGIN}/engineering`,
+    url: `${ORIGIN}/${plugin.id.replace("anthropic-", "")}`,
     fetch: s.fetch,
     known: async (urls) => {
       asked.push(urls)
@@ -223,6 +223,110 @@ describe("listDate", () => {
       "8 Apr 2026",
     ]) {
       expect(listDate(bad)).toBeNull()
+    }
+  })
+})
+
+describe("anthropicNews", () => {
+  const list = fixture("anthropic-news/list.html")
+  const LIST = `${ORIGIN}/news`
+  const news = (slug: string) => `${ORIGIN}/news/${slug}`
+
+  test("accepts its spellings and nothing else", () => {
+    expect(anthropicNews.id).toBe("anthropic-news")
+    for (const spelling of [
+      LIST,
+      `${LIST}/`,
+      "https://anthropic.com/news",
+      "https://anthropic.com/news/",
+    ]) {
+      const canonical = anthropicNews.canonical(new URL(spelling))
+      expect(canonical).toBe(LIST)
+      expect(anthropicNews.canonical(new URL(canonical!))).toBe(LIST)
+    }
+    for (const other of [
+      "http://anthropic.com/news",
+      `${LIST}?subjects=policy`,
+      `${LIST}/announcements`,
+      `${ORIGIN}/engineering`,
+      "https://claude.com/news",
+    ]) {
+      expect(anthropicNews.canonical(new URL(other))).toBeNull()
+    }
+  })
+
+  // The most fragile selector of the sources: CSS-module component names.
+  test("lists tile and row links through their CSS-module component names, topic links excluded", async () => {
+    const { listed } = await read(anthropicNews, { [LIST]: list }, [])
+    expect(listed).toHaveLength(24)
+    expect(listed.slice(0, 6)).toEqual([
+      `${ORIGIN}/claude-opus-5-5`,
+      news("public-benefit-fund"),
+      news("cyber-verification-program"),
+      `${ORIGIN}/claude-haiku-5-5`,
+      `${ORIGIN}/claude-sonnet-5-5`,
+      news("christopher-stubbs-joins-long-term-benefit-trust"),
+    ])
+    expect(listed).toContain(`${ORIGIN}/features/ebola-response`)
+    expect(listed).toContain(`${ORIGIN}/claude-fable-and-mythos-5-1`)
+    expect(listed.at(-1)).toBe(news("wellbeing-research-grants"))
+    expect(new Set(listed).size).toBe(listed.length)
+    for (const topic of ["announcements", "policy", "product"]) {
+      expect(listed).not.toContain(news(topic))
+    }
+  })
+
+  test("reads a post, a launch page and a feature page", async () => {
+    const post = news("cyber-verification-program")
+    const launch = `${ORIGIN}/claude-opus-5-5`
+    const feature = `${ORIGIN}/features/ebola-response`
+    const { entries } = await read(
+      anthropicNews,
+      {
+        [LIST]: list,
+        [post]: fixture("anthropic-news/cyber-verification-program.html"),
+        [launch]: fixture("anthropic-news/claude-opus-5-5.html"),
+        [feature]: fixture("anthropic-news/ebola-response.html"),
+      },
+      [post, launch, feature]
+    )
+    const byUrl = Object.fromEntries(entries.map((e) => [e.url, e]))
+
+    expect(byUrl[post]).toMatchObject({
+      guid: post,
+      title: "Expanding the Cyber Verification Program",
+      publishedAt: new Date("2026-10-06T00:00:00.000Z"),
+    })
+    expect(byUrl[post].summary).toStartWith("We’re launching a new, expanded")
+    expect(byUrl[post].contentHtml).toContain(
+      "launching a new, expanded version of our Cyber Verification Program"
+    )
+    expect(byUrl[post].contentHtml).toContain(
+      "Full details on each tier can be found in our"
+    )
+
+    // No published time: the list tile's date.
+    expect(byUrl[launch]).toMatchObject({
+      title: "Introducing Claude Opus 5.5",
+      publishedAt: new Date("2026-09-22T00:00:00.000Z"),
+    })
+    expect(byUrl[launch].contentHtml).toContain(
+      "the first model in our new Claude 5.5 family"
+    )
+    expect(byUrl[launch].contentHtml).toContain("migration guide for details.")
+
+    // No body and no published time: summary only, dated by its row.
+    expect(byUrl[feature]).toMatchObject({
+      title: "The Situation Report",
+      publishedAt: new Date("2026-09-21T00:00:00.000Z"),
+    })
+    expect(byUrl[feature].summary).toStartWith("A rare Ebola strain")
+    expect(byUrl[feature].contentHtml).toBe(byUrl[feature].summary)
+
+    for (const entry of entries) {
+      expect(entry.contentHtml).not.toContain("Try Claude")
+      expect(entry.contentHtml).not.toContain("Terms and policies")
+      expect(entry.contentHtml).not.toContain("<script")
     }
   })
 })
