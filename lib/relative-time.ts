@@ -1,5 +1,5 @@
-// Relative times for the reader, on Intl only: "2h" in list rows and
-// "6 days ago" in sentences. Times in the future (clock skew between the
+// Relative times for the reader: "2h" in list rows and "6 days ago" (Intl) in
+// sentences. Times in the future (clock skew between the
 // database and the server) read as now.
 const units = [
   ["year", 365 * 24 * 60 * 60],
@@ -18,16 +18,16 @@ function largestUnit(date: Date, now: Date) {
   return { unit: "second" as const, value: Math.floor(seconds) }
 }
 
-const short = new Map(
-  units.map(([unit]) => [
-    unit,
-    new Intl.NumberFormat("en", {
-      style: "unit",
-      unit,
-      unitDisplay: "narrow",
-    }),
-  ])
-)
+// Spelled out rather than Intl's narrow unit format, whose output depends on
+// the ICU build: some print a month as "1m", which reads as a minute.
+const short = {
+  year: "y",
+  month: "mo",
+  week: "w",
+  day: "d",
+  hour: "h",
+  minute: "m",
+} as const
 
 const long = new Intl.RelativeTimeFormat("en", { numeric: "always" })
 
@@ -35,7 +35,7 @@ const long = new Intl.RelativeTimeFormat("en", { numeric: "always" })
 export function shortAgo(date: Date, now = new Date()) {
   const { unit, value } = largestUnit(date, now)
   if (unit === "second") return "now"
-  return short.get(unit)!.format(value)
+  return `${value}${short[unit]}`
 }
 
 // "30 seconds ago", "6 days ago".

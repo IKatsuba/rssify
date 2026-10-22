@@ -31,6 +31,16 @@ Whole check (with local Postgres running):
 bun run lint && bun run typecheck && bun run test
 ```
 
+On a fresh clone, run `bunx next typegen` before `bun run typecheck` to
+generate `PageProps` and other route types. A dev server or build also
+generates them.
+
+`.github/workflows/ci.yml` runs the whole check and `bun run build` on
+every pull request and push to `main`, using Ubuntu, Bun 1.4.3 and a
+Postgres 17 service on port 54329. It installs with `--frozen-lockfile`,
+generates Prisma and Next.js types, and builds with dummy env values;
+no secrets are needed. Keep its checks in step with the commands above.
+
 Run one test file: `bun run test ./lib/auth.test.ts`. This forwards the
 file to Bun after applying test migrations, just like `bun run test`.
 The test script defaults to local `rssify_test` and needs no env setup.
