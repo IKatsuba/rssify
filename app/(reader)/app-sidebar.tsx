@@ -22,6 +22,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -45,6 +46,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { useAddFeed } from "./add-feed"
+import { KeyHint, useShowShortcuts } from "./keys"
 
 export type SidebarFeed = {
   id: string
@@ -125,15 +127,23 @@ export function SidebarNav({
       </SidebarGroup>
       <SidebarGroup>
         <SidebarGroupLabel>Feeds</SidebarGroupLabel>
-        <SidebarGroupAction
-          onClick={() => {
-            close()
-            addFeed()
-          }}
+        <KeyHint
+          label="Add feed"
+          keys={["A"]}
+          // Above, it would cover the All feeds count.
+          side="right"
+          render={
+            <SidebarGroupAction
+              onClick={() => {
+                close()
+                addFeed()
+              }}
+            />
+          }
         >
           <PlusIcon />
           <span className="sr-only">Add feed</span>
-        </SidebarGroupAction>
+        </KeyHint>
         <SidebarGroupContent>
           <SidebarMenu>
             {feeds.map((feed) => (
@@ -194,6 +204,7 @@ function FeedItem({
 
 function UserMenu({ email }: { email: string }) {
   const { theme, setTheme } = useTheme()
+  const showShortcuts = useShowShortcuts()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -203,6 +214,10 @@ function UserMenu({ email }: { email: string }) {
             <ChevronDownIcon className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">
+            <DropdownMenuItem onClick={showShortcuts}>
+              Keyboard shortcuts
+              <DropdownMenuShortcut>?</DropdownMenuShortcut>
+            </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
               <DropdownMenuSubContent>

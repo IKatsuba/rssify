@@ -1,18 +1,12 @@
-import {
-  ArrowLeftIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ExternalLinkIcon,
-} from "lucide-react"
+import { ArrowLeftIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { cache } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { getEntry, getNeighbours, ReaderError } from "@/lib/reader"
+import { getEntry, getEntryNavigation, ReaderError } from "@/lib/reader"
 import {
   entryHref,
   listHref,
@@ -21,6 +15,10 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
+import { StepLink } from "./step-link"
+import { BackButton } from "./back-button"
+import { EntryKeys } from "./entry-keys"
+import { OpenOriginal } from "./open-original"
 import { ReadButton } from "./read-button"
 
 // Rendering never marks read; ReadButton does, from the client after mount.
@@ -58,14 +56,25 @@ export default async function EntryPage({
   // The list it came from: a feed only when it is followed and holds this
   // entry, else All feeds, so a stale or edited ?feed= still reads well.
   const query = readEntryParams(await searchParams)
-  const feed = (await subscriptionsOf(userId)).find(
+  const subscriptions = await subscriptionsOf(userId)
+  const feed = subscriptions.find(
     (s) => s.feed.id === query.feedId && s.feed.id === entry.feedId
   )?.feed
+  // Shift+A here marks its list, so the confirm needs that scope's count.
+  const unread = subscriptions
+    .filter((s) => !feed || s.feed.id === feed.id)
+    .reduce((sum, s) => sum + s.unreadCount, 0)
+  const listPath = feed ? `/feeds/${feed.id}` : "/"
+  const backHref = listHref(listPath, { filter: query.filter })
   const scope = { feedId: feed?.id, filter: query.filter }
-  const { previousId, nextId } = await getNeighbours(userId, entry.id, {
-    feedId: feed?.id,
-    unreadOnly: query.filter === "unread",
-  })
+  const { previousId, nextId, pageCursor } = await getEntryNavigation(
+    userId,
+    entry.id,
+    {
+      feedId: feed?.id,
+      unreadOnly: query.filter === "unread",
+    }
+  )
   const listName = feed ? (feed.title ?? feed.url) : "All feeds"
   const site = entry.url && siteName(entry.url)
   const meta = [
@@ -82,31 +91,24 @@ export default async function EntryPage({
           orientation="vertical"
           className="mr-2 data-vertical:h-4 data-vertical:self-center"
         />
-        <Button
-          variant="ghost"
-          className="min-w-0"
-          nativeButton={false}
-          render={
-            <Link
-              href={listHref(feed ? `/feeds/${feed.id}` : "/", {
-                filter: query.filter,
-              })}
-            />
-          }
-        >
+        <BackButton list={backHref}>
           <ArrowLeftIcon />
           <span className="truncate max-sm:sr-only">{listName}</span>
-        </Button>
+        </BackButton>
         <nav className="ml-auto flex items-center gap-1">
           <StepLink
             href={previousId && entryHref(previousId, scope)}
             label="Previous entry"
+            hint="Previous"
+            hintKey="K"
           >
             <ChevronUpIcon />
           </StepLink>
           <StepLink
             href={nextId && entryHref(nextId, scope)}
             label="Next entry"
+            hint="Next"
+            hintKey="J"
           >
             <ChevronDownIcon />
           </StepLink>
@@ -116,23 +118,21 @@ export default async function EntryPage({
           className="mx-1 data-vertical:h-4 data-vertical:self-center"
         />
         <ReadButton key={entry.id} entryId={entry.id} read={entry.read} />
-        {entry.url ? (
-          <Button
-            variant="outline"
-            nativeButton={false}
-            render={
-              <a href={entry.url} target="_blank" rel="noopener noreferrer" />
-            }
-          >
-            <ExternalLinkIcon />
-            <span className="max-sm:sr-only">Open original</span>
-          </Button>
-        ) : (
-          <Button variant="outline" disabled>
-            <ExternalLinkIcon />
-            <span className="max-sm:sr-only">Open original</span>
-          </Button>
-        )}
+        <OpenOriginal url={entry.url} />
+        <EntryKeys
+          entryId={entry.id}
+          back={backHref}
+          page={listHref(listPath, {
+            filter: query.filter,
+            cursor: pageCursor ?? undefined,
+          })}
+          next={nextId && entryHref(nextId, scope)}
+          previous={previousId && entryHref(previousId, scope)}
+          url={entry.url}
+          feed={feed && { id: feed.id, title: listName }}
+          unread={unread}
+          asOf={new Date()}
+        />
       </header>
       <article className="mx-auto prose prose-sm w-full min-w-0 px-4 py-8 dark:prose-invert prose-code:before:content-none prose-code:after:content-none">
         <p className="not-prose text-xs text-muted-foreground">
@@ -166,36 +166,5 @@ export default async function EntryPage({
         )}
       </article>
     </>
-  )
-}
-
-function StepLink({
-  href,
-  label,
-  children,
-}: {
-  href: string | null
-  label: string
-  children: React.ReactNode
-}) {
-  // No neighbour that way: a disabled button, not a dead link.
-  if (!href) {
-    return (
-      <Button variant="ghost" size="icon" disabled>
-        {children}
-        <span className="sr-only">{label}</span>
-      </Button>
-    )
-  }
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      nativeButton={false}
-      render={<Link href={href} prefetch={false} />}
-    >
-      {children}
-      <span className="sr-only">{label}</span>
-    </Button>
   )
 }
