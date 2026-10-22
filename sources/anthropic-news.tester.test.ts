@@ -33,6 +33,19 @@ async function read(list: string, post = page) {
 }
 
 describe("Anthropic news tester regressions", () => {
+  test.each([
+    ["Launch &amp; tools | Anthropic", "Launch & tools"],
+    ["Launch | Anthropic | Extra", "Launch | Anthropic | Extra"],
+    ["Launch | anthropic", "Launch | anthropic"],
+  ])("title suffix handling preserves other text: %s", async (input, title) => {
+    const { entries } = await read(
+      tile("/launch", "Oct 1, 2026"),
+      `<meta property="og:title" content="${input}"><meta name="description" content="Summary | Anthropic">`
+    )
+    expect(entries[0].title).toBe(title)
+    expect(entries[0].summary).toBe("Summary | Anthropic")
+  })
+
   test("launch and feature URLs deduplicate query/hash spellings and exclude external links", async () => {
     const { entries, calls } = await read(
       tile("/launch?ref=home#top", "Oct 1, 2026") +
