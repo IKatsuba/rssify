@@ -144,13 +144,18 @@ describe("firefox-releases", () => {
     expect(major.contentHtml).toContain(
       `<li>Yeet: <a href="https://bugzilla.mozilla.org/1973441"`
     )
-    expect(major.summary).toStartWith("New You can now fill in forms faster")
+    // The section headings stay in the body and out of the summary.
+    expect(major.summary).toStartWith("You can now fill in forms faster")
+    expect(major.contentHtml).toMatch(/<h3>\s*<span>[^]*New/)
 
     expect(dot).toMatchObject({
       guid: notes("158.0.1"),
       title: "Firefox 158.0.1",
       publishedAt: new Date("2026-10-20T00:00:00.000Z"),
     })
+    expect(dot.summary).toStartWith(
+      "Mozilla blocked compromised eMudhra intermediate certificates"
+    )
     expect(dot.contentHtml).toContain(
       "Mozilla blocked compromised eMudhra intermediate certificates"
     )

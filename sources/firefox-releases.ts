@@ -74,12 +74,17 @@ function readPost(html: string, post: Post): IngestedEntry | null {
   const body = $(".c-release-notes").first()
   if (!date.length && !body.length) return null
   const version = NOTES.exec(new URL(post.url).pathname)![1]
+  // The summary starts at the first note: a section heading ("New",
+  // "Fixed") in front of it reads as noise, or "Fixed Fixed …".
+  const notes = body.clone()
+  notes.find("h1, h2, h3, h4, h5, h6").remove()
   return normaliseEntry(
     {
       id: post.url,
       url: post.url,
       title: `Firefox ${version}`,
       published: releaseDate(date.text()),
+      summary: body.length ? notes.html() : null,
       content: body.length ? body.html() : null,
     },
     post.url
