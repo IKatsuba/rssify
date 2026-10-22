@@ -65,9 +65,11 @@ const statusTooltip = {
 // would otherwise see as a mismatch.
 export function AppSidebar({
   email,
+  isAdmin,
   children,
 }: {
   email: string
+  isAdmin: boolean
   children: React.ReactNode
 }) {
   const { setOpenMobile } = useSidebar()
@@ -88,7 +90,7 @@ export function AppSidebar({
       </SidebarHeader>
       <SidebarContent>{children}</SidebarContent>
       <SidebarFooter>
-        <UserMenu email={email} />
+        <UserMenu email={email} isAdmin={isAdmin} />
       </SidebarFooter>
     </Sidebar>
   )
@@ -202,7 +204,7 @@ function FeedItem({
   )
 }
 
-function UserMenu({ email }: { email: string }) {
+function UserMenu({ email, isAdmin }: { email: string; isAdmin: boolean }) {
   const { theme, setTheme } = useTheme()
   const showShortcuts = useShowShortcuts()
   return (
@@ -221,6 +223,11 @@ function UserMenu({ email }: { email: string }) {
               Keyboard shortcuts
               <DropdownMenuShortcut>?</DropdownMenuShortcut>
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem render={<Link href="/admin" />}>
+                Admin
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
               <DropdownMenuSubContent>

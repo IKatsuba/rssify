@@ -34,7 +34,7 @@ export default async function ReaderLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { userId, email } = await currentUser()
+  const { userId, email, isAdmin } = await currentUser()
   // The template's own cookie, so a collapsed sidebar stays collapsed.
   const defaultOpen = (await cookies()).get("sidebar_state")?.value !== "false"
 
@@ -43,7 +43,7 @@ export default async function ReaderLayout({
       <KeysProvider>
         <TooltipProvider>
           <SidebarProvider defaultOpen={defaultOpen}>
-            <AppSidebar email={email}>
+            <AppSidebar email={email} isAdmin={isAdmin}>
               <SidebarNavBoundary>
                 <Suspense fallback={<SidebarNavSkeleton />}>
                   <ReaderNav userId={userId} />

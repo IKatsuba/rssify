@@ -4,13 +4,15 @@ import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
 import type { z } from "zod"
 
-import { requireUser } from "@/lib/actor"
+import { requireAdmin, requireUser } from "@/lib/actor"
+import * as admin from "@/lib/admin"
 import * as apiKeys from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import * as mcpClients from "@/lib/mcp-clients"
 import * as reader from "@/lib/reader"
 import {
   createApiKeyInput,
+  deleteUserInput,
   disconnectAppInput,
   markAllReadInput,
   markReadInput,
@@ -119,4 +121,14 @@ export async function disconnectApp(clientId: string) {
   const result = await mcpClients.disconnectApp(userId, input.clientId)
   if (result.ok) revalidatePath("/", "layout")
   return result
+}
+
+// requireAdmin first: without a session it redirects, and anyone else gets
+// the same 404 as the /admin page, before the input is even read.
+export async function deleteUser(userId: string) {
+  const { userId: actorId } = await requireAdmin()
+  const input = parse(deleteUserInput, { userId })
+  await admin.deleteUser(actorId, input.userId)
+  revalidatePath("/", "layout")
+  return { ok: true as const }
 }
