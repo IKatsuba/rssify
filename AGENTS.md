@@ -68,6 +68,9 @@ bun --env-file=.env.local scripts/refresh.ts              # one refresh cycle
 
 - Every route, action and MCP tool checks the caller through `lib/actor.ts`
   before reading or writing. An API key or MCP token never grants admin.
+- Advertise `offline_access` through `/api/mcp`'s `WWW-Authenticate`
+  challenge (`challengeScopes` in `lib/actor.ts`): `@better-auth/mcp` keeps
+  it out of protected-resource metadata (`scopes_supported`) by design.
 - All ingest HTTP goes through `safeFetch` (SSRF guard, limits). Keep its
   import of `'undici/index.js'`: `bun test` shims bare `'undici'` and would
   bypass the guard. `allowAddress`/`ports` on `createSafeFetch` are for
