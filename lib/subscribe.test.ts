@@ -582,6 +582,81 @@ describe("subscribe to a new feed", () => {
     })
   })
 
+  describe("the Anthropic built-in sources", () => {
+    const ORIGIN = "https://www.anthropic.com"
+    const saved = (dir: string, pages: Record<string, string>) =>
+      Object.fromEntries(
+        Object.entries(pages).map(([url, file]) => [
+          url,
+          readFileSync(`test/fixtures/${dir}/${file}.html`, "utf8"),
+        ])
+      )
+    // Saved pages answer; the other posts are skipped as 404s.
+    const fetchFrom =
+      (pages: Record<string, string>): SafeFetch =>
+      async (url) => ({
+        status: pages[url] === undefined ? 404 : 200,
+        url,
+        headers: new Headers(),
+        text: pages[url] ?? "",
+        kind: "unknown",
+      })
+
+    for (const { source, title, list, pages, guids } of [
+      {
+        source: "anthropic-engineering",
+        title: "Anthropic engineering",
+        list: `${ORIGIN}/engineering`,
+        pages: saved("anthropic-engineering", {
+          [`${ORIGIN}/engineering`]: "list",
+          [`${ORIGIN}/research/redesigning-source-control`]:
+            "redesigning-source-control",
+          [`${ORIGIN}/research/managed-agents`]: "managed-agents",
+        }),
+        guids: [
+          `${ORIGIN}/research/managed-agents`,
+          `${ORIGIN}/research/redesigning-source-control`,
+        ],
+      },
+      {
+        source: "anthropic-news",
+        title: "Anthropic news",
+        list: `${ORIGIN}/news`,
+        pages: saved("anthropic-news", {
+          [`${ORIGIN}/news`]: "list",
+          [`${ORIGIN}/claude-opus-5-5`]: "claude-opus-5-5",
+          [`${ORIGIN}/news/cyber-verification-program`]:
+            "cyber-verification-program",
+        }),
+        guids: [
+          `${ORIGIN}/claude-opus-5-5`,
+          `${ORIGIN}/news/cyber-verification-program`,
+        ],
+      },
+    ]) {
+      test(`{ source: "${source}" } subscribes through its plugin`, async () => {
+        const result = await subscribe(
+          "u1",
+          { source },
+          { fetch: fetchFrom(pages), now: NOW }
+        )
+        expect(result).toMatchObject({ ok: true, existed: false })
+        const feed = await db.feed.findUniqueOrThrow({ where: { url: list } })
+        expect(feed).toMatchObject({
+          pluginId: source,
+          title,
+          siteUrl: list,
+          lastSuccessAt: NOW,
+        })
+        const entries = await db.entry.findMany({
+          where: { feedId: feed.id },
+          orderBy: { guid: "asc" },
+        })
+        expect(entries.map((e) => e.guid)).toEqual(guids)
+      })
+    }
+  })
+
   describe("a URL a plugin matches runs the plugin", () => {
     const LIST = "https://scrape.example.com/blog"
     const post: IngestedEntry = {
