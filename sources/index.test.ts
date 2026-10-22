@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 
 import { anthropicEngineering, anthropicNews } from "./anthropic"
 import { builtinSource, builtinSources } from "./builtin"
+import { bytes } from "./bytes"
 import { cursorBlog } from "./cursor-blog"
 import { githubTrending } from "./github-trending"
 import { pluginFor, plugins } from "./index"
@@ -49,6 +50,7 @@ describe("pluginFor", () => {
     expect(plugins).toEqual({
       "anthropic-engineering": anthropicEngineering,
       "anthropic-news": anthropicNews,
+      bytes,
       "cursor-blog": cursorBlog,
       "github-trending": githubTrending,
     })
