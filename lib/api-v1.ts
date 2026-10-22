@@ -1,8 +1,12 @@
 import type { z } from "zod"
 
 import { type Actor, apiError, requireApiKey } from "@/lib/actor"
-import { addFeedError } from "@/lib/add-feed-errors"
 import * as reader from "@/lib/reader"
+import {
+  readerErrorBody,
+  subscribeErrorBody,
+  subscriptionOf,
+} from "@/lib/reader-output"
 import {
   getEntryInput,
   listEntriesInput,
@@ -47,9 +51,8 @@ async function handle(
       return apiError(400, "invalid_input", e.message)
     }
     if (e instanceof reader.ReaderError) {
-      return e.code === "invalid_cursor"
-        ? apiError(400, "invalid_input", "Invalid cursor")
-        : apiError(404, "not_found", "Not found")
+      const { code, message } = readerErrorBody(e)
+      return apiError(code === "invalid_input" ? 400 : 404, code, message)
     }
     throw e
   }
@@ -69,17 +72,12 @@ export function subscribe(request: Request, options?: reader.SubscribeOptions) {
     const input = parse(subscribeInput, await jsonBody(request))
     const result = await reader.subscribe(userId, input, options)
     if (!result.ok) {
-      const { code, choices } = result
-      // The sentence names the host the caller sent; a source has none.
-      const message = addFeedError(code, "url" in input ? input.url : "")
       return Response.json(
-        { error: { code, message, ...(choices && { choices }) } },
+        { error: subscribeErrorBody(result, input) },
         { status: 422 }
       )
     }
-    const subscription = (await reader.listSubscriptions(userId)).find(
-      (s) => s.feed.id === result.feedId
-    )
+    const subscription = await subscriptionOf(userId, result.feedId)
     return Response.json(
       { subscription },
       { status: result.existed ? 200 : 201 }

@@ -26,12 +26,17 @@ export const markReadInput = entryInput
 export const markUnreadInput = entryInput
 
 // upTo is a list's asOf: a Date from an action, an ISO string over JSON.
+// A valid Date goes through its ISO form rather than a z.date() branch,
+// which has no JSON Schema and so could not be listed as an MCP tool input.
 export const markAllReadInput = z.object({
   feedId: id.optional(),
-  upTo: z.union([
-    z.date(),
-    z.iso.datetime({ offset: true }).transform((value) => new Date(value)),
-  ]),
+  upTo: z.preprocess(
+    (value) =>
+      value instanceof Date && !Number.isNaN(value.getTime())
+        ? value.toISOString()
+        : value,
+    z.iso.datetime({ offset: true }).transform((value) => new Date(value))
+  ),
 })
 
 export const createApiKeyInput = z.object({
