@@ -24,6 +24,7 @@ describe("builtinSources", () => {
       "bytes",
       "claude-code",
       "cursor-blog",
+      "firefox-releases",
       "langchain-blog",
       "nodejs-blog",
     ])
@@ -38,6 +39,9 @@ describe("builtinSources", () => {
     expect(builtinSource("bytes")?.url).toBe("https://bytes.dev/archives")
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
     expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
+    expect(builtinSource("firefox-releases")?.url).toBe(
+      "https://www.firefox.com/en-US/releases/"
+    )
     expect(builtinSource("langchain-blog")?.url).toBe(
       "https://www.langchain.com/blog/rss.xml"
     )
