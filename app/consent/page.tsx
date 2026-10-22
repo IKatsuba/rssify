@@ -35,8 +35,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return { title: `Allow ${request.name} · rssify` }
 }
 
-// The provider sends the browser here with a signed query; consent is never
-// skipped, and every requested scope is shown before it can be granted.
+// The provider sends the browser here with a signed query when the user has
+// no consent covering the request; no client bypasses it, and a disconnect
+// in Settings brings it back. Every requested scope is shown before it can
+// be granted.
 export default async function ConsentPage(props: Props) {
   const request = await load(props)
   if (request.kind === "not_found") notFound()
