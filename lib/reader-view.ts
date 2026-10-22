@@ -36,6 +36,18 @@ export function listHref(
   return search ? `${path}?${search}` : path
 }
 
+export function readEntryParams(params: SearchParams) {
+  return {
+    feedId: one(params.feed),
+    filter: (one(params.filter) === "all" ? "all" : "unread") as ListFilter,
+  }
+}
+
+// "Read on {site}": the entry's host, without a leading www.
+export function siteName(url: string) {
+  return new URL(url).hostname.replace(/^www\./, "")
+}
+
 // The entry remembers the list it was opened from, for Back and ↑/↓.
 export function entryHref(
   entryId: string,

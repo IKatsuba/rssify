@@ -5,7 +5,9 @@ import {
   entryHref,
   feedNotice,
   listHref,
+  readEntryParams,
   readListParams,
+  siteName,
 } from "./reader-view"
 
 describe("readListParams", () => {
@@ -51,6 +53,24 @@ describe("entryHref", () => {
     expect(entryHref("e1", { feedId: "f1", filter: "all" })).toBe(
       "/entries/e1?feed=f1&filter=all"
     )
+  })
+})
+
+describe("readEntryParams", () => {
+  test("the list an entry came from", () => {
+    expect(readEntryParams({})).toEqual({ feedId: undefined, filter: "unread" })
+    expect(readEntryParams({ feed: "f1", filter: "all" })).toEqual({
+      feedId: "f1",
+      filter: "all",
+    })
+    expect(readEntryParams({ feed: ["f1", "f2"] }).feedId).toBeUndefined()
+  })
+})
+
+describe("siteName", () => {
+  test("the host, without www.", () => {
+    expect(siteName("https://www.example.com/a?b")).toBe("example.com")
+    expect(siteName("http://blog.example.org:8080/")).toBe("blog.example.org")
   })
 })
 
