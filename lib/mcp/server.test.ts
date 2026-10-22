@@ -1,9 +1,10 @@
 import { readFileSync } from "node:fs"
 
-import { beforeEach, describe, expect, test } from "bun:test"
+import { beforeEach, describe, expect, spyOn, test } from "bun:test"
 import { createMcpHandler } from "@modelcontextprotocol/server"
 
 import type { SafeFetch } from "@/lib/ingest/safe-fetch"
+import * as reader from "@/lib/reader"
 import type { SubscribeOptions } from "@/lib/reader"
 import { db } from "@/test/db"
 import { callTool, type Era, rpc, type ToolResult } from "@/test/mcp-rpc"
@@ -206,6 +207,59 @@ describe("subscribe", () => {
     expect(result.isError).toBe(true)
     expect(await db.subscription.count({ where: { userId: "u1" } })).toBe(2)
   })
+
+  test("an unreachable site → unreachable with the add-feed sentence", async () => {
+    const down: SafeFetch = async (url) => ({
+      status: 503,
+      url,
+      headers: new Headers(),
+      text: "",
+      kind: "unknown",
+    })
+    expect(
+      failure(
+        await call("subscribe", { url: page }, { options: { fetch: down } })
+      )
+    ).toEqual({
+      code: "unreachable",
+      message:
+        "We couldn’t reach blog.example.com. Check the address and try again.",
+    })
+  })
+
+  test("at the 500-feed cap → limit with the add-feed sentence", async () => {
+    await db.feed.createMany({
+      data: Array.from({ length: 498 }, (_, i) => ({
+        id: `cap${i}`,
+        url: `https://cap.example.com/${i}.xml`,
+      })),
+    })
+    await db.subscription.createMany({
+      data: Array.from({ length: 498 }, (_, i) => ({
+        userId: "u1",
+        feedId: `cap${i}`,
+      })),
+    })
+    expect(
+      failure(await call("subscribe", { url: page }, { options: { fetch } }))
+    ).toEqual({
+      code: "limit",
+      message:
+        "You follow 500 feeds, the most rssify allows. Unsubscribe from one first.",
+    })
+  })
+})
+
+// The SDK checks input against the schema before a tool runs and answers
+// with its own text; our JSON is for what lib/reader.ts says after that.
+test("input the schema refuses is an isError result, not a JSON-RPC error", async () => {
+  const { body } = await rpc(serve("u1"), "tools/call", {
+    name: "get_entry",
+    arguments: { entryId: 42 },
+  })
+  expect(body.error).toBeUndefined()
+  expect(body.result.isError).toBe(true)
+  expect(body.result.content[0].text).toStartWith("Input validation error")
 })
 
 describe("unsubscribe", () => {
@@ -339,4 +393,39 @@ describe("mark_read, mark_unread, mark_all_read", () => {
 test("each tool answers in the 2025 era too", async () => {
   const result = await call("get_entry", { entryId: "a1" }, { era: "legacy" })
   expect(output(result).entry.id).toBe("a1")
+})
+
+describe("an unexpected failure", () => {
+  const secret = 'relation "ReadMark" does not exist at db.internal:5432'
+  // Every reader function a tool calls, as one shape spyOn can replace.
+  const calls = reader as unknown as Record<string, () => Promise<unknown>>
+  const tools: [string, string, Record<string, unknown>][] = [
+    ["listSubscriptions", "list_feeds", {}],
+    ["subscribe", "subscribe", { url: "https://x.example.com/feed.xml" }],
+    ["unsubscribe", "unsubscribe", { feedId: "a" }],
+    ["listEntries", "list_entries", {}],
+    ["getEntry", "get_entry", { entryId: "a1" }],
+    ["markRead", "mark_read", { entryId: "a1" }],
+    ["markUnread", "mark_unread", { entryId: "a1" }],
+    ["markAllRead", "mark_all_read", { upTo: T(0).toISOString() }],
+  ]
+  for (const [fn, name, args] of tools) {
+    test(`in ${name} is logged, and its message never reaches the client`, async () => {
+      const failing = spyOn(calls, fn).mockRejectedValue(new Error(secret))
+      const logged = spyOn(console, "error").mockImplementation(() => {})
+      try {
+        const result = await call(name, args)
+        expect(failing).toHaveBeenCalled()
+        expect(JSON.stringify(result)).not.toContain("ReadMark")
+        expect(failure(result)).toEqual({
+          code: "internal_error",
+          message: "Something went wrong on our side. Try again in a moment.",
+        })
+        expect(logged).toHaveBeenCalled()
+      } finally {
+        failing.mockRestore()
+        logged.mockRestore()
+      }
+    })
+  }
 })

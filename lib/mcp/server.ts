@@ -71,16 +71,26 @@ function failed(body: ErrorBody) {
   }
 }
 
-// Others' data is not_found here as on the other two doors; anything else
-// is not the caller's to see and goes to the SDK as it is.
-async function run(call: () => Promise<object>) {
+type Result = ReturnType<typeof ok> | ReturnType<typeof failed>
+
+// Others' data is not_found here as on the other two doors. Anything else is
+// logged and answered with the reader's page-error sentence, never its own
+// message: the SDK would echo it, and a database error says too much.
+async function guarded(call: () => Promise<Result>) {
   try {
-    return ok(await call())
+    return await call()
   } catch (e) {
     if (e instanceof reader.ReaderError) return failed(readerErrorBody(e))
-    throw e
+    console.error("MCP tool failed", e)
+    return failed({
+      code: "internal_error",
+      message: "Something went wrong on our side. Try again in a moment.",
+    })
   }
 }
+
+const run = (call: () => Promise<object>) =>
+  guarded(async () => ok(await call()))
 
 // options is the test seam reader.subscribe has; the route passes nothing.
 export function buildMcpServer(
@@ -111,11 +121,14 @@ export function buildMcpServer(
       outputSchema: z.object({ subscription }),
       annotations: { openWorldHint: true, idempotentHint: true },
     },
-    async (input) => {
-      const result = await reader.subscribe(userId, input, options)
-      if (!result.ok) return failed(subscribeErrorBody(result, input))
-      return ok({ subscription: await subscriptionOf(userId, result.feedId) })
-    }
+    (input) =>
+      guarded(async () => {
+        const result = await reader.subscribe(userId, input, options)
+        if (!result.ok) return failed(subscribeErrorBody(result, input))
+        return ok({
+          subscription: await subscriptionOf(userId, result.feedId),
+        })
+      })
   )
 
   server.registerTool(
