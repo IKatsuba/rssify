@@ -419,6 +419,84 @@ describe("subscribe to a new feed", () => {
     expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(16)
   })
 
+  // The description is the whole text the feed gives, so it is both.
+  test("langchain-blog subscribes to its summary-only feed", async () => {
+    const url = "https://www.langchain.com/blog/rss.xml"
+    const { fetch, calls } = site({
+      [url]: { text: fixture("langchain-blog.rss.xml") },
+    })
+    const result = await subscribe(
+      "u1",
+      { source: "langchain-blog" },
+      { fetch, now: NOW }
+    )
+    expect(result).toMatchObject({ ok: true, existed: false })
+    expect(calls.map((c) => c.url)).toEqual([url])
+    const feed = await db.feed.findUniqueOrThrow({ where: { url } })
+    expect(feed).toMatchObject({ pluginId: null, title: "LangChain Blog" })
+    const entries = await db.entry.findMany({ where: { feedId: feed.id } })
+    expect(entries).toHaveLength(3)
+    for (const entry of entries) {
+      expect(entry.summary).not.toBeNull()
+      expect(entry.contentHtml).toBe(entry.summary)
+    }
+  })
+
+  describe("nodejs-blog", () => {
+    const url = "https://nodejs.org/en/feed/blog.xml"
+    const page = "https://nodejs.org/en/blog"
+    const feedAnswer = { text: fixture("nodejs-blog.rss.xml") }
+
+    test("subscribes to its feed, whose items carry no text", async () => {
+      const { fetch, calls } = site({ [url]: feedAnswer })
+      const result = await subscribe(
+        "u1",
+        { source: "nodejs-blog" },
+        { fetch, now: NOW }
+      )
+      expect(result).toMatchObject({ ok: true, existed: false })
+      expect(calls.map((c) => c.url)).toEqual([url])
+      const feed = await db.feed.findUniqueOrThrow({ where: { url } })
+      expect(feed).toMatchObject({ pluginId: null, title: "Node.js Blog" })
+      const entries = await db.entry.findMany({ where: { feedId: feed.id } })
+      expect(entries.map((e) => e.guid).sort()).toEqual([
+        "/blog/release/v24.22.1?1792579154786",
+        "/blog/release/v26.12.1?1792579160400",
+        "/blog/vulnerability/october-2026-security-releases?1792620000000",
+      ])
+      for (const entry of entries) {
+        expect(entry.summary).toBeNull()
+        expect(entry.contentHtml).toBeNull()
+      }
+    })
+
+    test("the pasted blog page lands on the built-in source's row", async () => {
+      const { fetch, calls } = site({
+        [page]: {
+          text: fixture("nodejs-blog.html"),
+          kind: "unknown",
+          headers: new Headers({ "content-type": "text/html; charset=utf-8" }),
+        },
+        [url]: feedAnswer,
+      })
+      const pasted = await subscribe("u1", { url: page }, { fetch, now: NOW })
+      expect(pasted).toMatchObject({ ok: true, existed: false })
+      expect(calls.map((c) => c.url)).toEqual([page, url])
+
+      const builtin = await subscribe(
+        "u2",
+        { source: "nodejs-blog" },
+        { fetch: noFetch, now: NOW }
+      )
+      expect(builtin).toEqual({
+        ok: true,
+        feedId: pasted.ok ? pasted.feedId : "",
+        existed: false,
+      })
+      expect(await db.feed.count()).toBe(1)
+    })
+  })
+
   test("an unknown source → not_found without a fetch", async () => {
     expect(
       await subscribe("u1", { source: "nope" }, { fetch: noFetch })

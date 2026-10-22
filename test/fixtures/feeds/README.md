@@ -16,6 +16,14 @@ bodies, never edited, never fetched by tests.
 | `jsonfeed-org.feed.json` | https://www.jsonfeed.org/feed.json | JSON Feed 1.0; `jsonfeed.org/feed.json` answers 404, this is the URL jsonfeed.org links |
 | `daringfireball.feed.json` | https://daringfireball.net/feeds/json | JSON Feed 1.1 |
 | `cursor-blog.html` | https://cursor.com/blog | HTML, not a feed |
+| `nodejs-blog.rss.xml` | https://nodejs.org/en/feed/blog.xml | RSS 2.0, no description; cut to the first 3 of 1,065 items |
+| `langchain-blog.rss.xml` | https://www.langchain.com/blog/rss.xml | RSS 2.0, description only; cut to the first 3 of 100 items |
+| `nodejs-blog.html` | https://nodejs.org/en/blog | HTML; cut to its `<title>` and alternate links |
+
+The three `nodejs-blog` and `langchain-blog` files are cut from captures of
+the same day to keep them small: the feeds keep their first three items as
+served, and the page keeps only its `<title>` and `<link rel="alternate">`
+tags, which is all discovery reads.
 
 Hand-made files start with `handmade-`:
 
