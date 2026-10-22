@@ -20,6 +20,7 @@
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
     "@rowanmanning/feed-parser": "2.1.5",
+    "@vercel/queue": "0.8.0",
     "better-auth": "1.7.12",
     "cheerio": "1.2.0",
     "class-variance-authority": "^0.7.1",
