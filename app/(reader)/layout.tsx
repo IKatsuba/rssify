@@ -17,6 +17,7 @@ import {
   SidebarNavSkeleton,
 } from "./app-sidebar"
 import { currentUser, subscriptionsOf, totalUnread } from "./data"
+import { KeysProvider } from "./keys"
 
 // The add-feed action runs under this layout and fetches the feed.
 export const maxDuration = 60
@@ -39,20 +40,22 @@ export default async function ReaderLayout({
 
   return (
     <AddFeedProvider sources={builtinChoices(userId)}>
-      <TooltipProvider>
-        <SidebarProvider defaultOpen={defaultOpen}>
-          <AppSidebar email={email}>
-            <SidebarNavBoundary>
-              <Suspense fallback={<SidebarNavSkeleton />}>
-                <ReaderNav userId={userId} />
-              </Suspense>
-            </SidebarNavBoundary>
-          </AppSidebar>
-          {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
-          <SidebarInset className="min-w-0">{children}</SidebarInset>
-        </SidebarProvider>
-        <Toaster />
-      </TooltipProvider>
+      <KeysProvider>
+        <TooltipProvider>
+          <SidebarProvider defaultOpen={defaultOpen}>
+            <AppSidebar email={email}>
+              <SidebarNavBoundary>
+                <Suspense fallback={<SidebarNavSkeleton />}>
+                  <ReaderNav userId={userId} />
+                </Suspense>
+              </SidebarNavBoundary>
+            </AppSidebar>
+            {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
+            <SidebarInset className="min-w-0">{children}</SidebarInset>
+          </SidebarProvider>
+          <Toaster />
+        </TooltipProvider>
+      </KeysProvider>
     </AddFeedProvider>
   )
 }

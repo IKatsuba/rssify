@@ -207,6 +207,22 @@ export async function getNeighbours(
   entryId: string,
   scope: EntryScope = {}
 ) {
+  const { previousId, nextId } = await getEntryNavigation(
+    userId,
+    entryId,
+    scope
+  )
+  return { previousId, nextId }
+}
+
+// The neighbours, plus pageCursor: the listEntries cursor of the page that
+// starts at this entry (older than the one above it; null for the first
+// page), so Back can land on its row after j/k left the page it came from.
+export async function getEntryNavigation(
+  userId: string,
+  entryId: string,
+  scope: EntryScope = {}
+) {
   const where = await scopeWhere(userId, scope)
   // The anchor must be in the list's feed, but not under its unread filter.
   const anchor = await db.entry.findFirst({
@@ -222,7 +238,7 @@ export async function getNeighbours(
     db.entry.findFirst({
       where: { AND: [where, newerThan(anchor)] },
       orderBy: [{ sortAt: "asc" }, { id: "asc" }],
-      select: { id: true },
+      select: { id: true, sortAt: true },
     }),
     db.entry.findFirst({
       where: { AND: [where, olderThan(anchor)] },
@@ -230,7 +246,11 @@ export async function getNeighbours(
       select: { id: true },
     }),
   ])
-  return { previousId: newer?.id ?? null, nextId: older?.id ?? null }
+  return {
+    previousId: newer?.id ?? null,
+    nextId: older?.id ?? null,
+    pageCursor: newer ? encodeCursor(newer) : null,
+  }
 }
 
 const visibleEntry = (userId: string, entryId: string) =>

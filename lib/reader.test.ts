@@ -6,6 +6,7 @@ import type { SafeFetch } from "./ingest/safe-fetch"
 
 import {
   getEntry,
+  getEntryNavigation,
   getNeighbours,
   listEntries,
   listSubscriptions,
@@ -295,6 +296,16 @@ describe("getNeighbours", () => {
       previousId: "t2",
       nextId: "b1",
     })
+  })
+
+  test("pageCursor lists a page that starts at the entry", async () => {
+    const { pageCursor } = await getEntryNavigation("u1", "a2")
+    const page = await listEntries("u1", { cursor: pageCursor! })
+    expect(page.entries[0].id).toBe("a2")
+    // The newest entry's page is the first page.
+    expect(
+      (await getEntryNavigation("u1", "a2", { feedId: "a" })).pageCursor
+    ).toBeNull()
   })
 
   test("another user's entry or feed is not_found", async () => {

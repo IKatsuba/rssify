@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { intentQueue } from "@/lib/intent-queue"
 
 import { markRead, markUnread } from "../../actions"
+import { KeyHint, useKeys } from "../../keys"
 
 // Opening marks read here, after mount, never in the server render, so a
 // prefetch cannot. The open call and the button share one queue, so a toggle
@@ -40,6 +41,7 @@ export function ReadButton({
     })
   )
   const opened = useRef(false)
+  useKeys({ toggleRead: () => void push(!read) })
 
   // A layout effect, so the read state shows at once: a passive effect's
   // update waits behind the pending server action and would leave the
@@ -52,11 +54,15 @@ export function ReadButton({
   }, [initialRead, push])
 
   return (
-    <Button variant="outline" onClick={() => push(!read)}>
+    <KeyHint
+      label={read ? "Mark as unread" : "Mark as read"}
+      keys={["M"]}
+      render={<Button variant="outline" onClick={() => void push(!read)} />}
+    >
       {read ? <MailOpenIcon /> : <MailIcon />}
       <span className="max-sm:sr-only">
         {read ? "Mark as unread" : "Mark as read"}
       </span>
-    </Button>
+    </KeyHint>
   )
 }
