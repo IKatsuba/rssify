@@ -566,6 +566,20 @@ describe("subscribe to a new feed", () => {
       expect(result).toMatchObject({ ok: true, existed: false })
       await expectCursorFeed()
     })
+
+    test("every post answering 404 → not_found", async () => {
+      const listOnly: SafeFetch = async (url) => ({
+        status: url === LIST ? 200 : 404,
+        url,
+        headers: new Headers(),
+        text: url === LIST ? saved[LIST] : "",
+        kind: "unknown",
+      })
+      expect(await fetchForAdd(LIST, { fetch: listOnly })).toEqual({
+        kind: "error",
+        code: "not_found",
+      })
+    })
   })
 
   describe("a URL a plugin matches runs the plugin", () => {

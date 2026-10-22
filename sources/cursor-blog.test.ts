@@ -7,6 +7,7 @@ import { parseFeed } from "@/lib/ingest/parse"
 import { SafeFetchError, type SafeFetch } from "@/lib/ingest/safe-fetch"
 
 import { cursorBlog, LAYOUT_CHANGED } from "./cursor-blog"
+import { NONE_READ } from "./list-posts"
 import { SourceStatusError } from "./types"
 
 const FIXTURES = join(import.meta.dir, "../test/fixtures")
@@ -168,8 +169,9 @@ describe("cursorBlog", () => {
         `<article>no link</article>`
     )
     const s = site({ [LIST]: { text: list } })
-    const entries = await run(s.fetch)
-    expect(entries).toEqual([])
+    // Both posts answer 404, so nothing new could be read.
+    const error = await run(s.fetch).catch((e) => e)
+    expect(error.message).toBe(NONE_READ)
     expect(s.calls).toEqual([LIST, post("a"), post("b")])
   })
 
