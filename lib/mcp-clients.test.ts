@@ -4,6 +4,7 @@ import {
   authorize,
   consent,
   createMcpClient,
+  createUserWithSession,
   exchangeCode,
   mintMcpToken,
 } from "@/test/mcp-token"
@@ -95,6 +96,24 @@ describe("disconnectApp", () => {
     await disconnectApp("u1", a.clientId)
     const again = await authorize(a.cookie, a.clientId)
     expect(again.location.pathname).toBe("/consent")
+  })
+
+  test("another user of the same app keeps their consent and tokens", async () => {
+    const a = await mintMcpToken("u1")
+    const cookie = await createUserWithSession("u2")
+    const { location, verifier } = await authorize(cookie, a.clientId)
+    const code = (await consent(cookie, location)).searchParams.get("code")!
+    await exchangeCode(a.clientId, code, verifier)
+
+    await disconnectApp("u1", a.clientId)
+
+    expect(await liveTokens({ userId: "u1", clientId: a.clientId })).toBe(0)
+    expect(await liveTokens({ userId: "u2", clientId: a.clientId })).toBe(1)
+    expect(
+      await db.oauthConsent.count({
+        where: { userId: "u2", clientId: a.clientId },
+      })
+    ).toBe(1)
   })
 
   test("another user's app is not_found and untouched", async () => {
