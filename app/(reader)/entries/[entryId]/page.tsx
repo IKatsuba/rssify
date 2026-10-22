@@ -21,8 +21,9 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
+import { ReadButton } from "./read-button"
 
-// Reading never marks read here; that is the client's call, in a later unit.
+// Rendering never marks read; ReadButton does, from the client after mount.
 const entryOf = cache(async (userId: string, entryId: string) => {
   try {
     return await getEntry(userId, entryId)
@@ -114,6 +115,7 @@ export default async function EntryPage({
           orientation="vertical"
           className="mx-1 data-vertical:h-4 data-vertical:self-center"
         />
+        <ReadButton key={entry.id} entryId={entry.id} read={entry.read} />
         {entry.url ? (
           <Button
             variant="outline"

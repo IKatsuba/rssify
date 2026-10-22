@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { Suspense } from "react"
 
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+import { Toaster } from "@/components/ui/sonner"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
 import {
@@ -45,6 +46,7 @@ export default async function ReaderLayout({
         {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
         <SidebarInset className="min-w-0">{children}</SidebarInset>
       </SidebarProvider>
+      <Toaster />
     </TooltipProvider>
   )
 }
