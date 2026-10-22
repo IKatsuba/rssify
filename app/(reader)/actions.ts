@@ -7,9 +7,11 @@ import type { z } from "zod"
 import { requireUser } from "@/lib/actor"
 import * as apiKeys from "@/lib/api-keys"
 import { db } from "@/lib/db"
+import * as mcpClients from "@/lib/mcp-clients"
 import * as reader from "@/lib/reader"
 import {
   createApiKeyInput,
+  disconnectAppInput,
   markAllReadInput,
   markReadInput,
   markUnreadInput,
@@ -107,6 +109,14 @@ export async function revokeApiKey(keyId: string) {
   await requireUser()
   const input = parse(revokeApiKeyInput, { keyId })
   const result = await apiKeys.revokeApiKey(await headers(), input.keyId)
+  if (result.ok) revalidatePath("/", "layout")
+  return result
+}
+
+export async function disconnectApp(clientId: string) {
+  const { userId } = await requireUser()
+  const input = parse(disconnectAppInput, { clientId })
+  const result = await mcpClients.disconnectApp(userId, input.clientId)
   if (result.ok) revalidatePath("/", "layout")
   return result
 }
