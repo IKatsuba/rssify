@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 
 import { db } from "@/test/db"
 
-import { auth, isAdmin, registrationGate } from "./auth"
+import { auth, isAdmin, MCP_RESOURCE, registrationGate } from "./auth"
 
 const ADMIN = "Admin@Example.com"
 const saved = {
@@ -130,5 +130,41 @@ describe("api keys", () => {
     })
     expect(row.rateLimitMax).toBe(120)
     expect(row.rateLimitTimeWindow).toBe(60_000)
+  })
+})
+
+describe("MCP provider", () => {
+  test("boots with jwt, the OAuth provider and CIMD", async () => {
+    const ctx = await auth.$context
+    const ids = ctx.options.plugins?.map((p) => p.id)
+    expect(ids).toEqual(
+      expect.arrayContaining(["jwt", "oauth-provider", "cimd"])
+    )
+    expect(MCP_RESOURCE).toBe("http://localhost:3210/api/mcp")
+  })
+
+  test("serves a signing key from the jwks table", async () => {
+    const res = await auth.handler(
+      new Request("http://localhost:3210/api/auth/jwks")
+    )
+    expect(res.status).toBe(200)
+    const { keys } = (await res.json()) as { keys: { kid: string }[] }
+    expect(keys.length).toBeGreaterThan(0)
+    expect(await db.jwks.count()).toBeGreaterThan(0)
+  })
+
+  test("jwt's session-to-JWT endpoint is disabled", async () => {
+    const res = await auth.handler(
+      new Request("http://localhost:3210/api/auth/token")
+    )
+    expect(res.status).toBe(404)
+  })
+
+  test("the OAuth tables exist", async () => {
+    expect(await db.oauthClient.count()).toBe(0)
+    expect(await db.oauthConsent.count()).toBe(0)
+    expect(await db.oauthRefreshToken.count()).toBe(0)
+    expect(await db.oauthAccessToken.count()).toBe(0)
+    expect(await db.oauthClientAssertion.count()).toBe(0)
   })
 })

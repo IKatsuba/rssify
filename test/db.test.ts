@@ -65,3 +65,31 @@ describe("truncation", () => {
     expect(await db.user.count()).toBe(0)
   })
 })
+
+describe("tables kept across tests", () => {
+  const key = {
+    id: "k1",
+    publicKey: "{}",
+    privateKey: "x",
+    createdAt: new Date(),
+  }
+  const resource = {
+    id: "r1",
+    identifier: "http://localhost:3210/kept",
+    name: "Kept",
+  }
+
+  test("a jwks and an oauthResource row written in one test", async () => {
+    await db.jwks.create({ data: key })
+    await db.oauthResource.create({ data: resource })
+  })
+
+  test("are still there in the next, and are cleaned up", async () => {
+    expect(await db.jwks.findUnique({ where: { id: "k1" } })).not.toBeNull()
+    expect(
+      await db.oauthResource.findUnique({ where: { id: "r1" } })
+    ).not.toBeNull()
+    await db.jwks.delete({ where: { id: "k1" } })
+    await db.oauthResource.delete({ where: { id: "r1" } })
+  })
+})

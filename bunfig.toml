@@ -1,4 +1,4 @@
 [test]
 # Loaded once for the whole run, so the guard and the truncation apply to
 # every test file, not only the first one that imports test/db.ts.
-preload = ["./test/db.ts"]
+preload = ["./test/env.ts", "./test/db.ts"]
