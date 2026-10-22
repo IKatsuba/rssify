@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test"
+import { beforeEach, describe, expect, test } from "bun:test"
 
 import { generateKeyPair, SignJWT } from "jose"
 
@@ -69,50 +69,57 @@ describe("withMcpAuth", () => {
     await expectUnauthorized(await call("Bearer not-a-jwt"))
   })
 
-  test("a token signed by a foreign key → 401", async () => {
-    const { privateKey } = await generateKeyPair("EdDSA")
-    const { kid } = (await auth.api.getJwks()).keys[0]
-    const token = await new SignJWT(good)
-      .setProtectedHeader({ alg: "EdDSA", kid })
-      .setExpirationTime("1h")
-      .sign(privateKey)
-    await expectUnauthorized(await call(`Bearer ${token}`))
-  })
-
-  test("our key with every claim right passes (control)", async () => {
-    await db.user.create({
-      data: { id: "u1", name: "u1", email: "u1@example.com" },
+  // u1 exists here, so each refusal comes from the token check, not from
+  // the user lookup that follows it.
+  describe("with the token's user present", () => {
+    beforeEach(async () => {
+      await db.user.create({
+        data: { id: "u1", name: "u1", email: "u1@example.com" },
+      })
     })
-    const res = await call(`Bearer ${await ownKeyToken(good)}`)
-    expect(res.status).toBe(200)
-  })
 
-  test("wrong aud → 401", async () => {
-    const token = await ownKeyToken({
-      ...good,
-      aud: "http://localhost:3210/api/other",
+    test("a token signed by a foreign key → 401", async () => {
+      const { privateKey } = await generateKeyPair("EdDSA")
+      const { kid } = (await auth.api.getJwks()).keys[0]
+      const token = await new SignJWT(good)
+        .setProtectedHeader({ alg: "EdDSA", kid })
+        .setExpirationTime("1h")
+        .sign(privateKey)
+      await expectUnauthorized(await call(`Bearer ${token}`))
     })
-    await expectUnauthorized(await call(`Bearer ${token}`))
-  })
 
-  test("wrong iss → 401", async () => {
-    const token = await ownKeyToken({
-      ...good,
-      iss: "http://localhost:3210/elsewhere",
+    test("our key with every claim right passes (control)", async () => {
+      const res = await call(`Bearer ${await ownKeyToken(good)}`)
+      expect(res.status).toBe(200)
     })
-    await expectUnauthorized(await call(`Bearer ${token}`))
-  })
 
-  test("expired → 401", async () => {
-    const past = Math.floor(Date.now() / 1000) - 3600
-    const token = await ownKeyToken({ ...good, iat: past - 60, exp: past })
-    await expectUnauthorized(await call(`Bearer ${token}`))
-  })
+    test("wrong aud → 401", async () => {
+      const token = await ownKeyToken({
+        ...good,
+        aud: "http://localhost:3210/api/other",
+      })
+      await expectUnauthorized(await call(`Bearer ${token}`))
+    })
 
-  test("no azp → 401", async () => {
-    const noAzp: Record<string, unknown> = { ...good }
-    delete noAzp.azp
-    await expectUnauthorized(await call(`Bearer ${await ownKeyToken(noAzp)}`))
+    test("wrong iss → 401", async () => {
+      const token = await ownKeyToken({
+        ...good,
+        iss: "http://localhost:3210/elsewhere",
+      })
+      await expectUnauthorized(await call(`Bearer ${token}`))
+    })
+
+    test("expired → 401", async () => {
+      const past = Math.floor(Date.now() / 1000) - 3600
+      const token = await ownKeyToken({ ...good, iat: past - 60, exp: past })
+      await expectUnauthorized(await call(`Bearer ${token}`))
+    })
+
+    test("no azp → 401", async () => {
+      const noAzp: Record<string, unknown> = { ...good }
+      delete noAzp.azp
+      await expectUnauthorized(await call(`Bearer ${await ownKeyToken(noAzp)}`))
+    })
   })
 
   test("no reader scope → 403 insufficient_scope", async () => {
