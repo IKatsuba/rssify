@@ -85,6 +85,7 @@ async function builtinChoices(userId: string): Promise<BuiltinChoice[]> {
   return builtinSources.map(({ id, title, url, note }) => ({
     id,
     title,
+    url,
     note,
     subscribed: followed.has(normaliseUrl(url) ?? url),
   }))

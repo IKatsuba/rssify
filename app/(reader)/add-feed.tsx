@@ -40,6 +40,7 @@ import { subscribe } from "./actions"
 export type BuiltinChoice = {
   id: string
   title: string
+  url: string
   note: string
   subscribed: boolean
 }
@@ -100,7 +101,11 @@ function AddFeedForm({
   const sources = use(sourcesPromise)
   const router = useRouter()
   const [url, setUrl] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  // A source's failure shows under that source, not under the URL field.
+  const [error, setError] = useState<{
+    message: string
+    source?: string
+  } | null>(null)
   // What is being added, so only that button shows "Adding…".
   const [adding, setAdding] = useState<Target | null>(null)
   const [choices, setChoices] = useState<string[] | null>(null)
@@ -108,8 +113,14 @@ function AddFeedForm({
   async function add(target: Target) {
     setAdding(target)
     setError(null)
-    // The sentence names the host the person typed, or the source's.
-    const typed = "url" in target ? target.url : ""
+    // The sentence names the host the person typed, or the source's own.
+    const source = "source" in target ? target.source : undefined
+    const typed =
+      "url" in target
+        ? target.url
+        : (sources.find((s) => s.id === target.source)?.url ?? "")
+    const fail = (code: string) =>
+      setError({ message: addFeedError(code, typed), source })
     try {
       const result = await subscribe(target)
       if (result.ok) {
@@ -124,19 +135,20 @@ function AddFeedForm({
       }
       if (result.code === "multiple" && "choices" in result && result.choices) {
         setChoices(result.choices)
-        setError(addFeedError("multiple", typed))
+        fail("multiple")
       } else {
         setChoices(null)
-        setError(addFeedError(result.code, typed))
+        fail(result.code)
       }
     } catch {
       setChoices(null)
-      setError(addFeedError("", typed))
+      fail("")
     }
     setAdding(null)
   }
 
   const busy = adding !== null
+  const urlError = error && !error.source ? error.message : null
   const header = (
     <DialogHeader>
       <DialogTitle>Add a feed</DialogTitle>
@@ -150,7 +162,7 @@ function AddFeedForm({
     return (
       <>
         {header}
-        <p className="text-muted-foreground">{error}</p>
+        <p className="text-muted-foreground">{error?.message}</p>
         <ItemGroup className="gap-2">
           {choices.map((choice) => (
             <Item key={choice} variant="outline">
@@ -200,7 +212,7 @@ function AddFeedForm({
             add({ url })
           }}
         >
-          <Field data-invalid={error ? true : undefined}>
+          <Field data-invalid={urlError ? true : undefined}>
             <FieldLabel htmlFor="add-feed-url">URL</FieldLabel>
             <div className="flex gap-2">
               <Input
@@ -213,7 +225,7 @@ function AddFeedForm({
                 value={url}
                 onChange={(event) => setUrl(event.target.value)}
                 disabled={busy}
-                aria-invalid={error ? true : undefined}
+                aria-invalid={urlError ? true : undefined}
               />
               <AddButton
                 type="submit"
@@ -223,39 +235,44 @@ function AddFeedForm({
                 Add
               </AddButton>
             </div>
-            <FieldError>{error}</FieldError>
+            <FieldError>{urlError}</FieldError>
           </Field>
         </form>
         <FieldSeparator>or pick a built-in source</FieldSeparator>
         <ItemGroup className="gap-2">
           {sources.map((source) => (
-            <Item key={source.id} variant="outline">
-              <ItemMedia variant="icon">
-                <RssIcon />
-              </ItemMedia>
-              <ItemContent>
-                <ItemTitle>{source.title}</ItemTitle>
-                <ItemDescription>{source.note}</ItemDescription>
-              </ItemContent>
-              <ItemActions>
-                {source.subscribed ? (
-                  <Badge variant="secondary">Subscribed</Badge>
-                ) : (
-                  <AddButton
-                    variant="outline"
-                    busy={busy}
-                    adding={
-                      adding !== null &&
-                      "source" in adding &&
-                      adding.source === source.id
-                    }
-                    onClick={() => add({ source: source.id })}
-                  >
-                    Subscribe
-                  </AddButton>
-                )}
-              </ItemActions>
-            </Item>
+            <div key={source.id} className="flex flex-col gap-1">
+              <Item variant="outline">
+                <ItemMedia variant="icon">
+                  <RssIcon />
+                </ItemMedia>
+                <ItemContent>
+                  <ItemTitle>{source.title}</ItemTitle>
+                  <ItemDescription>{source.note}</ItemDescription>
+                </ItemContent>
+                <ItemActions>
+                  {source.subscribed ? (
+                    <Badge variant="secondary">Subscribed</Badge>
+                  ) : (
+                    <AddButton
+                      variant="outline"
+                      busy={busy}
+                      adding={
+                        adding !== null &&
+                        "source" in adding &&
+                        adding.source === source.id
+                      }
+                      onClick={() => add({ source: source.id })}
+                    >
+                      Subscribe
+                    </AddButton>
+                  )}
+                </ItemActions>
+              </Item>
+              {error?.source === source.id && (
+                <FieldError>{error.message}</FieldError>
+              )}
+            </div>
           ))}
         </ItemGroup>
       </FieldGroup>
