@@ -1,9 +1,4 @@
-import {
-  ArrowLeftIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ExternalLinkIcon,
-} from "lucide-react"
+import { ArrowLeftIcon, ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { cache } from "react"
@@ -20,10 +15,10 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
-import { KeyHint } from "../../keys"
 import { StepLink } from "./step-link"
 import { BackButton } from "./back-button"
 import { EntryKeys } from "./entry-keys"
+import { OpenOriginal } from "./open-original"
 import { ReadButton } from "./read-button"
 
 // Rendering never marks read; ReadButton does, from the client after mount.
@@ -123,33 +118,7 @@ export default async function EntryPage({
           className="mx-1 data-vertical:h-4 data-vertical:self-center"
         />
         <ReadButton key={entry.id} entryId={entry.id} read={entry.read} />
-        {entry.url ? (
-          <KeyHint
-            label="Open original"
-            keys={["V"]}
-            render={
-              <Button
-                variant="outline"
-                nativeButton={false}
-                render={
-                  <a
-                    href={entry.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  />
-                }
-              />
-            }
-          >
-            <ExternalLinkIcon />
-            <span className="max-sm:sr-only">Open original</span>
-          </KeyHint>
-        ) : (
-          <Button variant="outline" disabled>
-            <ExternalLinkIcon />
-            <span className="max-sm:sr-only">Open original</span>
-          </Button>
-        )}
+        <OpenOriginal url={entry.url} />
         <EntryKeys
           entryId={entry.id}
           back={backHref}
