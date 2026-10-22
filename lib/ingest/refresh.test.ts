@@ -782,6 +782,29 @@ describe("refreshFeed with a source plugin", () => {
       })
     ).toMatchObject({ title: "Introducing Projects" })
   })
+
+  test("a cursor-blog run reading none of its new posts fails with backoff", async () => {
+    const CURSOR = "https://cursor.com/blog"
+    await feed({ url: CURSOR, pluginId: "cursor-blog", failureCount: 1 })
+    const list = readFileSync("test/fixtures/feeds/cursor-blog.html", "utf8")
+    const fetch: SafeFetch = async (url) => ({
+      status: url === CURSOR ? 200 : 404,
+      url,
+      headers: new Headers(),
+      text: url === CURSOR ? list : "",
+      kind: "unknown",
+    })
+    expect(await refreshFeed("f1", { fetch, now: NOW })).toEqual({
+      outcome: "failed",
+      error: "none of the new posts could be read",
+    })
+    expect(await row()).toMatchObject({
+      failureCount: 2,
+      nextFetchAt: at(4 * HOUR),
+      lastError: "none of the new posts could be read",
+    })
+    expect(await db.entry.count()).toBe(0)
+  })
 })
 
 describe("helpers", () => {

@@ -4,6 +4,9 @@ import { join } from "node:path"
 import { describe, expect, test } from "bun:test"
 
 import { SafeFetchError, type SafeFetch } from "@/lib/ingest/safe-fetch"
+import { refreshFeed } from "@/lib/ingest/refresh"
+import { subscribe } from "@/lib/reader"
+import { db } from "@/test/db"
 
 import { cursorBlog } from "./cursor-blog"
 import { SourceStatusError } from "./types"
@@ -34,6 +37,121 @@ const run = (fetch: SafeFetch) =>
   })
 
 describe("cursor-blog tester edge cases", () => {
+  test("three all-unreadable refreshes mark failing; recovery and a repeated refresh keep one entry", async () => {
+    const now = new Date("2026-10-22T10:00:00Z")
+    const feed = await db.feed.create({
+      data: {
+        url: listUrl,
+        pluginId: "cursor-blog",
+        title: "Cursor blog",
+        siteUrl: listUrl,
+      },
+    })
+    let readable = false
+    const calls: string[] = []
+    const fetch: SafeFetch = async (url) => {
+      calls.push(url)
+      return url === listUrl
+        ? answer(url, list(["projects"]))
+        : answer(url, readable ? savedPost : "", readable ? 200 : 404)
+    }
+    for (let failures = 1; failures <= 3; failures++) {
+      expect(await refreshFeed(feed.id, { fetch, now })).toEqual({
+        outcome: "failed",
+        error: "none of the new posts could be read",
+      })
+      expect(
+        await db.feed.findUniqueOrThrow({ where: { id: feed.id } })
+      ).toMatchObject({
+        failureCount: failures,
+        status: failures === 3 ? "failing" : "ok",
+        nextFetchAt: new Date(now.getTime() + 2 ** failures * 3_600_000),
+        lastSuccessAt: null,
+      })
+    }
+    readable = true
+    expect(await refreshFeed(feed.id, { fetch, now })).toEqual({
+      outcome: "ok",
+      stored: 1,
+    })
+    expect(
+      await db.feed.findUniqueOrThrow({ where: { id: feed.id } })
+    ).toMatchObject({
+      failureCount: 0,
+      status: "ok",
+      lastError: null,
+      lastSuccessAt: now,
+      title: "Cursor blog",
+      siteUrl: listUrl,
+    })
+    calls.length = 0
+    expect(await refreshFeed(feed.id, { fetch, now })).toEqual({
+      outcome: "ok",
+      stored: 0,
+    })
+    expect(calls).toEqual([listUrl])
+    expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(1)
+    expect(
+      await db.entry.findFirstOrThrow({ where: { feedId: feed.id } })
+    ).toMatchObject({
+      guid: postUrl("projects"),
+      title: "Introducing Projects",
+    })
+  })
+
+  test("an unreadable built-in add writes nothing and a later successful add can recover", async () => {
+    await db.user.create({
+      data: {
+        id: "cursor-tester",
+        name: "Tester",
+        email: "cursor-tester@example.com",
+      },
+    })
+    let readable = false
+    const fetch: SafeFetch = async (url) =>
+      url === listUrl
+        ? answer(url, list(["projects"]))
+        : answer(url, readable ? savedPost : "", readable ? 200 : 500)
+    expect(
+      await subscribe("cursor-tester", { source: "cursor-blog" }, { fetch })
+    ).toEqual({ ok: false, code: "not_found" })
+    expect(await db.feed.count()).toBe(0)
+    expect(await db.subscription.count()).toBe(0)
+    expect(await db.entry.count()).toBe(0)
+    readable = true
+    expect(
+      await subscribe("cursor-tester", { source: "cursor-blog" }, { fetch })
+    ).toMatchObject({ ok: true, existed: false })
+    expect(
+      await db.feed.findUniqueOrThrow({ where: { url: listUrl } })
+    ).toMatchObject({
+      title: "Cursor blog",
+      siteUrl: listUrl,
+      pluginId: "cursor-blog",
+    })
+    expect(await db.entry.count()).toBe(1)
+  })
+
+  test("missing body is a summary-only success and duplicate query links are fetched once", async () => {
+    const calls: string[] = []
+    const entries = await run(async (url) => {
+      calls.push(url)
+      return answer(
+        url,
+        url === listUrl
+          ? list(["summary?ref=first#top", "summary?ref=second"])
+          : '<meta property="og:title" content="Summary · Cursor"><meta name="description" content="Still readable">'
+      )
+    })
+    expect(calls).toEqual([listUrl, postUrl("summary")])
+    expect(entries).toHaveLength(1)
+    expect(entries[0]).toMatchObject({
+      title: "Summary",
+      summary: "Still readable",
+      contentHtml: "Still readable",
+    })
+  })
+
   test("preserves list status without looking up or fetching posts", async () => {
     for (const status of [304, 404, 410, 429, 500]) {
       const calls: string[] = []

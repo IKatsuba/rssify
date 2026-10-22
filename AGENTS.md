@@ -77,6 +77,9 @@ bun --env-file=.env.local scripts/refresh.ts              # one refresh cycle
 - A plugin is found by `canonical(url)`; the canonical URL is stored in
   `Feed.url` and is the plugin's whole configuration. Changing a shipped
   canonical form needs a migration that merges duplicates.
+  List-and-posts plugins use `fetchListThenPosts` (`sources/list-posts.ts`)
+  with `listUrl`, `links` and `readPost`; fetching and limits stay in the
+  helper.
 - Reading an entry through `/api/v1` or MCP never marks it read; the UI
   marks on open.
 - The queue consumer has no auth of its own: Vercel keeps queue consumers
