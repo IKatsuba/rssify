@@ -46,3 +46,5 @@ export const createApiKeyInput = z.object({
 export const revokeApiKeyInput = z.object({ keyId: id })
 
 export const disconnectAppInput = z.object({ clientId: id })
+
+export const deleteUserInput = z.object({ userId: id })
