@@ -240,7 +240,7 @@ function AddFeedForm({
         </form>
         <FieldSeparator>or pick a built-in source</FieldSeparator>
         {/* The list outgrows a phone's height; only it scrolls, so the URL field stays in view. */}
-        <ItemGroup className="-mx-4 max-h-[50vh] gap-2 overflow-y-auto px-4">
+        <ItemGroup className="-mx-4 max-h-[50vh] w-auto gap-2 overflow-y-auto px-4">
           {sources.map((source) => (
             <div key={source.id} className="flex flex-col gap-1">
               <Item variant="outline">
