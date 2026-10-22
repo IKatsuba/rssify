@@ -43,6 +43,7 @@ for (const id of ["nodejs-blog", "langchain-blog"]) {
         { fetch, now: NOW }
       )
       expect(first.ok).toBe(true)
+      if (!first.ok) throw new Error(`add failed: ${first.code}`)
       const second = await subscribe(
         "native-tester",
         { source: id },
@@ -138,7 +139,7 @@ for (const id of ["nodejs-blog", "langchain-blog"]) {
     for (const code of ["unreachable", "too_large"] as const) {
       test(`guarded fetch ${code} writes nothing`, async () => {
         const fetch: SafeFetch = async () => {
-          throw new SafeFetchError(code)
+          throw new SafeFetchError(code, `Fixture ${code}`)
         }
         expect(
           await subscribe("native-tester", { source: id }, { fetch })
