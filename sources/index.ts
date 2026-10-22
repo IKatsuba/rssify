@@ -6,10 +6,23 @@ export const plugins: Record<string, SourcePlugin> = {
   "cursor-blog": cursorBlog,
 }
 
-// Only an exact match: a plugin owns its list page's URL, nothing else.
+// The plugin owning an address, with the URL it stores for it. Shapes are
+// disjoint, so the first match is the only one. Object.values reads own
+// keys only, so a name on the prototype is no plugin.
 export function pluginFor(
   url: string,
   registry: Record<string, SourcePlugin> = plugins
-): SourcePlugin | undefined {
-  return Object.values(registry).find((plugin) => plugin.matches === url)
+): { plugin: SourcePlugin; url: string } | undefined {
+  for (const plugin of Object.values(registry)) {
+    let parsed
+    try {
+      // A fresh URL each time, so one plugin cannot change another's input.
+      parsed = new URL(url)
+    } catch {
+      return undefined
+    }
+    const canonical = plugin.canonical(parsed)
+    if (canonical !== null) return { plugin, url: canonical }
+  }
+  return undefined
 }

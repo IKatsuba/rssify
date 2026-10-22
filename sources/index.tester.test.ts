@@ -26,7 +26,7 @@ describe("source lookup tester edges", () => {
       url: "https://cursor.com/blog",
       note: "cursor.com/blog — no feed of its own",
     })
-    expect(pluginFor(source!.url)?.id).toBe(source!.id)
+    expect(pluginFor(source!.url)?.plugin.id).toBe(source!.id)
     for (const url of [
       "https://cursor.com/blog/",
       "https://cursor.com/blog/projects",
@@ -45,7 +45,10 @@ describe("source lookup tester edges", () => {
     let fetchCalls = 0
     const first: SourcePlugin = {
       id: "first",
-      matches: "https://example.com/blog",
+      canonical: (u) =>
+        u.href === "https://example.com/blog"
+          ? "https://example.com/blog"
+          : null,
       fetchEntries: async () => {
         fetchCalls++
         throw new Error("lookup must not execute a plugin")
@@ -54,11 +57,20 @@ describe("source lookup tester edges", () => {
     const second: SourcePlugin = {
       ...first,
       id: "second",
-      matches: "https://other.example/blog",
+      canonical: (u) =>
+        u.href === "https://other.example/blog"
+          ? "https://other.example/blog"
+          : null,
     }
     const registry = { first, second }
-    expect(pluginFor(second.matches, registry)).toBe(second)
-    expect(pluginFor(first.matches, registry)).toBe(first)
+    expect(pluginFor("https://other.example/blog", registry)).toEqual({
+      plugin: second,
+      url: "https://other.example/blog",
+    })
+    expect(pluginFor("https://example.com/blog", registry)).toEqual({
+      plugin: first,
+      url: "https://example.com/blog",
+    })
     for (const url of [
       "http://example.com/blog",
       "https://example.com/blog?feed=1",

@@ -77,6 +77,7 @@ function run(
   deadline = new AbortController().signal
 ) {
   return cursorBlog.fetchEntries({
+    url: LIST,
     fetch,
     known: async (urls) => new Set(urls.filter((url) => known.includes(url))),
     deadline,
@@ -100,7 +101,10 @@ const page = (head: string, body = "") =>
 describe("cursorBlog", () => {
   test("owns the list page", () => {
     expect(cursorBlog.id).toBe("cursor-blog")
-    expect(cursorBlog.matches).toBe(LIST)
+    expect(cursorBlog.canonical(new URL(LIST))).toBe(LIST)
+    for (const other of [`${LIST}/`, `${LIST}?a=1`, "http://cursor.com/blog"]) {
+      expect(cursorBlog.canonical(new URL(other))).toBeNull()
+    }
   })
 
   test("reads posts from the saved list and post pages", async () => {
@@ -139,6 +143,7 @@ describe("cursorBlog", () => {
     const s = site({ [LIST]: realPosts[LIST] })
     const asked: string[][] = []
     await cursorBlog.fetchEntries({
+      url: LIST,
       fetch: s.fetch,
       known: async (urls) => {
         asked.push(urls)

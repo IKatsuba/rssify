@@ -94,7 +94,8 @@ async function fetchPost(post: Post, ctx: Ctx): Promise<IngestedEntry | null> {
 
 export const cursorBlog: SourcePlugin = {
   id: "cursor-blog",
-  matches: LIST_URL,
+  // Exact, as before: the list page and nothing else.
+  canonical: (url) => (url.href === LIST_URL ? LIST_URL : null),
   async fetchEntries(ctx) {
     const response = await ctx.fetch(LIST_URL, { deadline: ctx.deadline })
     if (!ok(response.status)) {

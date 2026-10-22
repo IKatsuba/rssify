@@ -15,9 +15,13 @@ export class SourceStatusError extends Error {
 
 // A scraper for a site without a feed.
 export interface SourcePlugin {
-  id: string // stored on Feed.pluginId
-  matches: string // the list-page URL; Feed.url for its feed
+  id: string // stored on Feed.pluginId; never renamed without a migration
+  // Pure, no I/O: the stored URL for an address this plugin owns, else null.
+  canonical(url: URL): string | null
+  // The title of a new feed; a built-in source’s title wins.
+  title?(url: string): string
   fetchEntries(ctx: {
+    url: string // the stored, canonical Feed.url; plugins parse it
     fetch: SafeFetch
     known(urls: string[]): Promise<Set<string>>
     deadline: AbortSignal

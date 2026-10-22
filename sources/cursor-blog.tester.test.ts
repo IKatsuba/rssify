@@ -27,6 +27,7 @@ const answer = (url: string, text: string, status = 200) => ({
 })
 const run = (fetch: SafeFetch) =>
   cursorBlog.fetchEntries({
+    url: listUrl,
     fetch,
     known: async () => new Set(),
     deadline: new AbortController().signal,
@@ -40,6 +41,7 @@ describe("cursor-blog tester edge cases", () => {
       let lookups = 0
       const result = await cursorBlog
         .fetchEntries({
+          url: listUrl,
           fetch: async (url) => {
             calls.push(url)
             return { ...answer(url, list(["projects"]), status), headers }
@@ -102,6 +104,7 @@ describe("cursor-blog tester edge cases", () => {
       return answer(url, savedPost)
     }
     const ctx = {
+      url: listUrl,
       fetch,
       known: async (urls: string[]) =>
         new Set(urls.filter((url) => known.has(url))),

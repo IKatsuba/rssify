@@ -492,7 +492,11 @@ describe("refreshFeed with a source plugin", () => {
   })
   type Ctx = Parameters<SourcePlugin["fetchEntries"]>[0]
   const registry = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
-    scrape: { id: "scrape", matches: LIST, fetchEntries },
+    scrape: {
+      id: "scrape",
+      canonical: (u: URL) => (u.href === LIST ? LIST : null),
+      fetchEntries,
+    },
   })
   const pluginFeed = (data: Record<string, unknown> = {}) =>
     feed({ url: LIST, pluginId: "scrape", ...data })
@@ -519,6 +523,7 @@ describe("refreshFeed with a source plugin", () => {
     expect(
       await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
     ).toEqual({ outcome: "ok", stored: 2 })
+    expect(ctx?.url).toBe(LIST)
     expect(ctx?.fetch).toBe(noFetch)
     expect(ctx?.deadline).toBeInstanceOf(AbortSignal)
     expect(ctx?.deadline.aborted).toBe(false)
@@ -587,6 +592,35 @@ describe("refreshFeed with a source plugin", () => {
         failureCount: 1,
         nextFetchAt: at(2 * HOUR),
         lastFetchedAt: NOW,
+        lastError: "the source isn’t supported any more",
+      })
+    }
+  })
+
+  test("a stored URL the plugin no longer gives as its own is unsupported", async () => {
+    for (const canonical of [() => null, () => `${LIST}/`]) {
+      await db.feed.deleteMany()
+      await pluginFeed()
+      let ran = false
+      const plugins = {
+        scrape: {
+          id: "scrape",
+          canonical,
+          fetchEntries: async () => {
+            ran = true
+            return [entry("a")]
+          },
+        },
+      }
+      expect(
+        await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+      ).toEqual({
+        outcome: "failed",
+        error: "the source isn’t supported any more",
+      })
+      expect(ran).toBe(false)
+      expect(await row()).toMatchObject({
+        failureCount: 1,
         lastError: "the source isn’t supported any more",
       })
     }

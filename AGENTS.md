@@ -227,10 +227,11 @@ and refresh cycle inline, without a queue.
   list's `asOf` as its `upTo` cutoff.
   Inaccessible data returns `not_found`. `subscribe(userId, { url } | { source })`
   checks the 500-subscription cap first (`limit`), resolves built-in sources
-  (unknown IDs return `not_found`) and normalises URLs without fragments.
-  Existing feeds need no fetch. New feeds are fetched outside the transaction;
-  one transaction locks the user, rechecks the cap, inserts the feed, first
-  entries, success polling fields and subscription. A URL conflict subscribes
+  (unknown IDs return `not_found`) and canonicalises URLs before looking up
+  stored feeds. Plugin URL spellings share one row; existing feeds need no
+  fetch. New feeds are fetched outside the transaction; one transaction locks
+  the user, rechecks the cap, inserts the feed, first entries, success polling
+  fields and subscription. A URL conflict subscribes
   to the winner's feed. Failures write nothing; DB errors throw. Last
   unsubscribe deletes the feed, entries and read marks in one transaction.
 - `lib/reader-view.ts`: reader URL parameters and links, empty states and
@@ -238,24 +239,35 @@ and refresh cycle inline, without a queue.
   sentences with Intl; future dates read as now.
 - `lib/ingest/add.ts`: `fetchForAdd` uses `safeFetch` with a 15 s deadline
   and parses against the final response URL. The add path discovers HTML
-  after parse failure, using body sniffing or an HTML Content-Type:
-  no links returns `not_found`, several return `multiple` with `choices`,
-  and one rechecks stored feeds before a separate 15 s fetch. Discovery
-  stops there; another HTML page returns `not_found`. Direct feeds keep the
-  normalised input URL after redirects; discovery stores the discovered URL.
+  after parse failure, using body sniffing or an HTML Content-Type. Subscribe
+  canonicalises and deduplicates discovered URLs: none returns `not_found`,
+  several return `multiple` with `choices`, and one rechecks stored feeds
+  before fetching. Discovery stops there; another HTML page is `not_found`.
+  Direct feeds keep the normalised input URL after redirects; discovered
+  feeds use the canonical discovered URL. Each plain fetch gets 15 s.
   HTTP 404/410 and non-feeds return `not_found`, other non-2xx responses
   `unreachable`; `SafeFetchError` codes pass through. A matching plugin gets
-  one 40 s deadline; fetch errors keep their code and list-page HTTP errors
-  map as above. Other throws or zero entries return `not_found`.
+  one 40 s deadline and its canonical URL as `ctx.url` and `siteUrl`. Its
+  title is the built-in title, else `plugin.title(url)`, else null. Fetch
+  errors keep their code; list-page HTTP errors map as above. Other throws
+  or zero entries return `not_found`.
+- `lib/ingest/target.ts`: pure, idempotent `canonicalUrl(input, plugins)`
+  runs `normaliseUrl`, then uses the first plugin's canonical URL or the
+  normalised URL. Invalid inputs return null. `normaliseUrl` trims, parses
+  HTTP(S) URLs and removes fragments; `lib/reader.ts` re-exports it.
+  Changing shipped canonical forms requires a migration merging duplicates.
 - `lib/ingest/discover.ts`: `discoverFeeds(html, pageUrl)` uses cheerio to
   read alternate RSS/Atom/RDF/JSON Feed links, resolving against `<base>`
   or the final page URL. It returns deduplicated HTTP(S) URLs in document
   order, with no path guessing.
 - `sources/`: `builtinSources` maps `claude-code` to
   `https://claude.dev/rss.xml` and `cursor-blog` to `https://cursor.com/blog`.
-  `SourcePlugin` defines `fetchEntries` with guarded fetch, known-URL lookup
-  and a shared deadline; `pluginFor` matches the URL exactly against
-  `matches`. The registered `cursor-blog` plugin reads static HTML with
+  `SourcePlugin` has a stable `id`, pure `canonical(URL): string | null`,
+  optional `title(url)` and `fetchEntries` with the stored canonical URL,
+  guarded fetch, known-URL lookup and a shared deadline. `pluginFor` returns
+  the first `{ plugin, url }` match or undefined, using own registry keys
+  and a fresh URL per plugin. `cursor-blog` owns exactly
+  `https://cursor.com/blog`. It reads static HTML with
   cheerio: article links must be same-origin HTTPS `/blog/` post URLs;
   query/hash are stripped and duplicates removed in document order.
   It fetches at most 10 unknown posts per run, four at a time, using URLs
@@ -297,9 +309,10 @@ and refresh cycle inline, without a queue.
   plugins, now })` uses conditional `safeFetch` with a 15 s deadline for
   feeds, parsing against the final response URL without changing the stored
   URL. Missing feeds return; `skipIfFreshWithin` skips recent fetches
-  (seconds). Plugin feeds get one 40 s deadline and `known()` checks stored
-  guids for that feed. Plugin success uses the same storage and scheduling,
-  without validators or changing title/siteUrl. Unknown plugin IDs fail with
+  (seconds). Plugin feeds get one 40 s deadline, `ctx.url = feed.url` and
+  `known()` checks stored guids. Success uses the same storage and scheduling,
+  without validators or changing title/siteUrl. Unknown plugin IDs or a
+  `plugin.canonical(new URL(feed.url))` unequal to `feed.url` fail with
   "the source isn’t supported any more"; fetch errors use the usual texts,
   list-page HTTP errors use the status handling below, and other throws
   store their message. Database errors, including in `known()`, throw even
