@@ -869,6 +869,41 @@ describe("subscribe to a new feed", () => {
     })
   })
 
+  test("two github-trending spellings → one feed, the second with no fetch", async () => {
+    const JS_MONTHLY = "https://github.com/trending/javascript?since=monthly"
+    const { fetch, calls } = site({
+      [JS_MONTHLY]: {
+        kind: "unknown",
+        text: readFileSync(
+          "test/fixtures/github-trending/javascript-monthly.html",
+          "utf8"
+        ),
+      },
+    })
+    const first = await subscribe(
+      "u1",
+      { url: "http://www.github.com/trending/JavaScript/?since=monthly" },
+      { fetch, now: NOW }
+    )
+    const second = await subscribe(
+      "u2",
+      { url: `${JS_MONTHLY}&spoken_language_code=` },
+      { fetch, now: NOW }
+    )
+    expect(first).toMatchObject({ ok: true, existed: false })
+    expect(second).toMatchObject({ ok: true, existed: false })
+    expect(calls.map((call) => call.url)).toEqual([JS_MONTHLY])
+    const feed = await db.feed.findUniqueOrThrow({ where: { url: JS_MONTHLY } })
+    expect(feed).toMatchObject({
+      pluginId: "github-trending",
+      title: "GitHub trending · javascript · this month",
+      siteUrl: JS_MONTHLY,
+    })
+    expect(await db.feed.count()).toBe(1)
+    expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(17)
+    expect(await db.subscription.count({ where: { feedId: feed.id } })).toBe(2)
+  })
+
   test("two users adding one new URL at once share one feed", async () => {
     let release!: () => void
     const gate = new Promise<void>((resolve) => (release = resolve))

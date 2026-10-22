@@ -116,3 +116,55 @@ describe("pluginFor", () => {
     expect(pluginFor("https://example.com/__proto__", {})).toBeUndefined()
   })
 })
+
+describe("canonicalUrl with the registered github-trending plugin", () => {
+  const JS_MONTHLY = "https://github.com/trending/javascript?since=monthly"
+
+  test("every spelling reaches one URL, idempotently", () => {
+    for (const spelling of [
+      JS_MONTHLY,
+      "http://github.com/trending/javascript?since=monthly",
+      "https://www.github.com/trending/JavaScript/?since=monthly",
+      "https://github.com/trending/javascript?since=monthly&spoken_language_code=",
+      "https://github.com/trending/javascript?since=monthly&ref=x#top",
+    ]) {
+      expect(canonicalUrl(spelling)).toBe(JS_MONTHLY)
+    }
+    for (const input of [
+      "https://github.com/trending",
+      "https://github.com/trending/C++?since=weekly&spoken_language_code=zh",
+    ]) {
+      const once = canonicalUrl(input)!
+      expect(canonicalUrl(once)).toBe(once)
+    }
+    expect(canonicalUrl("https://github.com/trending/")).toBe(
+      "https://github.com/trending?since=daily"
+    )
+  })
+
+  test("each canonical URL matches exactly one plugin", () => {
+    for (const url of [
+      JS_MONTHLY,
+      "https://github.com/trending?since=daily",
+      "https://github.com/trending/c%2B%2B?since=weekly&spoken_language_code=zh",
+      "https://cursor.com/blog",
+    ]) {
+      const owners = Object.values(plugins).filter(
+        (plugin) => plugin.canonical(new URL(url)) !== null
+      )
+      expect([url, owners.length]).toEqual([url, 1])
+    }
+  })
+
+  test("what the plugin refuses stays a normalised URL", () => {
+    for (const url of [
+      "https://github.com/trending?since=yearly",
+      "https://github.com/trending/developers",
+      "https://github.com.evil.invalid/trending",
+      "https://gitlab.com/trending",
+    ]) {
+      expect(canonicalUrl(url)).toBe(url)
+      expect(pluginFor(url)).toBeUndefined()
+    }
+  })
+})
