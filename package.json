@@ -19,6 +19,7 @@
     "@better-auth/cimd": "1.7.12",
     "@better-auth/mcp": "1.7.12",
     "@better-auth/oauth-provider": "1.7.12",
+    "@modelcontextprotocol/server": "2.3.1",
     "@prisma/adapter-neon": "7.10.1",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
