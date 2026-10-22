@@ -2,7 +2,7 @@
 
 import { MailIcon, MailOpenIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -41,7 +41,10 @@ export function ReadButton({
   )
   const opened = useRef(false)
 
-  useEffect(() => {
+  // A layout effect, so the read state shows at once: a passive effect's
+  // update waits behind the pending server action and would leave the
+  // button saying "Mark as read" until the open call returns.
+  useLayoutEffect(() => {
     // Development runs effects twice; once is enough.
     if (opened.current || initialRead) return
     opened.current = true
