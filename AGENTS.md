@@ -67,7 +67,7 @@ and refresh cycle inline, without a queue.
   redirecting, registration-closed or error states.
 - `app/(reader)/`: session-only layout with a responsive sidebar, unread
   badges, failing/gone markers and an email menu for Settings, shortcuts,
-  theme and sign-out.
+  Admin (admin only), theme and sign-out.
   `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
   empty states and feed notices. Mark all as read confirms the list scope,
   uses `asOf` as the cutoff, is disabled at zero unread and toasts the actual
@@ -101,6 +101,23 @@ and refresh cycle inline, without a queue.
   deletes all that user's consents for the client and revokes its refresh
   tokens in one transaction through `lib/mcp-clients.ts`; issued access
   tokens remain valid for up to one hour. Success and failure toast.
+- `app/(reader)/admin/`: `/admin` uses `requireAdmin`, has a loading state
+  and the title `Admin · rssify`. Users lists email, joined date and
+  subscription count, oldest first, with a `you` badge and confirmed Delete
+  for other users; success and failure toast. Registration shows open/closed
+  with instructions to change `REGISTRATION_ENABLED` and redeploy. Feeds
+  lists subscribed URLs, subscriber counts, Failing/Gone/OK status, failures,
+  last error (`—` if absent) and relative last success (`Never` if absent),
+  failing then gone then OK, ordered by URL within each status. Neither list
+  pages. Phones hide Joined/Feeds in Users and Subscribers/Failures/Last
+  success in Feeds; feed URLs and errors wrap. Signed-in non-admins see the
+  noindex not-found page without admin data; streaming can leave HTTP 200.
+- `lib/admin.ts`: lists users and subscribed feeds for the admin page.
+  `deleteUser(actorId, userId)` refuses self-deletion; a missing user is a
+  no-op. One transaction locks the user before their feeds, matching
+  subscribe's lock order, deletes the user with cascading sessions, accounts,
+  subscriptions, read marks, API keys and OAuth rows, then deletes feeds
+  nobody else follows with their entries. Shared feeds stay.
 - `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
   the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
   v for the original and r to refresh, even when empty. Entries use j/k
@@ -119,9 +136,10 @@ and refresh cycle inline, without a queue.
   the feed title (URL fallback) for toasts. `createApiKey` and `revokeApiKey`
   use `lib/api-keys.ts` with session headers, as does the Settings list
   loader; a key cannot manage keys. `disconnectApp` uses the session user ID
-  and `lib/mcp-clients.ts`, revalidating the layout on success. Actions parse
-  inputs after the session check and throw `TypeError` for invalid input.
-  API keys do not grant access.
+  and `lib/mcp-clients.ts`, revalidating the layout on success. `deleteUser`
+  checks `requireAdmin` before parsing, calls `lib/admin.ts` and revalidates
+  the layout. Actions parse inputs after authorization and throw `TypeError`
+  for invalid input. API keys do not grant access.
 - `lib/reader-schemas.ts`: shared Zod 4 inputs for actions, `/api/v1` and MCP.
   Subscribe accepts exactly one of `{ url }` or `{ source }`; mark-all
   accepts a Date or ISO datetime `upTo`, preprocessing Dates to ISO strings
@@ -182,6 +200,8 @@ and refresh cycle inline, without a queue.
   Existing consent covering the request is reused until disconnected.
 - `lib/actor.ts`: session-only user/admin guards and an `x-api-key` guard.
   `requireUser` also returns email for display; ownership uses user ID.
+  `requireAdmin` redirects missing sessions to `/sign-in` and calls
+  `notFound()` for signed-in non-admins.
   Keys never grant admin access or use session cookies; invalid keys return
   401, and rate-limited keys return 429 with `Retry-After`.
   `withMcpAuth` authenticates OAuth requests to `/api/mcp`:
@@ -391,7 +411,8 @@ commits, fixtures and messages.
   `http://localhost:3210` locally.
 - `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`: Vercel OAuth credentials.
 - `ADMIN_EMAIL`: verified admin email; unset means no admin.
-- `REGISTRATION_ENABLED`: defaults to `false`.
+- `REGISTRATION_ENABLED`: defaults to `false`; change and redeploy to update
+  registration. `/admin` displays the current state.
 - `CRON_SECRET`: required bearer secret for the refresh cron route.
 - `VERCEL_ENV`: supplied by Vercel; `vercel-build` generates Prisma,
   deploys migrations on production/preview, then builds Next.js.
