@@ -45,6 +45,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton"
 
 import { useAddFeed } from "./add-feed"
+import { useShowShortcuts } from "./keys"
 
 export type SidebarFeed = {
   id: string
@@ -194,6 +195,7 @@ function FeedItem({
 
 function UserMenu({ email }: { email: string }) {
   const { theme, setTheme } = useTheme()
+  const showShortcuts = useShowShortcuts()
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -203,6 +205,9 @@ function UserMenu({ email }: { email: string }) {
             <ChevronDownIcon className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">
+            <DropdownMenuItem onClick={showShortcuts}>
+              Keyboard shortcuts
+            </DropdownMenuItem>
             <DropdownMenuSub>
               <DropdownMenuSubTrigger>Theme</DropdownMenuSubTrigger>
               <DropdownMenuSubContent>
