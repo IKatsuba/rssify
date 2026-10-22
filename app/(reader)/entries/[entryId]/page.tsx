@@ -132,7 +132,7 @@ export default async function EntryPage({
           </Button>
         )}
       </header>
-      <article className="mx-auto prose prose-sm w-full min-w-0 px-4 py-8 dark:prose-invert">
+      <article className="mx-auto prose prose-sm w-full min-w-0 px-4 py-8 dark:prose-invert prose-code:before:content-none prose-code:after:content-none">
         <p className="not-prose text-xs text-muted-foreground">
           {meta.join(" · ")}
         </p>
@@ -143,8 +143,11 @@ export default async function EntryPage({
           {entry.contentHtml ? (
             // Sanitised at ingest (lib/ingest/sanitize.ts) before storage.
             <div dangerouslySetInnerHTML={{ __html: entry.contentHtml }} />
+          ) : entry.summary ? (
+            <p>{entry.summary}</p>
           ) : (
-            <p>{entry.summary ?? "This entry has no text"}</p>
+            // Our state line, not the entry's text, so it reads as muted.
+            <p className="text-muted-foreground">This entry has no text</p>
           )}
         </div>
         {!entry.contentHtml && entry.url && (
