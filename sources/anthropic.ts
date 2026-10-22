@@ -10,6 +10,7 @@ import { fetchListThenPosts, type Post } from "./list-posts"
 import type { SourcePlugin } from "./types"
 
 const ORIGIN = "https://www.anthropic.com"
+const TITLE_SUFFIX = " | Anthropic"
 const MONTHS = [
   "Jan",
   "Feb",
@@ -59,7 +60,11 @@ function postUrl(href: string | undefined, pageUrl: string) {
 // that changes between builds.
 function readPost(html: string, post: Post): IngestedEntry {
   const $ = load(html)
-  const title = $('meta[property="og:title"]').attr("content")?.trim()
+  // Some pages' og:title carries the site name; most do not.
+  const ogTitle = $('meta[property="og:title"]').attr("content")?.trim()
+  const title = ogTitle?.endsWith(TITLE_SUFFIX)
+    ? ogTitle.slice(0, -TITLE_SUFFIX.length)
+    : ogTitle
   const description = $('meta[name="description"]').attr("content")
   const body = $("p.post-text").first().parent()
   const published =

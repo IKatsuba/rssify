@@ -148,14 +148,14 @@ describe("anthropicEngineering", () => {
     }
   })
 
-  test("a page without the body is a summary-only entry", async () => {
+  test("a page without the body is a summary-only entry, its title without the site suffix", async () => {
     const url = research("managed-agents")
     const { entries } = await read(
       anthropicEngineering,
       {
         [LIST]: list,
         [url]: page(
-          '<meta property="og:title" content="Agents &amp; harnesses">' +
+          '<meta property="og:title" content="Agents &amp; harnesses | Anthropic">' +
             '<meta name="description" content="Short <b>text</b>">' +
             '<meta property="article:published_time" content="2026-04-08T00:00:00.000Z">',
           "<main><p>Not a post-text paragraph</p></main>"
