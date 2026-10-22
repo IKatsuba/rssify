@@ -24,7 +24,7 @@ describe("source lookup tester edges", () => {
       id: "cursor-blog",
       title: "Cursor blog",
       url: "https://cursor.com/blog",
-      note: "No feed of its own",
+      note: "cursor.com/blog — no feed of its own",
     })
     expect(pluginFor(source!.url)?.id).toBe(source!.id)
     for (const url of [
