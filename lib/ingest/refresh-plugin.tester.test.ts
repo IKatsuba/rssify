@@ -18,7 +18,11 @@ const seed = () =>
   })
 const row = () => db.feed.findUniqueOrThrow({ where: { id: "plugin-tester" } })
 const registry = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
-  "cursor-blog": { id: "cursor-blog", matches: LIST, fetchEntries },
+  "cursor-blog": {
+    id: "cursor-blog",
+    canonical: (u: URL) => (u.href === LIST ? LIST : null),
+    fetchEntries,
+  },
 })
 const noFetch: SafeFetch = async () => {
   throw new Error("unexpected network request")
