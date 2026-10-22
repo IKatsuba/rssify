@@ -1,7 +1,7 @@
 "use client"
 
 import { CopyIcon, KeyRoundIcon, PlusIcon } from "lucide-react"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -238,6 +238,10 @@ function CreatedKeyDialog({
   created?: { name: string; key: string }
   onDone: () => void
 }) {
+  // Focus starts on Copy: focusing the field would put its caret at the end
+  // and scroll the key's start out of view on a narrow screen.
+  const copyButton = useRef<HTMLButtonElement>(null)
+
   async function copy() {
     if (!created) return
     await navigator.clipboard.writeText(created.key)
@@ -251,7 +255,11 @@ function CreatedKeyDialog({
       disablePointerDismissal
       onOpenChange={(open) => !open && onDone()}
     >
-      <DialogContent showCloseButton={false} className="sm:max-w-md">
+      <DialogContent
+        showCloseButton={false}
+        className="sm:max-w-md"
+        initialFocus={copyButton}
+      >
         <DialogHeader>
           <DialogTitle>Copy your new key</DialogTitle>
           <DialogDescription>
@@ -272,6 +280,7 @@ function CreatedKeyDialog({
             />
             <InputGroupAddon align="inline-end">
               <InputGroupButton
+                ref={copyButton}
                 size="icon-xs"
                 aria-label="Copy key"
                 onClick={copy}
