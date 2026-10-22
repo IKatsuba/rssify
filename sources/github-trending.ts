@@ -35,7 +35,7 @@ function canonical(url: URL): string | null {
     if (lang === "developers") return null
   }
   const since = url.searchParams.get("since") ?? "daily"
-  if (!(since in PERIODS)) return null
+  if (!Object.hasOwn(PERIODS, since)) return null
   const code = url.searchParams.get("spoken_language_code")
   // encodeURIComponent writes a slug as GitHub links it: c++ is c%2B%2B.
   return (
