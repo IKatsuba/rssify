@@ -64,7 +64,8 @@ and refresh cycle inline, without a queue.
   redirects signed-in users to `/`; otherwise it shows Vercel sign-in,
   redirecting, registration-closed or error states.
 - `app/(reader)/`: session-only layout with a responsive sidebar, unread
-  badges, failing/gone markers and an email menu for theme and sign-out.
+  badges, failing/gone markers and an email menu for shortcuts, theme and
+  sign-out.
   `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
   empty states and feed notices. Mark all as read confirms the list scope,
   uses `asOf` as the cutoff, is disabled at zero unread and toasts the actual
@@ -85,6 +86,18 @@ and refresh cycle inline, without a queue.
   `catchError` boundary. Sonner supplies reader toasts.
   `app/error.tsx` catches reader layout failures. `data.ts` caches session
   and subscription reads per request; the layout title includes unread count.
+- `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
+  the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
+  v for the original and r to refresh, even when empty. Entries use j/k
+  for next/previous, u/Esc for Back, m and v. Both use a for Add a feed,
+  Shift+A to confirm marking their list read (Enter confirms), and ? for
+  Keyboard shortcuts. The dialog also opens from the email menu and has
+  Turn shortcuts off/on. Tooltips and menus show platform-specific hints.
+  `lib/list-cursor.ts` holds cursor logic; `return-point.ts` saves the page,
+  scope and current entry in sessionStorage. The cursor starts on the first
+  row; Back restores the current entry's row, including after j/k crosses
+  pages, or falls back to the first row. Under Unread, m keeps its index,
+  clamped to the remaining rows.
 - `app/(reader)/actions.ts`: session-only `subscribe`, `unsubscribe`,
   `markRead`, `markUnread` and `markAllRead` server actions use `requireUser`
   and its user ID, then revalidate `('/', 'layout')`. Subscribe also returns
@@ -98,7 +111,8 @@ and refresh cycle inline, without a queue.
   401, and rate-limited keys return 429 with `Retry-After`.
 - `lib/reader.ts`: user-scoped subscriptions with unread counts, entry
   queries ordered by `sortAt`/id descending with keyset paging, and scoped
-  neighbours. `listEntries` accepts `cursor` for older or `before` for newer
+  neighbours. `getEntryNavigation` also returns a page cursor for Back.
+  `listEntries` accepts `cursor` for older or `before` for newer
   (`before` wins), returning `nextCursor` and `prevCursor`. Reads do not mark
   entries read; read/unread writes are idempotent, and mark-all uses the
   list's `asOf` as its `upTo` cutoff.
@@ -241,6 +255,12 @@ and refresh cycle inline, without a queue.
   Existing users can still sign in.
 - Session cookies are cached for five minutes. API keys use the `rss_`
   prefix and a default limit of 120 requests per minute.
+- `lib/keys.ts` defines the key map, switch helpers and `canHandleKey` guard;
+  the theme's d listener also uses the guard. Shortcuts default on; localStorage
+  `rssify:shortcuts` set to "off" disables them. The guard rejects typing
+  targets, open dialogs/sheets/menus and modifiers except Shift. Only
+  handled keys prevent default; Space and / keep browser behaviour.
+  The template's ⌘B/Ctrl+B sidebar chord stays independent of the switch.
 - Keep safe-fetch's `undici/index.js` import: `bun test` substitutes a shim
   for bare `undici` that ignores the custom Agent and bypasses the guard.
   Next's build bundles `undici/index.js` into the consumer route.
