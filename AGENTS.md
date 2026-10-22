@@ -7,10 +7,10 @@ shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. The session-only reader uses
 Vercel sign-in, marks entries read on open and manages API keys in Settings.
 It shares subscriptions and read-state operations with API-key-only
-`/api/v1`. An OAuth provider supplies MCP consent and connected-app
-management; the `/api/mcp` endpoint is not implemented yet. Ingest has
-guarded HTTP, feed parsing, sanitising, refresh and add-feed helpers, cron
-and queue scheduling, and a Cursor blog source plugin.
+`/api/v1` and `/api/mcp` (OAuth or API key). The OAuth provider supplies
+MCP consent and connected-app management. Ingest has guarded HTTP, feed
+parsing, sanitising, refresh and add-feed helpers, cron and queue
+scheduling, and a Cursor blog source plugin.
 
 ## Commands
 
@@ -122,9 +122,10 @@ and refresh cycle inline, without a queue.
   and `lib/mcp-clients.ts`, revalidating the layout on success. Actions parse
   inputs after the session check and throw `TypeError` for invalid input.
   API keys do not grant access.
-- `lib/reader-schemas.ts`: shared Zod 4 inputs for actions and `/api/v1`.
+- `lib/reader-schemas.ts`: shared Zod 4 inputs for actions, `/api/v1` and MCP.
   Subscribe accepts exactly one of `{ url }` or `{ source }`; mark-all
-  accepts a Date or ISO datetime `upTo`. Zod is a direct dependency.
+  accepts a Date or ISO datetime `upTo`, preprocessing Dates to ISO strings
+  so MCP can expose its JSON Schema. Zod is a direct dependency.
 - `app/api/v1/`: JSON Route Handlers over `lib/api-v1.ts` and `lib/reader.ts`,
   each with `maxDuration = 60`. Only `x-api-key` authenticates; cookies do not.
   GET/POST `subscriptions` list or subscribe (201 new, 200 existing);
@@ -137,6 +138,29 @@ and refresh cycle inline, without a queue.
   Errors use `{ error: { code, message } }`: 400 `invalid_input`, 401,
   404 for missing or inaccessible data, 422 for subscribe failures (the
   add-feed sentence and discovery `choices` when present), and 429.
+- `app/api/mcp/route.ts`: POST only, `maxDuration = 60`, delegating to
+  `lib/mcp/route.ts`. SDK v2 `@modelcontextprotocol/server` 2.3.1 serves
+  Streamable HTTP with a fresh server per request and `legacy: "stateless"`
+  for 2025-era clients; GET/DELETE return 405. Before auth, the SDK refuses
+  a present Origin whose hostname differs from `BETTER_AUTH_URL`'s;
+  scheme and port are not compared. A present `x-api-key` takes precedence
+  over OAuth, including an empty or invalid key, with `/api/v1`'s 401/429
+  checks. Otherwise `withMcpAuth` checks the OAuth bearer. `Bearer rss_…`
+  is refused; query `access_token` and cookies are ignored.
+- `lib/mcp/server.ts`: `buildMcpServer(userId)` registers `list_feeds`,
+  `subscribe`, `unsubscribe`, `list_entries`, `get_entry`, `mark_read`,
+  `mark_unread` and `mark_all_read` over `lib/reader.ts`. Successful results
+  use `/api/v1` JSON shapes as `structuredContent` with an `outputSchema`
+  and one JSON text block; mutations returning 204 over HTTP return `{}`.
+  `list_entries` takes `feedId?`, `unreadOnly` (default false), `limit`
+  (1–100, default 50) and `cursor?`; its `asOf` is `mark_all_read`'s `upTo`.
+  `get_entry` never marks read. Reader errors return `isError` with JSON
+  `{ code, message, choices? }` as text; retry `subscribe` with a choice
+  after `multiple`. Unexpected failures are logged and return
+  `internal_error` with the generic page-error sentence; invalid inputs
+  use the SDK's own `isError` text. No resources or prompts are registered.
+  `lib/reader-output.ts` shares error bodies and subscription lookup with
+  `/api/v1`.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
   sessions, API keys and the MCP OAuth provider (`jwt()`, `mcp()`, `cimd()`).
@@ -160,7 +184,7 @@ and refresh cycle inline, without a queue.
   `requireUser` also returns email for display; ownership uses user ID.
   Keys never grant admin access or use session cookies; invalid keys return
   401, and rate-limited keys return 429 with `Retry-After`.
-  `withMcpAuth` prepares OAuth authentication for the future MCP route:
+  `withMcpAuth` authenticates OAuth requests to `/api/mcp`:
   verifies JWT signature, issuer, audience `MCP_RESOURCE`, expiry, `azp` and
   `reader` scope, then checks the user still exists. Refusals are 401 with
   a `resource_metadata` challenge or 403 `insufficient_scope`; never admin.
