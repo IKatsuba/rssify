@@ -21,6 +21,7 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
+import { EntryKeys } from "./entry-keys"
 import { ReadButton } from "./read-button"
 
 // Rendering never marks read; ReadButton does, from the client after mount.
@@ -58,9 +59,17 @@ export default async function EntryPage({
   // The list it came from: a feed only when it is followed and holds this
   // entry, else All feeds, so a stale or edited ?feed= still reads well.
   const query = readEntryParams(await searchParams)
-  const feed = (await subscriptionsOf(userId)).find(
+  const subscriptions = await subscriptionsOf(userId)
+  const feed = subscriptions.find(
     (s) => s.feed.id === query.feedId && s.feed.id === entry.feedId
   )?.feed
+  // Shift+A here marks its list, so the confirm needs that scope's count.
+  const unread = subscriptions
+    .filter((s) => !feed || s.feed.id === feed.id)
+    .reduce((sum, s) => sum + s.unreadCount, 0)
+  const backHref = listHref(feed ? `/feeds/${feed.id}` : "/", {
+    filter: query.filter,
+  })
   const scope = { feedId: feed?.id, filter: query.filter }
   const { previousId, nextId } = await getNeighbours(userId, entry.id, {
     feedId: feed?.id,
@@ -86,13 +95,7 @@ export default async function EntryPage({
           variant="ghost"
           className="min-w-0"
           nativeButton={false}
-          render={
-            <Link
-              href={listHref(feed ? `/feeds/${feed.id}` : "/", {
-                filter: query.filter,
-              })}
-            />
-          }
+          render={<Link href={backHref} />}
         >
           <ArrowLeftIcon />
           <span className="truncate max-sm:sr-only">{listName}</span>
@@ -133,6 +136,16 @@ export default async function EntryPage({
             <span className="max-sm:sr-only">Open original</span>
           </Button>
         )}
+        <EntryKeys
+          entryId={entry.id}
+          back={backHref}
+          next={nextId && entryHref(nextId, scope)}
+          previous={previousId && entryHref(previousId, scope)}
+          url={entry.url}
+          feed={feed && { id: feed.id, title: listName }}
+          unread={unread}
+          asOf={new Date()}
+        />
       </header>
       <article className="mx-auto prose prose-sm w-full min-w-0 px-4 py-8 dark:prose-invert prose-code:before:content-none prose-code:after:content-none">
         <p className="not-prose text-xs text-muted-foreground">

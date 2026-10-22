@@ -18,13 +18,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty"
-import {
-  Item,
-  ItemContent,
-  ItemDescription,
-  ItemGroup,
-  ItemTitle,
-} from "@/components/ui/item"
+import { ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item"
 import { listEntries, ReaderError } from "@/lib/reader"
 import {
   emptyState,
@@ -39,6 +33,7 @@ import { shortAgo } from "@/lib/relative-time"
 
 import { subscriptionsOf } from "./data"
 import { AddFeedButton } from "./add-feed"
+import { EntryRows } from "./entry-rows"
 import { ListActions } from "./list-actions"
 import { ListHeader } from "./list-header"
 
@@ -134,19 +129,16 @@ export async function EntryList({
         {empty ? (
           <EmptyList state={empty} path={path} />
         ) : (
-          <ItemGroup className="gap-1">
-            {list.entries.map((entry) => (
-              <Item
-                key={entry.id}
-                role="listitem"
-                render={
-                  // Opening an entry will mark it read, so never prefetch.
-                  <Link
-                    href={entryHref(entry.id, { feedId: feed?.id, filter })}
-                    prefetch={false}
-                  />
-                }
-              >
+          <EntryRows
+            // A new page or filter starts its own cursor.
+            key={`${filter}:${cursor ?? ""}:${before ?? ""}`}
+            list={listHref(path, { filter })}
+            rows={list.entries.map((entry) => ({
+              id: entry.id,
+              href: entryHref(entry.id, { feedId: feed?.id, filter }),
+              url: entry.url,
+              read: entry.read,
+              content: (
                 <ItemContent className="min-w-0">
                   <p className="text-muted-foreground">
                     {!feed && `${entry.feedTitle ?? "(untitled)"} · `}
@@ -170,9 +162,9 @@ export async function EntryList({
                     <ItemDescription>{entry.summary}</ItemDescription>
                   )}
                 </ItemContent>
-              </Item>
-            ))}
-          </ItemGroup>
+              ),
+            }))}
+          />
         )}
         {list.nextCursor && (
           <PageLink href={listHref(path, { filter, cursor: list.nextCursor })}>

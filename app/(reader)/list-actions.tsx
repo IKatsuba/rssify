@@ -23,9 +23,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { entryCount } from "@/lib/reader-view"
-
-import { markAllRead, unsubscribe } from "./actions"
+import { unsubscribe } from "./actions"
+import { useKeys } from "./keys"
+import { MarkAllConfirm } from "./mark-all"
 
 type ListFeed = {
   id: string
@@ -48,19 +48,12 @@ export function ListActions({
   asOf: Date
 }) {
   const router = useRouter()
-  const [confirm, setConfirm] = useState<"mark" | "unsubscribe" | null>(null)
+  const [confirm, setConfirm] = useState<
+    "mark" | "markByKey" | "unsubscribe" | null
+  >(null)
   const close = (open: boolean) => !open && setConfirm(null)
-
-  async function markAll() {
-    setConfirm(null)
-    try {
-      const result = await markAllRead({ feedId: feed?.id, upTo: asOf })
-      if (!result.ok) return router.push("/")
-      toast.success(`Marked ${entryCount(result.marked)} as read`)
-    } catch {
-      toast.error("Couldn’t mark entries as read. Try again.")
-    }
-  }
+  // Shift+A, like the button, does nothing at zero unread.
+  useKeys({ markAll: () => unread > 0 && setConfirm("markByKey") })
 
   async function leave(feed: ListFeed) {
     setConfirm(null)
@@ -127,25 +120,14 @@ export function ListActions({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-      <AlertDialog open={confirm === "mark"} onOpenChange={close}>
-        <AlertDialogContent size="sm">
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Mark {entryCount(unread)} as read?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Everything unread in {feed?.title ?? "All feeds"} up to now.
-              Entries that arrive later stay unread.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={markAll}>
-              Mark as read
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <MarkAllConfirm
+        feed={feed}
+        unread={unread}
+        asOf={asOf}
+        open={confirm === "mark" || confirm === "markByKey"}
+        byKey={confirm === "markByKey"}
+        onOpenChange={close}
+      />
       {feed && (
         <AlertDialog open={confirm === "unsubscribe"} onOpenChange={close}>
           <AlertDialogContent size="sm">
