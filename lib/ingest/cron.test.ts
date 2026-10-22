@@ -94,6 +94,25 @@ describe("handleCronRefresh", () => {
     expect((await leased()).getTime()).toBeGreaterThan(Date.now())
   })
 
+  test("the run ends by deleting expired auth rows", async () => {
+    await db.oauthClientAssertion.createMany({
+      data: [
+        { id: "old", expiresAt: new Date(NOW.getTime() - 1000) },
+        { id: "live", expiresAt: new Date(NOW.getTime() + 1000) },
+      ],
+    })
+    const { enqueue } = collect()
+    const response = await handleCronRefresh(
+      request(`Bearer ${SECRET}`),
+      enqueue,
+      { now: NOW }
+    )
+    expect(await response.json()).toEqual({ claimed: 1, sent: 1, failed: 0 })
+    expect(
+      (await db.oauthClientAssertion.findMany()).map((row) => row.id)
+    ).toEqual(["live"])
+  })
+
   test("a failed send is counted", async () => {
     const response = await handleCronRefresh(
       request(`Bearer ${SECRET}`),

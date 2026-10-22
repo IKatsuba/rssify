@@ -135,6 +135,7 @@ model Jwks {
 // ---------- @better-auth/oauth-provider 1.7.12 (through @better-auth/mcp) ----------
 // CIMD clients are oauthClient rows with clientDiscoveryId "cimd". MCP access
 // tokens are JWTs and are not stored; oauthAccessToken holds opaque ones only.
+// The expiresAt indexes are ours, for the cron cleanup (lib/auth-cleanup.ts).
 
 model OauthClient {
   id                               String                @id
@@ -250,6 +251,7 @@ model OauthRefreshToken {
   @@index([sessionId])
   @@index([userId])
   @@index([authorizationCodeId])
+  @@index([expiresAt])
   @@map("oauthRefreshToken")
 }
 
@@ -280,6 +282,7 @@ model OauthAccessToken {
   @@index([userId])
   @@index([authorizationCodeId])
   @@index([refreshId])
+  @@index([expiresAt])
   @@map("oauthAccessToken")
 }
 
@@ -305,6 +308,7 @@ model OauthClientAssertion {
   id        String   @id
   expiresAt DateTime
 
+  @@index([expiresAt])
   @@map("oauthClientAssertion")
 }
 
