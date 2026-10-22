@@ -291,7 +291,8 @@ function AddButton({
     <Button {...props} disabled={busy}>
       {adding ? (
         <>
-          <Spinner />
+          {/* The text says it; a second "Loading" would muddle the name. */}
+          <Spinner aria-hidden />
           Adding…
         </>
       ) : (
