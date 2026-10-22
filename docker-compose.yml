@@ -1,28 +1,20 @@
 services:
-  app:
-    build: .
+  postgres:
+    image: postgres:17-alpine
     ports:
-      - '8000:8000'
+      - '127.0.0.1:54329:5432'
     environment:
-      - PORT=8000
-      - REDIS_URL=redis://redis:6379
-    depends_on:
-      redis:
-        condition: service_healthy
-    restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    ports:
-      - '6379:6379'
+      POSTGRES_USER: rssify
+      POSTGRES_DB: rssify
+      POSTGRES_HOST_AUTH_METHOD: trust
     volumes:
-      - redis-data:/data
+      - pg-data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 3
-    restart: unless-stopped
+      test: ['CMD', 'pg_isready', '-U', 'rssify']
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
 volumes:
-  redis-data:
+  pg-data:

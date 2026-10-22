@@ -13,7 +13,7 @@ lead:
     <key> is the task key the job names (RSSF-n
     on the board; `board show <key>` is the task, whole), and <dir> is
     design/<key-lowercase>/. Before anything else read the repository's agent
-    instructions (CLAUDE.md, and AGENTS.md where there is one), README.md
+    instructions (AGENTS.md at the root), README.md
     where there is one, and the designs under design/ the job touches.
 
     Make the task's branch from origin/main (`git switch -c <key>
