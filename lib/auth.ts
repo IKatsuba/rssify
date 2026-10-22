@@ -10,8 +10,14 @@ import { jwt } from "better-auth/plugins"
 
 import { db } from "@/lib/db"
 
+// BETTER_AUTH_URL names the production origin. A preview has no fixed one,
+// so it falls back to the deployment's own URL (previews have no sign-in).
+export const AUTH_URL =
+  process.env.BETTER_AUTH_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
+
 // The RFC 8707 resource MCP tokens are bound to; their aud must equal it.
-export const MCP_RESOURCE = `${process.env.BETTER_AUTH_URL}/api/mcp`
+export const MCP_RESOURCE = `${AUTH_URL}/api/mcp`
 export const MCP_SCOPE = "reader"
 // Explicit, because the provider default also offers the OIDC identity
 // scopes, which rssify does not use (design §9).
@@ -40,11 +46,15 @@ export async function registrationGate(user: EmailUser) {
 }
 
 export const auth = betterAuth({
+  baseURL: AUTH_URL,
   database: prismaAdapter(db, { provider: "postgresql" }),
   socialProviders: {
     vercel: {
       clientId: process.env.VERCEL_CLIENT_ID!,
       clientSecret: process.env.VERCEL_CLIENT_SECRET!,
+      // Vercel's userinfo returns only consented claims and the provider asks
+      // for no scopes by default; without `email` there is no user to create.
+      scope: ["openid", "email", "profile"],
     },
   },
   session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
