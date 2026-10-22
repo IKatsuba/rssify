@@ -15,7 +15,15 @@ import {
   type KeyAction,
   type KeyContext,
   modifierLabel,
+  shiftLabel,
 } from "@/lib/keys"
+
+import { Kbd, KbdGroup } from "@/components/ui/kbd"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import { useAddFeed } from "./add-feed"
 import { ShortcutsDialog } from "./shortcuts-dialog"
@@ -40,7 +48,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
     registrations,
     showShortcuts: () => setShortcuts(true),
   }))
-  const modifier = useModifierLabel()
+  const labels = useKeyLabels()
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -68,7 +76,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
       {children}
       <ShortcutsDialog
         open={shortcuts}
-        modifier={modifier}
+        labels={labels}
         onOpenChange={setShortcuts}
       />
     </KeysContext>
@@ -96,12 +104,56 @@ export function useShowShortcuts() {
   return use(KeysContext).showShortcuts
 }
 
-// The platform's modifier for key hints; the server and the first client
-// render say Ctrl, then macOS switches to ⌘.
-export function useModifierLabel() {
-  return useSyncExternalStore(
+export type KeyLabels = { mod: string; shift: string }
+
+// The platform's key names for hints: ⌘ and ⇧ on macOS, Ctrl and Shift
+// elsewhere. The server and the first client render use the latter.
+export function useKeyLabels(): KeyLabels {
+  const platform = useSyncExternalStore(
     () => () => {},
-    () => modifierLabel(navigator.platform),
-    () => "Ctrl"
+    () => navigator.platform,
+    () => ""
+  )
+  return { mod: modifierLabel(platform), shift: shiftLabel(platform) }
+}
+
+// "mod" and "shift" in keys stand for the platform's names.
+export function keyNames(keys: string[], labels: KeyLabels) {
+  return keys.map((key) =>
+    key === "mod" ? labels.mod : key === "shift" ? labels.shift : key
+  )
+}
+
+// A menu item's shortcut text: ⇧A on macOS, Shift+A elsewhere.
+export function menuShortcut(keys: string[], labels: KeyLabels) {
+  return keyNames(keys, labels).join(labels.shift === "⇧" ? "" : "+")
+}
+
+// A control's tooltip with its key (design §3: "Next J"). render is the
+// control itself; a disabled one shows no tooltip.
+export function KeyHint({
+  label,
+  keys,
+  render,
+  children,
+}: {
+  label: string
+  keys: string[]
+  render: React.ComponentProps<typeof TooltipTrigger>["render"]
+  children: React.ReactNode
+}) {
+  const labels = useKeyLabels()
+  return (
+    <Tooltip>
+      <TooltipTrigger render={render}>{children}</TooltipTrigger>
+      <TooltipContent>
+        {label}
+        <KbdGroup>
+          {keyNames(keys, labels).map((key) => (
+            <Kbd key={key}>{key}</Kbd>
+          ))}
+        </KbdGroup>
+      </TooltipContent>
+    </Tooltip>
   )
 }

@@ -15,16 +15,18 @@ import { Kbd, KbdGroup } from "@/components/ui/kbd"
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table"
 import { onShortcutsChange, setShortcutsOn, shortcutsOn } from "@/lib/keys"
 
+import { keyNames, type KeyLabels } from "./keys"
+
 // The ? dialog (design §2.5, desktop-shortcuts.png). Its switch is how a
 // person turns single-letter keys back on, so the dialog also opens from
 // the email menu, where it does not depend on the keys themselves.
 export function ShortcutsDialog({
   open,
-  modifier,
+  labels,
   onOpenChange,
 }: {
   open: boolean
-  modifier: string
+  labels: KeyLabels
   onOpenChange: (open: boolean) => void
 }) {
   const on = useSyncExternalStore(onShortcutsChange, shortcutsOn, () => true)
@@ -35,10 +37,10 @@ export function ShortcutsDialog({
     ["Back to list", ["U"]],
     ["Mark read / unread", ["M"]],
     ["Open original in a new tab", ["V"]],
-    ["Mark all as read", ["⇧", "A"]],
+    ["Mark all as read", ["shift", "A"]],
     ["Reload list", ["R"]],
     ["Add a feed", ["A"]],
-    ["Toggle sidebar", [modifier, "B"]],
+    ["Toggle sidebar", ["mod", "B"]],
     ["Toggle dark mode", ["D"]],
     ["Show this list", ["?"]],
   ]
@@ -59,7 +61,7 @@ export function ShortcutsDialog({
                 <TableCell>{label}</TableCell>
                 <TableCell className="text-right">
                   <KbdGroup>
-                    {keys.map((key) => (
+                    {keyNames(keys, labels).map((key) => (
                       <Kbd key={key}>{key}</Kbd>
                     ))}
                   </KbdGroup>

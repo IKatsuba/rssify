@@ -4,6 +4,7 @@ import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
 
+import { KeyHint } from "../../keys"
 import { useBackHref } from "../../return-point"
 
 // ← {list name}: back to the page of the list the entry was opened from,
@@ -16,13 +17,19 @@ export function BackButton({
   children: React.ReactNode
 }) {
   return (
-    <Button
-      variant="ghost"
-      className="min-w-0"
-      nativeButton={false}
-      render={<Link href={useBackHref(list)} />}
+    <KeyHint
+      label="Back to list"
+      keys={["U"]}
+      render={
+        <Button
+          variant="ghost"
+          className="min-w-0"
+          nativeButton={false}
+          render={<Link href={useBackHref(list)} />}
+        />
+      }
     >
       {children}
-    </Button>
+    </KeyHint>
   )
 }

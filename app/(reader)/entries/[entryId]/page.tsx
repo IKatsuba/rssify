@@ -5,7 +5,6 @@ import {
   ExternalLinkIcon,
 } from "lucide-react"
 import type { Metadata } from "next"
-import Link from "next/link"
 import { notFound } from "next/navigation"
 import { cache } from "react"
 
@@ -21,6 +20,8 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
+import { KeyHint } from "../../keys"
+import { StepLink } from "./step-link"
 import { BackButton } from "./back-button"
 import { EntryKeys } from "./entry-keys"
 import { ReadButton } from "./read-button"
@@ -103,12 +104,16 @@ export default async function EntryPage({
           <StepLink
             href={previousId && entryHref(previousId, scope)}
             label="Previous entry"
+            hint="Previous"
+            hintKey="K"
           >
             <ChevronUpIcon />
           </StepLink>
           <StepLink
             href={nextId && entryHref(nextId, scope)}
             label="Next entry"
+            hint="Next"
+            hintKey="J"
           >
             <ChevronDownIcon />
           </StepLink>
@@ -119,16 +124,26 @@ export default async function EntryPage({
         />
         <ReadButton key={entry.id} entryId={entry.id} read={entry.read} />
         {entry.url ? (
-          <Button
-            variant="outline"
-            nativeButton={false}
+          <KeyHint
+            label="Open original"
+            keys={["V"]}
             render={
-              <a href={entry.url} target="_blank" rel="noopener noreferrer" />
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={
+                  <a
+                    href={entry.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              />
             }
           >
             <ExternalLinkIcon />
             <span className="max-sm:sr-only">Open original</span>
-          </Button>
+          </KeyHint>
         ) : (
           <Button variant="outline" disabled>
             <ExternalLinkIcon />
@@ -182,36 +197,5 @@ export default async function EntryPage({
         )}
       </article>
     </>
-  )
-}
-
-function StepLink({
-  href,
-  label,
-  children,
-}: {
-  href: string | null
-  label: string
-  children: React.ReactNode
-}) {
-  // No neighbour that way: a disabled button, not a dead link.
-  if (!href) {
-    return (
-      <Button variant="ghost" size="icon" disabled>
-        {children}
-        <span className="sr-only">{label}</span>
-      </Button>
-    )
-  }
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      nativeButton={false}
-      render={<Link href={href} prefetch={false} />}
-    >
-      {children}
-      <span className="sr-only">{label}</span>
-    </Button>
   )
 }

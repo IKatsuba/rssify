@@ -21,10 +21,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { unsubscribe } from "./actions"
-import { useKeys } from "./keys"
+import { KeyHint, menuShortcut, useKeyLabels, useKeys } from "./keys"
 import { MarkAllConfirm } from "./mark-all"
 
 type ListFeed = {
@@ -52,6 +53,7 @@ export function ListActions({
     "mark" | "markByKey" | "unsubscribe" | null
   >(null)
   const close = (open: boolean) => !open && setConfirm(null)
+  const markAllKeys = menuShortcut(["shift", "A"], useKeyLabels())
   // Here rather than on the rows, so r and Shift+A also work on an empty
   // list; Shift+A, like the button, does nothing at zero unread.
   useKeys(
@@ -76,22 +78,30 @@ export function ListActions({
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="icon"
-        disabled={unread === 0}
-        onClick={() => setConfirm("mark")}
+      <KeyHint
+        label="Mark all as read"
+        keys={["shift", "A"]}
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={unread === 0}
+            onClick={() => setConfirm("mark")}
+          />
+        }
       >
         <CheckCheckIcon />
         <span className="sr-only">Mark all as read</span>
-      </Button>
+      </KeyHint>
       {feed && (
         <DropdownMenu>
           <DropdownMenuTrigger render={<Button variant="ghost" size="icon" />}>
             <EllipsisIcon />
             <span className="sr-only">Feed actions</span>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          {/* w-auto: the shortcut hint would wrap its item at the 28 px
+              trigger's width. */}
+          <DropdownMenuContent align="end" className="w-auto">
             {feed.siteUrl && (
               <DropdownMenuItem
                 render={
@@ -116,6 +126,7 @@ export function ListActions({
               onClick={() => setConfirm("mark")}
             >
               Mark all as read
+              <DropdownMenuShortcut>{markAllKeys}</DropdownMenuShortcut>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

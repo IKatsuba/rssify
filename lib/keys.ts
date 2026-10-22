@@ -163,3 +163,7 @@ export function keyAction(
 export function modifierLabel(platform: string) {
   return /Mac|iPhone|iPad|iPod/i.test(platform) ? "⌘" : "Ctrl"
 }
+
+export function shiftLabel(platform: string) {
+  return modifierLabel(platform) === "⌘" ? "⇧" : "Shift"
+}

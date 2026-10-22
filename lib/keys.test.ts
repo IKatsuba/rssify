@@ -5,6 +5,7 @@ import {
   keyAction,
   modifierLabel,
   setShortcutsOn,
+  shiftLabel,
   SHORTCUTS_KEY,
   shortcutsOn,
   type KeyContext,
@@ -66,9 +67,7 @@ describe("canHandleKey", () => {
 
   test("refuses keys typed into a field", () => {
     for (const tagName of ["INPUT", "TEXTAREA", "SELECT"]) {
-      expect(canHandleKey(press("j", { target: { tagName } }), env)).toBe(
-        false
-      )
+      expect(canHandleKey(press("j", { target: { tagName } }), env)).toBe(false)
     }
     expect(
       canHandleKey(
@@ -164,9 +163,7 @@ describe("keyAction", () => {
 
   for (const [key, shiftKey, context, action] of cases) {
     test(`${shiftKey ? "Shift+" : ""}${key} in ${context} → ${action}`, () => {
-      expect(keyAction(press(key, { shiftKey }), context)).toBe(
-        action as never
-      )
+      expect(keyAction(press(key, { shiftKey }), context)).toBe(action as never)
     })
   }
 
@@ -189,5 +186,12 @@ describe("modifierLabel", () => {
     expect(modifierLabel("Win32")).toBe("Ctrl")
     expect(modifierLabel("Linux x86_64")).toBe("Ctrl")
     expect(modifierLabel("")).toBe("Ctrl")
+  })
+})
+
+describe("shiftLabel", () => {
+  test("⇧ on Apple platforms, Shift elsewhere", () => {
+    expect(shiftLabel("MacIntel")).toBe("⇧")
+    expect(shiftLabel("Win32")).toBe("Shift")
   })
 })
