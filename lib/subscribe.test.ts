@@ -643,6 +643,16 @@ describe("subscribe to a new feed", () => {
         }),
         guids: ["https://bytes.dev/archives/531"],
       },
+      {
+        source: "firefox-releases",
+        title: "Firefox release notes",
+        list: "https://www.firefox.com/en-US/releases/",
+        pages: saved("firefox-releases", {
+          "https://www.firefox.com/en-US/releases/": "releases",
+          "https://www.firefox.com/firefox/158.0/releasenotes/": "158.0",
+        }),
+        guids: ["https://www.firefox.com/firefox/158.0/releasenotes/"],
+      },
     ]) {
       test(`{ source: "${source}" } subscribes through its plugin`, async () => {
         const result = await subscribe(

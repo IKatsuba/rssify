@@ -4,6 +4,7 @@ import { anthropicEngineering, anthropicNews } from "./anthropic"
 import { builtinSource, builtinSources } from "./builtin"
 import { bytes } from "./bytes"
 import { cursorBlog } from "./cursor-blog"
+import { firefoxReleases } from "./firefox-releases"
 import { githubTrending } from "./github-trending"
 import { pluginFor, plugins } from "./index"
 import type { SourcePlugin } from "./types"
@@ -23,6 +24,7 @@ describe("builtinSources", () => {
       "bytes",
       "claude-code",
       "cursor-blog",
+      "firefox-releases",
       "langchain-blog",
       "nodejs-blog",
     ])
@@ -37,6 +39,9 @@ describe("builtinSources", () => {
     expect(builtinSource("bytes")?.url).toBe("https://bytes.dev/archives")
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
     expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
+    expect(builtinSource("firefox-releases")?.url).toBe(
+      "https://www.firefox.com/en-US/releases/"
+    )
     expect(builtinSource("langchain-blog")?.url).toBe(
       "https://www.langchain.com/blog/rss.xml"
     )
@@ -54,6 +59,7 @@ describe("pluginFor", () => {
       "anthropic-news": anthropicNews,
       bytes,
       "cursor-blog": cursorBlog,
+      "firefox-releases": firefoxReleases,
       "github-trending": githubTrending,
     })
     expect(pluginFor("https://cursor.com/blog")).toEqual({

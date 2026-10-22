@@ -1,6 +1,7 @@
 import { anthropicEngineering, anthropicNews } from "./anthropic"
 import { bytes } from "./bytes"
 import { cursorBlog } from "./cursor-blog"
+import { firefoxReleases } from "./firefox-releases"
 import { githubTrending } from "./github-trending"
 import type { SourcePlugin } from "./types"
 
@@ -10,6 +11,7 @@ export const plugins: Record<string, SourcePlugin> = {
   "anthropic-news": anthropicNews,
   bytes,
   "cursor-blog": cursorBlog,
+  "firefox-releases": firefoxReleases,
   "github-trending": githubTrending,
 }
 

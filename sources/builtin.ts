@@ -31,6 +31,12 @@ export const builtinSources = [
     note: "cursor.com/blog — no feed of its own",
   },
   {
+    id: "firefox-releases",
+    title: "Firefox release notes",
+    url: "https://www.firefox.com/en-US/releases/",
+    note: "firefox.com — desktop release notes, no feed of their own",
+  },
+  {
     id: "langchain-blog",
     title: "LangChain blog",
     url: "https://www.langchain.com/blog/rss.xml",
