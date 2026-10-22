@@ -130,6 +130,13 @@ describe("OAuth", () => {
     )
   })
 
+  test("a reader token without offline_access calls a tool", async () => {
+    const { access_token } = await mintMcpToken("u2", "reader")
+    const res = await listFeeds({ authorization: `Bearer ${access_token}` })
+    expect(res.status).toBe(200)
+    expect((await readRpc(res)).result.isError).toBeFalsy()
+  })
+
   test("no reader scope → 403 insufficient_scope", async () => {
     const { access_token } = await mintMcpToken("u2", "offline_access")
     const res = await listFeeds({ authorization: `Bearer ${access_token}` })

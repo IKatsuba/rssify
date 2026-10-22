@@ -47,9 +47,16 @@ async function ownKeyToken(payload: Record<string, unknown>) {
   return token
 }
 
+// The scopes a challenge names, as a set: the order is the library's.
+function challengeScopes(res: Response) {
+  const scope = /scope="([^"]*)"/.exec(res.headers.get("www-authenticate")!)
+  return new Set(scope?.[1].split(" "))
+}
+
 async function expectUnauthorized(res: Response) {
   expect(res.status).toBe(401)
   expect(res.headers.get("www-authenticate")).toContain(METADATA)
+  expect(challengeScopes(res)).toEqual(new Set(["offline_access", "reader"]))
   expect((await res.json()).jsonrpc).toBe("2.0")
 }
 
@@ -128,7 +135,13 @@ describe("withMcpAuth", () => {
     expect(res.status).toBe(403)
     const challenge = res.headers.get("www-authenticate")
     expect(challenge).toContain('error="insufficient_scope"')
-    expect(challenge).toContain('scope="reader"')
+    expect(challengeScopes(res)).toEqual(new Set(["reader"]))
+  })
+
+  test("reader without offline_access is enough", async () => {
+    const { access_token } = await mintMcpToken("u1", "reader")
+    const res = await call(`Bearer ${access_token}`)
+    expect(res.status).toBe(200)
   })
 
   test("a deleted user's token → 401", async () => {

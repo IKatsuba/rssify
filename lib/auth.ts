@@ -21,7 +21,7 @@ export const MCP_RESOURCE = `${AUTH_URL}/api/mcp`
 export const MCP_SCOPE = "reader"
 // Explicit, because the provider default also offers the OIDC identity
 // scopes, which rssify does not use (design §9).
-const MCP_SCOPES = ["offline_access", MCP_SCOPE]
+export const MCP_SCOPES = ["offline_access", MCP_SCOPE]
 
 type EmailUser = { email: string; emailVerified: boolean }
 
