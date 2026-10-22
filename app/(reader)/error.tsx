@@ -17,6 +17,12 @@ import {
 import { RETRY_EVENT } from "./app-sidebar"
 import { ListHeader } from "./list-header"
 
+// Pages whose title is known without a query; others get no title.
+const titles: Record<string, string> = {
+  "/": "All feeds",
+  "/settings": "Settings",
+}
+
 export default function ReaderError({
   error,
   retry,
@@ -31,7 +37,7 @@ export default function ReaderError({
 
   return (
     <>
-      <ListHeader title={pathname === "/" ? "All feeds" : undefined} />
+      <ListHeader title={titles[pathname]} />
       <Empty>
         <EmptyHeader>
           <EmptyMedia variant="icon">

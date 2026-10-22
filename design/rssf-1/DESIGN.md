@@ -360,7 +360,7 @@ no CSRF surface on these handlers. JSON; errors
 `export const maxDuration = 60`.
 
 - `GET /api/v1/subscriptions` → `{ subscriptions: [{ id, createdAt,
-  unreadCount, feed: { id, url, title, siteUrl, sourceId, status,
+  unreadCount, feed: { id, url, title, siteUrl, pluginId, status,
   lastError, lastSuccessAt } }] }`
 - `POST /api/v1/subscriptions` `{ url }` or `{ source }` → `201
   { subscription }` (new), `200` (existing), `422 { error: { code,

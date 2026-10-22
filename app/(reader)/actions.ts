@@ -1,10 +1,22 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
+import type { z } from "zod"
 
 import { requireUser } from "@/lib/actor"
+import * as apiKeys from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import * as reader from "@/lib/reader"
+import {
+  createApiKeyInput,
+  markAllReadInput,
+  markReadInput,
+  markUnreadInput,
+  revokeApiKeyInput,
+  subscribeInput,
+  unsubscribeInput,
+} from "@/lib/reader-schemas"
 
 type NotFound = { ok: false; code: "not_found" }
 
@@ -26,22 +38,18 @@ async function run<T>(
   return result
 }
 
-// Inputs arrive from the network, so their types are not trusted. Full
-// schemas come with the API; this only keeps junk away from Prisma.
-function id(value: unknown) {
-  if (typeof value !== "string" || value === "") {
-    throw new TypeError("Expected an id")
-  }
-  return value
+// Inputs arrive from the network, so their types are not trusted: each is
+// parsed inside run, after the session check. Junk throws a TypeError, as
+// before the schemas, so the client treats it like any failed action.
+function parse<S extends z.ZodType>(schema: S, value: unknown): z.output<S> {
+  const result = schema.safeParse(value)
+  if (!result.success) throw new TypeError(result.error.message)
+  return result.data
 }
 
 export async function subscribe(input: { url: string } | { source: string }) {
-  const target =
-    input && typeof input === "object" && "source" in input
-      ? { source: String(input.source) }
-      : { url: String((input as { url?: unknown })?.url ?? "") }
   return run(async (userId) => {
-    const result = await reader.subscribe(userId, target)
+    const result = await reader.subscribe(userId, parse(subscribeInput, input))
     if (!result.ok) return result
     // The toasts name the feed; a feed without a title goes by its URL.
     const feed = await db.feed.findUniqueOrThrow({
@@ -54,39 +62,51 @@ export async function subscribe(input: { url: string } | { source: string }) {
 
 export async function unsubscribe(feedId: string) {
   return run(async (userId) => {
-    await reader.unsubscribe(userId, id(feedId))
+    await reader.unsubscribe(userId, parse(unsubscribeInput, { feedId }).feedId)
     return { ok: true as const }
   })
 }
 
 export async function markRead(entryId: string) {
   return run(async (userId) => {
-    await reader.markRead(userId, id(entryId))
+    await reader.markRead(userId, parse(markReadInput, { entryId }).entryId)
     return { ok: true as const }
   })
 }
 
 export async function markUnread(entryId: string) {
   return run(async (userId) => {
-    await reader.markUnread(userId, id(entryId))
+    await reader.markUnread(userId, parse(markUnreadInput, { entryId }).entryId)
     return { ok: true as const }
   })
 }
 
-export async function markAllRead({
-  feedId,
-  upTo,
-}: {
+export async function markAllRead(input: {
   feedId?: string
   upTo: Date | string
 }) {
   return run(async (userId) => {
-    const cutoff = new Date(upTo)
-    if (Number.isNaN(cutoff.getTime())) throw new TypeError("Expected upTo")
-    const { marked } = await reader.markAllRead(userId, {
-      feedId: feedId === undefined ? undefined : id(feedId),
-      upTo: cutoff,
-    })
+    const { marked } = await reader.markAllRead(
+      userId,
+      parse(markAllReadInput, input)
+    )
     return { ok: true as const, marked }
   })
+}
+
+// Keys are managed with the session only, never with a key (design §9).
+export async function createApiKey(name: string) {
+  await requireUser()
+  const input = parse(createApiKeyInput, { name })
+  const { key } = await apiKeys.createApiKey(await headers(), input.name)
+  revalidatePath("/", "layout")
+  return { key }
+}
+
+export async function revokeApiKey(keyId: string) {
+  await requireUser()
+  const input = parse(revokeApiKeyInput, { keyId })
+  const result = await apiKeys.revokeApiKey(await headers(), input.keyId)
+  if (result.ok) revalidatePath("/", "layout")
+  return result
 }

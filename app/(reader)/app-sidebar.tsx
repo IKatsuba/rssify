@@ -214,6 +214,9 @@ function UserMenu({ email }: { email: string }) {
             <ChevronDownIcon className="ml-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="start">
+            <DropdownMenuItem render={<Link href="/settings" />}>
+              Settings
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={showShortcuts}>
               Keyboard shortcuts
               <DropdownMenuShortcut>?</DropdownMenuShortcut>

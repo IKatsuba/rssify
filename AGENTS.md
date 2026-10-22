@@ -4,11 +4,11 @@
 
 rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
-Bun is the package manager and test runner. Vercel sign-in and a session-only
-reader UI support adding and removing feeds, marking entries read on open,
-read/unread toggles and bulk marking. Ingest has guarded HTTP, feed parsing,
-sanitising, refresh and add-feed helpers, cron and queue scheduling, and a
-Cursor blog source plugin.
+Bun is the package manager and test runner. The session-only reader uses
+Vercel sign-in, marks entries read on open and manages API keys in Settings.
+It shares subscriptions and read-state operations with API-key-only
+`/api/v1`. Ingest has guarded HTTP, feed parsing, sanitising, refresh and
+add-feed helpers, cron and queue scheduling, and a Cursor blog source plugin.
 
 ## Commands
 
@@ -64,8 +64,8 @@ and refresh cycle inline, without a queue.
   redirects signed-in users to `/`; otherwise it shows Vercel sign-in,
   redirecting, registration-closed or error states.
 - `app/(reader)/`: session-only layout with a responsive sidebar, unread
-  badges, failing/gone markers and an email menu for shortcuts, theme and
-  sign-out.
+  badges, failing/gone markers and an email menu for Settings, shortcuts,
+  theme and sign-out.
   `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
   empty states and feed notices. Mark all as read confirms the list scope,
   uses `asOf` as the cutoff, is disabled at zero unread and toasts the actual
@@ -86,6 +86,13 @@ and refresh cycle inline, without a queue.
   `catchError` boundary. Sonner supplies reader toasts.
   `app/error.tsx` catches reader layout failures. `data.ts` caches session
   and subscription reads per request; the layout title includes unread count.
+- `app/(reader)/settings/`: `/settings` has Account (email and Sign out),
+  API keys and Keyboard shortcuts (Show and Turn off/on) cards, loading and
+  error states, and the title `Settings · rssify`. Keys list newest first
+  with name, eight-character start, Created and Last used (Never if unused);
+  dates are hidden on phones. Create takes a trimmed 1–64-character name,
+  then opens a shown-once dialog with a masked field and Copy for the full
+  key; closing drops the secret. Revoke confirms first; failures toast.
 - `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
   the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
   v for the original and r to refresh, even when empty. Entries use j/k
@@ -101,7 +108,25 @@ and refresh cycle inline, without a queue.
 - `app/(reader)/actions.ts`: session-only `subscribe`, `unsubscribe`,
   `markRead`, `markUnread` and `markAllRead` server actions use `requireUser`
   and its user ID, then revalidate `('/', 'layout')`. Subscribe also returns
-  the feed title (URL fallback) for toasts. API keys do not grant access.
+  the feed title (URL fallback) for toasts. `createApiKey` and `revokeApiKey`
+  use `lib/api-keys.ts` with session headers, as does the Settings list
+  loader; a key cannot manage keys. Actions parse inputs after the session
+  check and throw `TypeError` for invalid input. API keys do not grant access.
+- `lib/reader-schemas.ts`: shared Zod 4 inputs for actions and `/api/v1`.
+  Subscribe accepts exactly one of `{ url }` or `{ source }`; mark-all
+  accepts a Date or ISO datetime `upTo`. Zod is a direct dependency.
+- `app/api/v1/`: JSON Route Handlers over `lib/api-v1.ts` and `lib/reader.ts`,
+  each with `maxDuration = 60`. Only `x-api-key` authenticates; cookies do not.
+  GET/POST `subscriptions` list or subscribe (201 new, 200 existing);
+  DELETE `subscriptions/[feedId]` returns 204. Subscription feeds expose
+  `pluginId` (null for plain feeds). GET `entries` accepts `feedId`,
+  `unread=true|false`, `limit` (1–100, default 50) and `cursor`, returning
+  `{ entries, nextCursor, asOf }`. GET `entries/[id]` includes `contentHtml`
+  without marking read. PUT/DELETE `entries/[id]/read` return 204;
+  POST `entries/read` takes `{ feedId?, upTo }` and returns `{ marked }`.
+  Errors use `{ error: { code, message } }`: 400 `invalid_input`, 401,
+  404 for missing or inaccessible data, 422 for subscribe failures (the
+  add-feed sentence and discovery `choices` when present), and 429.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
   sessions and API keys; `lib/auth-client.ts` starts browser sign-in.
@@ -254,7 +279,8 @@ and refresh cycle inline, without a queue.
   is exactly `true`; the verified admin can register while it is closed.
   Existing users can still sign in.
 - Session cookies are cached for five minutes. API keys use the `rss_`
-  prefix and a default limit of 120 requests per minute.
+  prefix, an eight-character visible start including the prefix and a
+  default limit of 120 requests per minute.
 - `lib/keys.ts` defines the key map, switch helpers and `canHandleKey` guard;
   the theme's d listener also uses the guard. Shortcuts default on; localStorage
   `rssify:shortcuts` set to "off" disables them. The guard rejects typing
