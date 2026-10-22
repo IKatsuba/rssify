@@ -6,6 +6,12 @@ export const builtinSources = [
     url: "https://claude.dev/rss.xml",
     note: "claude.dev — the Claude Code blog’s own feed",
   },
+  {
+    id: "cursor-blog",
+    title: "Cursor blog",
+    url: "https://cursor.com/blog",
+    note: "No feed of its own",
+  },
 ] as const
 
 export type BuiltinSource = (typeof builtinSources)[number]

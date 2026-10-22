@@ -1,7 +1,10 @@
+import { cursorBlog } from "./cursor-blog"
 import type { SourcePlugin } from "./types"
 
-// Registering a plugin is a code change; cursor-blog arrives with RSSF-9.
-export const plugins: Record<string, SourcePlugin> = {}
+// Registering a plugin is a code change.
+export const plugins: Record<string, SourcePlugin> = {
+  "cursor-blog": cursorBlog,
+}
 
 // Only an exact match: a plugin owns its list page's URL, nothing else.
 export function pluginFor(

@@ -7,8 +7,8 @@ shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
 no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing,
-sanitising, refresh and add-feed helpers, with cron and queue scheduling;
-plugins are pending.
+sanitising, refresh and add-feed helpers, cron and queue scheduling, and
+a Cursor blog source plugin.
 
 ## Commands
 
@@ -85,17 +85,27 @@ and refresh cycle inline, without a queue.
   normalised input URL after redirects; discovery stores the discovered URL.
   HTTP 404/410 and non-feeds return `not_found`, other non-2xx responses
   `unreachable`; `SafeFetchError` codes pass through. A matching plugin gets
-  one 40 s deadline; fetch errors keep their code, other throws or zero
-  entries return `not_found`.
+  one 40 s deadline; fetch errors keep their code and list-page HTTP errors
+  map as above. Other throws or zero entries return `not_found`.
 - `lib/ingest/discover.ts`: `discoverFeeds(html, pageUrl)` uses cheerio to
   read alternate RSS/Atom/RDF/JSON Feed links, resolving against `<base>`
   or the final page URL. It returns deduplicated HTTP(S) URLs in document
   order, with no path guessing.
 - `sources/`: `builtinSources` maps `claude-code` to
-  `https://claude.dev/rss.xml`. `SourcePlugin` defines `fetchEntries` with
-  guarded fetch, known-URL lookup and a shared deadline; `pluginFor` matches
-  the URL exactly against `matches`. The plugin registry is empty; Cursor
-  support is pending. Feed rows are created on subscribe, never seeded.
+  `https://claude.dev/rss.xml` and `cursor-blog` to `https://cursor.com/blog`.
+  `SourcePlugin` defines `fetchEntries` with guarded fetch, known-URL lookup
+  and a shared deadline; `pluginFor` matches the URL exactly against
+  `matches`. The registered `cursor-blog` plugin reads static HTML with
+  cheerio: article links must be same-origin HTTPS `/blog/` post URLs;
+  query/hash are stripped and duplicates removed in document order.
+  It fetches at most 10 unknown posts per run, four at a time, using URLs
+  as guids. Entries use `og:title` minus trailing ` · Cursor`, meta
+  description and the first `.prose--blog`, with normal feed normalisation
+  and sanitising. Dates use the first valid `article:published_time`,
+  post `time[datetime]`, then list date. No post links throws
+  "the page layout changed"; failed post fetches are skipped for this run.
+  A non-2xx list page throws `SourceStatusError` with status and headers.
+  Feed rows are created on subscribe, never seeded.
 - `lib/ingest/fan-out.ts`: `fanOut(enqueue)` claims up to 500 due,
   subscribed feeds, oldest first, in one SQL statement with
   `FOR UPDATE SKIP LOCKED`, setting `nextFetchAt` to a 30-minute lease.
@@ -121,10 +131,16 @@ and refresh cycle inline, without a queue.
   `experimentalTriggers` binds the consumer to `queue/v2beta`, topic
   `feed-refresh`, with `maxDeliveries: 3`.
 - `lib/ingest/refresh.ts`: `refreshFeed(feedId, { skipIfFreshWithin, fetch,
-  now })` uses conditional `safeFetch` with a 15 s deadline, then parses
-  against the final response URL without changing the stored URL.
-  Missing feeds return; `skipIfFreshWithin` skips recent
-  fetches (seconds); plugin feeds throw until plugins are implemented.
+  plugins, now })` uses conditional `safeFetch` with a 15 s deadline for
+  feeds, parsing against the final response URL without changing the stored
+  URL. Missing feeds return; `skipIfFreshWithin` skips recent fetches
+  (seconds). Plugin feeds get one 40 s deadline and `known()` checks stored
+  guids for that feed. Plugin success uses the same storage and scheduling,
+  without validators or changing title/siteUrl. Unknown plugin IDs fail with
+  "the source isn’t supported any more"; fetch errors use the usual texts,
+  list-page HTTP errors use the status handling below, and other throws
+  store their message. Database errors, including in `known()`, throw even
+  if the plugin catches them.
   Shared `storeEntries` takes the newest 100 items by `sortAt`, with document
   order breaking ties and `sortAt = min(publishedAt ?? now, now)`.
   `(feedId, guid)` duplicates keep the first version. In one transaction,
@@ -166,8 +182,8 @@ and refresh cycle inline, without a queue.
   `target="_blank"` on links. Output caps at 200 KiB of UTF-8 with tags
   closed and code points intact; empty output is null. `plainText`
   strips markup and collapses whitespace; `safeUrl` resolves URLs and
-  allows HTTP(S) only. Feed fixtures in `test/fixtures/feeds/` are local;
-  tests never fetch them.
+  allows HTTP(S) only. Fixtures in `test/fixtures/feeds/` and
+  `test/fixtures/cursor-blog/` are local; tests never fetch them.
 - `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, feed,
   entry, subscription and read-mark storage. Generated Prisma code lives
   in gitignored `lib/generated/prisma/`; regenerate it rather than edit it.
