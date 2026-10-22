@@ -36,7 +36,7 @@ const answer = (url: string, text: string) => ({
   text,
   status: 200,
   headers: new Headers(),
-  kind: "html" as const,
+  kind: "unknown" as const,
 })
 
 beforeEach(async () => {
