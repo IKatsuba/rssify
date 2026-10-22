@@ -153,7 +153,8 @@ function AddFeedForm({
     <DialogHeader>
       <DialogTitle>Add a feed</DialogTitle>
       <DialogDescription>
-        Paste a feed URL or a website’s address. We’ll find its feed.
+        Paste a feed URL or a website’s address. We’ll find its feed. GitHub
+        Trending pages work too.
       </DialogDescription>
     </DialogHeader>
   )
