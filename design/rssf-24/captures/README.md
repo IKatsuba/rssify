@@ -12,7 +12,7 @@ press `a`, and set the theme through localStorage `theme`.
 
 | Capture | State |
 | --- | --- |
-| `desktop-add.png` | 1280×800, light: four sources ordered by title, list flush with the field; it fits, so nothing scrolls |
+| `desktop-add.png` | 1280×800, light, retaken at 8072d99 (U3: "langchain.com — the LangChain blog’s own feed"): four sources ordered by title, list flush with the field; it fits, so nothing scrolls |
 | `dark-add.png` | 1280×800, dark: same |
 | `phone-add.png` | 390×844, light: the list (331 px) fits under 50vh (422 px), so it doesn't scroll at this height |
 | `phone-add-scrolled.png` | 375×600, light: the list is capped at 300 px and scrolled to the end; the URL field and separator stay fixed above it |
