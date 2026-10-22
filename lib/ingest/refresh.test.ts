@@ -597,6 +597,35 @@ describe("refreshFeed with a source plugin", () => {
     }
   })
 
+  test("a stored URL the plugin no longer gives as its own is unsupported", async () => {
+    for (const canonical of [() => null, () => `${LIST}/`]) {
+      await db.feed.deleteMany()
+      await pluginFeed()
+      let ran = false
+      const plugins = {
+        scrape: {
+          id: "scrape",
+          canonical,
+          fetchEntries: async () => {
+            ran = true
+            return [entry("a")]
+          },
+        },
+      }
+      expect(
+        await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
+      ).toEqual({
+        outcome: "failed",
+        error: "the source isn’t supported any more",
+      })
+      expect(ran).toBe(false)
+      expect(await row()).toMatchObject({
+        failureCount: 1,
+        lastError: "the source isn’t supported any more",
+      })
+    }
+  })
+
   test("a plugin's fetch errors become their sentences", async () => {
     await pluginFeed()
     const cases = [

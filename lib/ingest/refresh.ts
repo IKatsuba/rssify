@@ -202,7 +202,10 @@ export async function refreshFeed(
     const plugin = Object.hasOwn(plugins, feed.pluginId)
       ? plugins[feed.pluginId]
       : undefined
-    if (!plugin) return fail(LAST_ERROR.unknownSource)
+    // A shape a plugin no longer owns, as stored, is a source it dropped.
+    if (!plugin || plugin.canonical(new URL(feed.url)) !== feed.url) {
+      return fail(LAST_ERROR.unknownSource)
+    }
 
     const deadline = AbortSignal.timeout(PLUGIN_TIMEOUT)
     // A database error inside known() is ours, even if the plugin lets it

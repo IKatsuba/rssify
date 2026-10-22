@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, test } from "bun:test"
 import { SourceStatusError, type SourcePlugin } from "@/sources/types"
 import { db } from "@/test/db"
 
+import { fetchForAdd } from "./ingest/add"
 import type { IngestedEntry } from "./ingest/parse"
 import {
   SafeFetchError,
@@ -533,6 +534,46 @@ describe("subscribe to a new feed", () => {
         lastSuccessAt: NOW,
       })
       expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(1)
+    })
+
+    describe("fetchForAdd", () => {
+      // Owns the list page with or without a trailing slash.
+      const titled = (title: string, seen: string[] = []): SourcePlugin => ({
+        id: "scrape",
+        canonical: (u) => (u.href.replace(/\/$/, "") === LIST ? LIST : null),
+        title: (url) => `${title} ${url}`,
+        fetchEntries: async (c) => {
+          seen.push(c.url)
+          return [post]
+        },
+      })
+
+      test("titles the feed by the plugin and keeps its canonical URL", async () => {
+        const seen: string[] = []
+        expect(
+          await fetchForAdd(`${LIST}/`, {
+            fetch: noFetch,
+            plugins: { scrape: titled("Scrape", seen) },
+          })
+        ).toMatchObject({
+          kind: "feed",
+          feed: { pluginId: "scrape", title: `Scrape ${LIST}`, siteUrl: LIST },
+        })
+        expect(seen).toEqual([LIST])
+      })
+
+      test("a built-in source's title wins over the plugin's", async () => {
+        const CURSOR = "https://cursor.com/blog"
+        const plugins: Record<string, SourcePlugin> = {
+          scrape: {
+            ...titled("Scrape"),
+            canonical: (u) => (u.href === CURSOR ? CURSOR : null),
+          },
+        }
+        expect(
+          await fetchForAdd(CURSOR, { fetch: noFetch, plugins })
+        ).toMatchObject({ kind: "feed", feed: { title: "Cursor blog" } })
+      })
     })
 
     const failures: [string, SourcePlugin["fetchEntries"], string][] = [

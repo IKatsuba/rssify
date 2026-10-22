@@ -138,8 +138,12 @@ async function runPlugin(
     kind: "feed",
     feed: {
       pluginId: plugin.id,
-      // A plugin page has no feed title; a built-in source names it.
-      title: builtinSources.find((source) => source.url === url)?.title ?? null,
+      // A plugin page has no feed title; a built-in source names it, else
+      // the plugin may build one from its URL.
+      title:
+        builtinSources.find((source) => source.url === url)?.title ??
+        plugin.title?.(url) ??
+        null,
       siteUrl: url,
       entries,
       etag: null,
