@@ -64,27 +64,42 @@ export default async function AdminPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* A phone keeps what the page is for: which feed, and why it fails. */}
                   <TableHead>URL</TableHead>
-                  <TableHead>Subscribers</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Subscribers
+                  </TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Failures</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Failures
+                  </TableHead>
                   <TableHead>Last error</TableHead>
-                  <TableHead>Last success</TableHead>
+                  <TableHead className="hidden sm:table-cell">
+                    Last success
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {feeds.map((feed) => (
                   <TableRow key={feed.id}>
-                    <TableCell className="font-mono">{feed.url}</TableCell>
-                    <TableCell>{feed.subscribers}</TableCell>
+                    <TableCell className="font-mono break-all whitespace-normal sm:whitespace-nowrap">
+                      {feed.url}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {feed.subscribers}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={STATUS[feed.status].variant}>
                         {STATUS[feed.status].label}
                       </Badge>
                     </TableCell>
-                    <TableCell>{feed.failureCount}</TableCell>
-                    <TableCell>{feed.lastError ?? "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {feed.failureCount}
+                    </TableCell>
+                    <TableCell className="whitespace-normal sm:whitespace-nowrap">
+                      {feed.lastError ?? "—"}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {feed.lastSuccessAt
                         ? longAgo(feed.lastSuccessAt, now)
                         : "Never"}

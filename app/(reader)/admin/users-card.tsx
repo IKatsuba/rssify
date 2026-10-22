@@ -65,8 +65,9 @@ export function UsersCard({
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead>Feeds</TableHead>
+              {/* A phone keeps Email and Delete, as Settings drops its dates. */}
+              <TableHead className="hidden sm:table-cell">Joined</TableHead>
+              <TableHead className="hidden sm:table-cell">Feeds</TableHead>
               <TableHead>
                 <span className="sr-only">Actions</span>
               </TableHead>
@@ -79,8 +80,12 @@ export function UsersCard({
                   {user.email}{" "}
                   {user.you && <Badge variant="secondary">you</Badge>}
                 </TableCell>
-                <TableCell>{user.joined}</TableCell>
-                <TableCell>{user.feeds}</TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {user.joined}
+                </TableCell>
+                <TableCell className="hidden sm:table-cell">
+                  {user.feeds}
+                </TableCell>
                 <TableCell className="text-right">
                   {!user.you && (
                     <Button variant="ghost" onClick={() => setDeleting(user)}>
