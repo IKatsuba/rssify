@@ -21,6 +21,7 @@ import {
 } from "@/lib/reader-view"
 
 import { currentUser, subscriptionsOf } from "../../data"
+import { BackButton } from "./back-button"
 import { EntryKeys } from "./entry-keys"
 import { ReadButton } from "./read-button"
 
@@ -91,15 +92,10 @@ export default async function EntryPage({
           orientation="vertical"
           className="mr-2 data-vertical:h-4 data-vertical:self-center"
         />
-        <Button
-          variant="ghost"
-          className="min-w-0"
-          nativeButton={false}
-          render={<Link href={backHref} />}
-        >
+        <BackButton list={backHref}>
           <ArrowLeftIcon />
           <span className="truncate max-sm:sr-only">{listName}</span>
-        </Button>
+        </BackButton>
         <nav className="ml-auto flex items-center gap-1">
           <StepLink
             href={previousId && entryHref(previousId, scope)}

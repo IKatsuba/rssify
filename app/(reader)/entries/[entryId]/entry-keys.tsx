@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-import { useReturnTo } from "../../entry-rows"
 import { useKeys } from "../../keys"
 import { MarkAllConfirm } from "../../mark-all"
+import { useBackHref, useFollowEntry } from "../../return-point"
 
 // The entry page's keys (design §3); m lives on ReadButton, which owns the
 // entry's read queue.
@@ -30,12 +30,13 @@ export function EntryKeys({
 }) {
   const router = useRouter()
   const [confirm, setConfirm] = useState(false)
-  useReturnTo(back, entryId)
+  useFollowEntry(back, entryId)
+  const backTo = useBackHref(back)
   useKeys(
     {
       next: () => next !== null && router.push(next),
       previous: () => previous !== null && router.push(previous),
-      back: () => router.push(back),
+      back: () => router.push(backTo),
       original: () =>
         url !== null && void window.open(url, "_blank", "noopener,noreferrer"),
       markAll: () => unread > 0 && setConfirm(true),

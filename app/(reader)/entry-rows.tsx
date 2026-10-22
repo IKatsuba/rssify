@@ -8,9 +8,11 @@ import { toast } from "sonner"
 import { Item, ItemGroup } from "@/components/ui/item"
 import { intentQueue } from "@/lib/intent-queue"
 import { ROW_ATTRIBUTE } from "@/lib/keys"
+import { clampCursor, moveCursor, restoreCursor } from "@/lib/list-cursor"
 
 import { markRead, markUnread } from "./actions"
 import { useKeys } from "./keys"
+import { clearReturn, readReturn, writeReturn } from "./return-point"
 
 export type Row = {
   id: string
@@ -20,52 +22,22 @@ export type Row = {
   content: React.ReactNode
 }
 
-// Where Back should put the cursor: the list it belongs to, the entry last
-// shown and the row index it was opened from, for when that row has left an
-// Unread list by the time the person comes back.
-const RETURN_KEY = "rssify:cursor"
-type Return = { list: string; id: string; index: number }
-
-function readReturn(): Return | null {
-  try {
-    return JSON.parse(sessionStorage.getItem(RETURN_KEY) ?? "null")
-  } catch {
-    return null
-  }
-}
-
-function writeReturn(value: Return) {
-  try {
-    sessionStorage.setItem(RETURN_KEY, JSON.stringify(value))
-  } catch {
-    // Without storage Back starts on the first row.
-  }
-}
-
-function clearReturn() {
-  try {
-    sessionStorage.removeItem(RETURN_KEY)
-  } catch {
-    // Nothing stored to clear.
-  }
-}
-
-// The entry page keeps the return point on the entry it shows, so Back after
-// j/k lands on the last entry read, not the one first opened.
-export function useReturnTo(list: string, id: string) {
-  useEffect(() => {
-    const saved = readReturn()
-    if (saved?.list === list) writeReturn({ ...saved, id })
-  }, [list, id])
-}
-
 // The list's rows and its keyboard cursor (design §3). The cursor is client
 // state: it starts on the first row, or on the entry the person came back
 // from, and stays at its index when m drops a row from an Unread list.
-export function EntryRows({ list, rows }: { list: string; rows: Row[] }) {
+// list is the scope's first page, href the page shown.
+export function EntryRows({
+  list,
+  href,
+  rows,
+}: {
+  list: string
+  href: string
+  rows: Row[]
+}) {
   const router = useRouter()
   const [cursor, setCursor] = useState(0)
-  const at = Math.min(cursor, rows.length - 1)
+  const at = clampCursor(cursor, rows.length)
   const row = rows[at]
   const moved = useRef(false)
   // One queue per row, so repeated m on a row sends in order and the last
@@ -75,17 +47,20 @@ export function EntryRows({ list, rows }: { list: string; rows: Row[] }) {
   )
 
   useLayoutEffect(() => {
-    const saved = readReturn()
-    if (saved?.list !== list) return
+    const index = restoreCursor(
+      readReturn(),
+      href,
+      rows.map((r) => r.id)
+    )
+    if (index === null) return
     clearReturn()
-    const index = rows.findIndex((r) => r.id === saved.id)
-    // Restoring from storage after hydration; the server cannot know it.
     moved.current = true
+    // Restoring from storage after hydration; the server cannot know it.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setCursor(index >= 0 ? index : saved.index)
+    setCursor(index)
     // Only on arrival: later renders keep the person's own cursor.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list])
+  }, [href])
 
   useEffect(() => {
     if (moved.current) {
@@ -97,12 +72,12 @@ export function EntryRows({ list, rows }: { list: string; rows: Row[] }) {
   }, [at])
 
   function open(index: number) {
-    writeReturn({ list, id: rows[index].id, index })
+    writeReturn({ list, href, id: rows[index].id, index })
   }
 
   function move(step: number) {
     moved.current = true
-    setCursor(Math.max(0, Math.min(at + step, rows.length - 1)))
+    setCursor(moveCursor(at, step, rows.length))
   }
 
   function toggleRead({ id, read }: Row) {
@@ -143,9 +118,8 @@ export function EntryRows({ list, rows }: { list: string; rows: Row[] }) {
           original: () =>
             row.url !== null &&
             void window.open(row.url, "_blank", "noopener,noreferrer"),
-          refresh: () => router.refresh(),
         }
-      : { refresh: () => router.refresh() },
+      : {},
     "list"
   )
 
@@ -157,7 +131,9 @@ export function EntryRows({ list, rows }: { list: string; rows: Row[] }) {
           role="listitem"
           {...{ [ROW_ATTRIBUTE]: "" }}
           data-cursor={index === at || undefined}
-          className="data-cursor:bg-muted"
+          // Hover is lighter than the cursor, so the row the keys act on
+          // stays clear with the pointer resting on another.
+          className="data-cursor:bg-muted [a]:hover:bg-muted/50 data-cursor:[a]:hover:bg-muted"
           onFocus={() => setCursor(index)}
           onClick={() => open(index)}
           render={

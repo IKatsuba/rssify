@@ -52,8 +52,15 @@ export function ListActions({
     "mark" | "markByKey" | "unsubscribe" | null
   >(null)
   const close = (open: boolean) => !open && setConfirm(null)
-  // Shift+A, like the button, does nothing at zero unread.
-  useKeys({ markAll: () => unread > 0 && setConfirm("markByKey") })
+  // Here rather than on the rows, so r and Shift+A also work on an empty
+  // list; Shift+A, like the button, does nothing at zero unread.
+  useKeys(
+    {
+      markAll: () => unread > 0 && setConfirm("markByKey"),
+      refresh: () => router.refresh(),
+    },
+    "list"
+  )
 
   async function leave(feed: ListFeed) {
     setConfirm(null)

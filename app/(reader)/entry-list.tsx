@@ -133,6 +133,7 @@ export async function EntryList({
             // A new page or filter starts its own cursor.
             key={`${filter}:${cursor ?? ""}:${before ?? ""}`}
             list={listHref(path, { filter })}
+            href={listHref(path, { filter, cursor, before })}
             rows={list.entries.map((entry) => ({
               id: entry.id,
               href: entryHref(entry.id, { feedId: feed?.id, filter }),
