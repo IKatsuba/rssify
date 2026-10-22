@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, test } from "bun:test"
 
 import { db } from "@/test/db"
 
+import type { SafeFetch } from "./ingest/safe-fetch"
+
 import {
   getEntry,
   getNeighbours,
@@ -339,10 +341,26 @@ describe("subscribe", () => {
     }
   })
 
-  test("a URL with no Feed row is refused, writing nothing (unit 6 fetches)", async () => {
+  test("a URL with no Feed row is fetched; a failed fetch writes nothing", async () => {
+    const urls: string[] = []
+    const fetch: SafeFetch = async (url) => {
+      urls.push(url)
+      return {
+        status: 404,
+        url,
+        headers: new Headers(),
+        text: "",
+        kind: "unknown",
+      }
+    }
     expect(
-      await subscribe("u1", { url: "https://new.example.com/feed.xml" })
-    ).toEqual({ ok: false, code: "not_supported" })
+      await subscribe(
+        "u1",
+        { url: "https://new.example.com/feed.xml" },
+        { fetch }
+      )
+    ).toEqual({ ok: false, code: "not_found" })
+    expect(urls).toEqual(["https://new.example.com/feed.xml"])
     expect(await db.feed.count()).toBe(3)
   })
 
@@ -466,12 +484,31 @@ describe("races", () => {
     const release = await holdLock(lockFeed("b"))
     const unsub = unsubscribe("u1", "b")
     await lockWaiters(1)
-    const sub = subscribe("u2", { url: "https://b.example.com/feed.xml" })
+    // The feed is gone by the time subscribe sees it, so it is fetched as new.
+    const fetch: SafeFetch = async (url) => ({
+      status: 200,
+      url,
+      headers: new Headers(),
+      text: '<?xml version="1.0"?><rss version="2.0"><channel><title>Beta</title></channel></rss>',
+      kind: "xml",
+    })
+    const sub = subscribe(
+      "u2",
+      { url: "https://b.example.com/feed.xml" },
+      { fetch }
+    )
     await lockWaiters(2)
     await release()
     await unsub
-    expect(await sub).toEqual({ ok: false, code: "not_supported" })
+    const result = await sub
+    expect(result).toMatchObject({ ok: true, existed: false })
+    expect(result.ok && result.feedId).not.toBe("b")
     expect(await db.feed.count({ where: { id: "b" } })).toBe(0)
-    expect(await db.subscription.count({ where: { feedId: "b" } })).toBe(0)
+    expect(
+      await db.subscription.findMany({
+        where: { feed: { url: "https://b.example.com/feed.xml" } },
+        select: { userId: true },
+      })
+    ).toEqual([{ userId: "u2" }])
   })
 })

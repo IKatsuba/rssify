@@ -1,5 +1,8 @@
 import { db } from "@/lib/db"
 import { Prisma } from "@/lib/generated/prisma/client"
+import { fetchForAdd, type AddOptions, type NewFeed } from "@/lib/ingest/add"
+import { storeEntries, successFields } from "@/lib/ingest/refresh"
+import { builtinSource } from "@/sources/builtin"
 
 // Every function takes the caller's userId and derives ownership from it;
 // anything not the caller's is not_found, never forbidden, so ids of other
@@ -280,6 +283,11 @@ export type SubscribeResult =
   | { ok: true; feedId: string; existed: boolean }
   | { ok: false; code: string; choices?: string[] }
 
+export type SubscribeInput = { url: string } | { source: string }
+
+// Test seam, like refreshFeed's: production passes nothing.
+export type SubscribeOptions = AddOptions & { now?: Date }
+
 // Minimal for now: a WHATWG parse, http(s) only, no fragment. The ingest
 // unit owns any richer rule.
 export function normaliseUrl(input: string) {
@@ -294,38 +302,114 @@ export function normaliseUrl(input: string) {
   return url.href
 }
 
-// SEAM (build unit 6, "Add feed"): fetch, discovery and the new-feed
-// transaction replace this, taking (userId, url). Until then a URL with no
-// Feed row is refused with a code instead of being fetched.
-async function subscribeNewFeed(): Promise<SubscribeResult> {
-  return { ok: false, code: "not_supported" }
+type Target = { url: string } | { code: "invalid_url" | "not_found" }
+
+function resolveTarget(input: SubscribeInput): Target {
+  if ("source" in input) {
+    const source = builtinSource(input.source)
+    if (!source) return { code: "not_found" }
+    input = { url: source.url }
+  }
+  const url = normaliseUrl(input.url)
+  return url ? { url } : { code: "invalid_url" }
+}
+
+// Subscribes to a feed that is already stored; null when there is none.
+// The cap comes first, so a full account hears limit whatever it sends.
+async function subscribeKnown(
+  userId: string,
+  target: Target
+): Promise<SubscribeResult | null> {
+  return db.$transaction(async (tx): Promise<SubscribeResult | null> => {
+    // The user lock makes the cap count and the insert one step per user.
+    await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`
+    const count = await tx.subscription.count({ where: { userId } })
+    if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
+    if ("code" in target) return { ok: false, code: target.code }
+    // A feed deleted by a last unsubscribe while we waited for its lock
+    // is skipped by FOR UPDATE, so it reads as not existing.
+    const [feed] = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "Feed" WHERE url = ${target.url} FOR UPDATE`
+    if (!feed) return null
+    // A known feed is polled on its own schedule, so subscribing never
+    // fetches.
+    const { count: created } = await tx.subscription.createMany({
+      data: { userId, feedId: feed.id },
+      skipDuplicates: true,
+    })
+    return { ok: true, feedId: feed.id, existed: created === 0 }
+  })
+}
+
+// The first fetch happens outside any transaction; only its result is
+// written, all at once, so a failure leaves nothing behind.
+async function storeNewFeed(
+  userId: string,
+  url: string,
+  feed: NewFeed,
+  now: Date
+): Promise<SubscribeResult> {
+  const { entries, ...fields } = feed
+  return db.$transaction(async (tx): Promise<SubscribeResult> => {
+    await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`
+    const count = await tx.subscription.count({ where: { userId } })
+    if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
+    let feedId: string | undefined
+    // Two people adding one new URL at once: ON CONFLICT makes the second
+    // wait for the first and then subscribe to its row, whose entries the
+    // first stored. The retry covers that row being unsubscribed away
+    // between the two statements.
+    for (let attempt = 0; !feedId && attempt < 2; attempt++) {
+      const [created] = await tx.feed.createManyAndReturn({
+        data: { url, ...fields, ...successFields(now) },
+        skipDuplicates: true,
+        select: { id: true },
+      })
+      if (created) {
+        feedId = created.id
+        await storeEntries(tx, feedId, entries, now)
+        break
+      }
+      const [existing] = await tx.$queryRaw<{ id: string }[]>`
+        SELECT id FROM "Feed" WHERE url = ${url} FOR UPDATE`
+      feedId = existing?.id
+    }
+    if (!feedId) throw new Error(`Could not store or find the feed ${url}`)
+    const { count: subscribed } = await tx.subscription.createMany({
+      data: { userId, feedId },
+      skipDuplicates: true,
+    })
+    return { ok: true, feedId, existed: subscribed === 0 }
+  })
 }
 
 export async function subscribe(
   userId: string,
-  { url: input }: { url: string }
+  input: SubscribeInput,
+  { now = new Date(), ...options }: SubscribeOptions = {}
 ): Promise<SubscribeResult> {
-  const result = await db.$transaction(
-    async (tx): Promise<SubscribeResult | null> => {
-      // The user lock makes the cap count and the insert one step per user.
-      await tx.$queryRaw`SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`
-      const count = await tx.subscription.count({ where: { userId } })
-      if (count >= SUBSCRIPTION_LIMIT) return { ok: false, code: "limit" }
-      const url = normaliseUrl(input)
-      if (!url) return { ok: false, code: "invalid_url" }
-      // A feed deleted by a last unsubscribe while we waited for its lock
-      // is skipped by FOR UPDATE, so it reads as not existing.
-      const [feed] = await tx.$queryRaw<{ id: string }[]>`
-        SELECT id FROM "Feed" WHERE url = ${url} FOR UPDATE`
-      if (!feed) return null
-      // A known feed is polled on its own schedule, so subscribing never
-      // fetches.
-      const { count: created } = await tx.subscription.createMany({
-        data: { userId, feedId: feed.id },
-        skipDuplicates: true,
-      })
-      return { ok: true, feedId: feed.id, existed: created === 0 }
-    }
-  )
-  return result ?? subscribeNewFeed()
+  const target = resolveTarget(input)
+  const known = await subscribeKnown(userId, target)
+  if (known) return known
+  // subscribeKnown answers every non-URL target, so this is a URL.
+  let url = (target as { url: string }).url
+
+  let fetched = await fetchForAdd(url, options)
+  if (fetched.kind === "page") {
+    const feeds = [
+      ...new Set(fetched.feeds.flatMap((feed) => normaliseUrl(feed) ?? [])),
+    ]
+    if (feeds.length === 0) return { ok: false, code: "not_found" }
+    if (feeds.length > 1) return { ok: false, code: "multiple", choices: feeds }
+    // Discovery stores the URL it found, which may already be a feed here.
+    url = feeds[0]
+    const again = await subscribeKnown(userId, { url })
+    if (again) return again
+    fetched = await fetchForAdd(url, options)
+    // A page that points to another page is not followed further.
+    if (fetched.kind === "page") return { ok: false, code: "not_found" }
+  }
+  if (fetched.kind === "error") return { ok: false, code: fetched.code }
+  // A direct feed keeps the address it was added by, even after redirects.
+  return storeNewFeed(userId, url, fetched.feed, now)
 }
