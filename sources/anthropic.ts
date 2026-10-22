@@ -57,16 +57,27 @@ function postUrl(href: string | undefined, pageUrl: string) {
 
 // Both sections serve the same post template. The body is found through
 // the plain `post-text` class; its container's class is a CSS-module hash
-// that changes between builds.
-function readPost(html: string, post: Post): IngestedEntry {
+// that changes between builds. Some posts carry the site-wide description
+// (`siteDescription`, read from the list page) instead of their own; their
+// summary is the first paragraph.
+function readPost(
+  html: string,
+  post: Post,
+  siteDescription: string | undefined
+): IngestedEntry {
   const $ = load(html)
   // Some pages' og:title carries the site name; most do not.
   const ogTitle = $('meta[property="og:title"]').attr("content")?.trim()
   const title = ogTitle?.endsWith(TITLE_SUFFIX)
     ? ogTitle.slice(0, -TITLE_SUFFIX.length)
     : ogTitle
-  const description = $('meta[name="description"]').attr("content")
-  const body = $("p.post-text").first().parent()
+  const description = $('meta[name="description"]').attr("content")?.trim()
+  const first = $("p.post-text").first()
+  const body = first.parent()
+  const summary =
+    !description || description === siteDescription
+      ? first.text()
+      : description
   const published =
     validDate($('meta[property="article:published_time"]').attr("content")) ??
     post.listDate
@@ -79,7 +90,7 @@ function readPost(html: string, post: Post): IngestedEntry {
       url: post.url,
       title: title ? escapeHtml(title) : null,
       published,
-      summary: description ? escapeHtml(description) : null,
+      summary: summary ? escapeHtml(summary) : null,
       content: body.length ? body.html() : null,
     },
     post.url
@@ -103,8 +114,20 @@ function plugin(
     // href is already normalised, so a query, hash, port or credentials
     // make it no spelling of ours.
     canonical: (url) => (spellings.has(url.href) ? listUrl : null),
-    fetchEntries: (ctx) =>
-      fetchListThenPosts(ctx, { listUrl, links, readPost }),
+    fetchEntries: (ctx) => {
+      // Per call, not per module: each run reads the list page afresh.
+      let siteDescription: string | undefined
+      return fetchListThenPosts(ctx, {
+        listUrl,
+        links: ($, pageUrl) => {
+          siteDescription = $('meta[name="description"]')
+            .attr("content")
+            ?.trim()
+          return links($, pageUrl)
+        },
+        readPost: (html, post) => readPost(html, post, siteDescription),
+      })
+    },
   }
 }
 

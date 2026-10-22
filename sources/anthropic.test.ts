@@ -148,6 +148,55 @@ describe("anthropicEngineering", () => {
     }
   })
 
+  test("a post with the site-wide description is summarised by its first paragraph", async () => {
+    const generic = research("harness-design-long-running-apps")
+    const normal = research("managed-agents")
+    const { entries } = await read(
+      anthropicEngineering,
+      {
+        [LIST]: list,
+        [generic]: fixture(
+          "anthropic-engineering/harness-design-long-running-apps.html"
+        ),
+        [normal]: fixture("anthropic-engineering/managed-agents.html"),
+      },
+      [generic, normal]
+    )
+    const byUrl = Object.fromEntries(entries.map((e) => [e.url, e]))
+
+    expect(byUrl[generic].title).toBe("Harness design for long-running apps")
+    expect(byUrl[generic].summary).toStartWith(
+      "Over the past several months I’ve been working on two interconnected problems"
+    )
+    // Cut like every other summary.
+    expect(byUrl[generic].summary!.length).toBeLessThanOrEqual(300)
+    expect(byUrl[generic].summary).not.toContain("AI safety and research")
+
+    expect(byUrl[normal].summary).toBe(
+      "Harnesses encode assumptions that go stale as models improve. See how Managed Agents is built around interfaces that stay stable as harnesses change."
+    )
+  })
+
+  test("without a list page description, a post's description is its summary", async () => {
+    const url = research("harness-design-long-running-apps")
+    const { entries } = await read(
+      anthropicEngineering,
+      {
+        [LIST]: page(
+          "",
+          `<article><h3><a href="/research/harness-design-long-running-apps">Harness</a></h3></article>`
+        ),
+        [url]: fixture(
+          "anthropic-engineering/harness-design-long-running-apps.html"
+        ),
+      },
+      [url]
+    )
+    expect(entries[0].summary).toBe(
+      "Anthropic is an AI safety and research company that's working to build reliable, interpretable, and steerable AI systems."
+    )
+  })
+
   test("a page without the body is a summary-only entry, its title without the site suffix", async () => {
     const url = research("managed-agents")
     const { entries } = await read(
