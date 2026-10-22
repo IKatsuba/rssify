@@ -1,459 +1,122 @@
 # AGENTS.md
 
-## Project Overview
+rssify is a simple serverless RSS reader: Next.js App Router, shadcn/ui
+(preset b1D0dxmC, Base UI), Prisma 7 on Neon, better-auth (Sign in with
+Vercel, API keys, MCP OAuth), Vercel Cron and Queues. Bun is the package
+manager and test runner. The web UI, `/api/v1` and the MCP server at
+`/api/mcp` all call one set of operations in `lib/reader.ts`.
 
-rssify is a serverless RSS reader built with Next.js App Router, React,
-shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
-Bun is the package manager and test runner. The session-only reader uses
-Vercel sign-in, marks entries read on open and manages API keys in Settings.
-It shares subscriptions and read-state operations with API-key-only
-`/api/v1` and `/api/mcp` (OAuth or API key). The OAuth provider supplies
-MCP consent and connected-app management. Ingest has guarded HTTP, feed
-parsing, sanitising, refresh and add-feed helpers, cron and queue
-scheduling, and a Cursor blog source plugin.
+Keep it simple: the smallest code that does the job, a maintained library
+before our own code, no workaround around a library that does not fit (stop
+and ask instead).
 
 ## Commands
 
-Run from the repository root:
-
 ```bash
 bun install
-bunx prisma generate                 # After clone or a schema change
-cp .env.example .env.local            # Once; fill local auth settings
-docker compose up -d                 # Local Postgres, port 54329
+bunx prisma generate                  # after clone or a schema change
+cp .env.example .env.local            # once
+docker compose up -d                  # Postgres 17 on 127.0.0.1:54329
 bun --env-file=.env.local run prisma migrate dev
-bun run dev                          # http://localhost:3210
+bun run dev                           # http://localhost:3210
 ```
 
-Whole check (with local Postgres running):
+Whole check (local Postgres running):
 
 ```bash
 bun run lint && bun run typecheck && bun run test
 ```
 
-On a fresh clone, run `bunx next typegen` before `bun run typecheck` to
-generate `PageProps` and other route types. A dev server or build also
-generates them.
+- One test file: `bun run test ./lib/auth.test.ts`. Tests use the local
+  `rssify_test` database and need no env setup.
+- A fresh clone needs `bunx next typegen` before `bun run typecheck`.
+- `bun run build` for a production build; CI runs the whole check and the
+  build on every PR and push to `main` (`.github/workflows/ci.yml`).
+- Run targeted tests while editing and the whole check before a commit is
+  handed on. Run heavy commands in the background, one at a time.
 
-`.github/workflows/ci.yml` runs the whole check and `bun run build` on
-every pull request and push to `main`, using Ubuntu, Bun 1.4.3 and a
-Postgres 17 service on port 54329. It installs with `--frozen-lockfile`,
-generates Prisma and Next.js types, and builds with dummy env values;
-no secrets are needed. Keep its checks in step with the commands above.
-
-Run one test file: `bun run test ./lib/auth.test.ts`. This forwards the
-file to Bun after applying test migrations, just like `bun run test`.
-The test script defaults to local `rssify_test` and needs no env setup.
-Use targeted tests while editing; run the whole check at the unit handoff
-and final gate. Run heavy checks in the background and read their result
-before starting another. The safe-fetch TLS test needs local `node` and
-`openssl`.
+Local helpers (each refuses a non-local database):
 
 ```bash
-bun run build                        # Production build
-bun run start -p 3210                 # Serve that build locally
-bun run format                       # Format TypeScript/TSX
-bun --env-file=.env.local scripts/dev-session.ts [email]
-bun --env-file=.env.local scripts/dev-seed.ts [email]
-bun --env-file=.env.local scripts/refresh.ts
+bun --env-file=.env.local scripts/dev-session.ts [email]  # session cookie
+bun --env-file=.env.local scripts/dev-seed.ts [email]     # mock feeds
+bun --env-file=.env.local scripts/refresh.ts              # one refresh cycle
 ```
 
-The session helper creates a local user and session without Vercel and
-prints a session cookie to set on localhost:3210. It accepts only a local
-Postgres host; its default user is `reader@example.com`.
+## Where things are
 
-The seed script accepts only a local Postgres host and creates mock feeds
-and entries for reader screen checks, defaulting to `reader@example.com`.
-Reruns replace the mock feeds, moving them to the chosen user when the
-email changes; real feeds are left alone. Mock feeds are not due for refresh.
+- `app/`: pages, server actions, Route Handlers. `(reader)/` is the
+  signed-in UI; `api/v1`, `api/mcp`, `api/cron/refresh`,
+  `api/queues/refresh-feed` and `.well-known/` are the machine endpoints.
+- `lib/reader.ts`: subscriptions, entries and read state; the one
+  implementation behind actions, `/api/v1` and MCP. Inputs are the zod
+  schemas in `lib/reader-schemas.ts`, shared by all three.
+- `lib/actor.ts`: who is calling (session, API key, MCP token); every route,
+  action and tool goes through it.
+- `lib/auth.ts`: better-auth config, `isAdmin`, the registration gate.
+- `lib/ingest/`: fetching (`safe-fetch.ts`), URL canonicalisation
+  (`target.ts`), discovery, parsing and sanitising, add-feed, refresh,
+  cron fan-out and the queue consumer.
+- `sources/`: source plugins and built-in sources for sites without a
+  usable feed.
+- `lib/mcp/`: the MCP server and its route.
+- `prisma/`: schema and committed migrations.
+- `design/rssf-*/DESIGN.md`: the design behind each feature. Read the one a
+  task names; it is the specification, not this file.
 
-The refresh script accepts only a local Postgres host and runs one claim
-and refresh cycle inline, without a queue.
+## Rules that are easy to get wrong
 
-## Architecture
+- Every route, action and MCP tool checks the caller through `lib/actor.ts`
+  before reading or writing. An API key or MCP token never grants admin.
+- All ingest HTTP goes through `safeFetch` (SSRF guard, limits). Keep its
+  import of `'undici/index.js'`: `bun test` shims bare `'undici'` and would
+  bypass the guard. `allowAddress`/`ports` on `createSafeFetch` are for
+  tests only. CIMD client metadata uses `@better-auth/cimd`'s own guarded
+  fetcher by design.
+- Feed HTML is sanitised once, at ingest; render stored content as is.
+- A plugin is found by `canonical(url)`; the canonical URL is stored in
+  `Feed.url` and is the plugin's whole configuration. Changing a shipped
+  canonical form needs a migration that merges duplicates.
+- Reading an entry through `/api/v1` or MCP never marks it read; the UI
+  marks on open.
+- The queue consumer has no auth of its own: Vercel keeps queue consumers
+  private. Never add a public route that calls `refreshFeed`.
+- Prisma: one client per instance (`lib/db.ts`), schema changes only
+  through a committed migration, dev commands with
+  `bun --env-file=.env.local`.
+- `BETTER_AUTH_SECRET` must stay stable: it encrypts the JWKS signing key.
 
-- `app/`: App Router pages, server actions and Route Handlers. `/sign-in`
-  redirects signed-in users to `/`; otherwise it shows Vercel sign-in,
-  redirecting, registration-closed or error states.
-- `app/(reader)/`: session-only layout with a responsive sidebar, unread
-  badges, failing/gone markers and an email menu for Settings, shortcuts,
-  Admin (admin only), theme and sign-out.
-  `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
-  empty states and feed notices. Mark all as read confirms the list scope,
-  uses `asOf` as the cutoff, is disabled at zero unread and toasts the actual
-  marked count. The feed menu opens the website when `siteUrl` exists,
-  copies the feed URL and marks all read. Unsubscribe confirms, then returns
-  to `/` with a toast. The sidebar + and no-feeds state open Add a feed:
-  a URL field above a scrolling built-in source list (max 50vh), Subscribed
-  badges, Adding… state, discovered URL choices with Back, and errors under
-  the field or source. Success
-  opens `/feeds/[id]` with a toast; `lib/add-feed-errors.ts` maps error codes.
-  `/entries/[entryId]?feed=&filter=` shows stored sanitised content,
-  falling back to summary or a no-text state, with Back, scoped previous/next,
-  Open original and Mark as read/unread. Opening marks read after client
-  mount, never during server rendering or prefetch. `lib/intent-queue.ts`
-  serialises optimistic read changes so the last intent wins; a failed
-  latest change restores the confirmed state and shows an error toast.
-  Routes have loading and not-found states; `(reader)/error.tsx` retries
-  page and sidebar queries together through `rssify:retry` and the sidebar's
-  `catchError` boundary. Sonner supplies reader toasts.
-  `app/error.tsx` catches reader layout failures. `data.ts` caches session
-  and subscription reads per request; the layout title includes unread count.
-- `app/(reader)/settings/`: `/settings` has Account (email and Sign out),
-  API keys, Connected apps and Keyboard shortcuts (Show and Turn off/on)
-  cards, loading/error states and the title `Settings · rssify`. Keys list
-  newest first with name, eight-character start, Created and Last used
-  (Never if unused); dates are hidden on phones. Create takes a trimmed
-  1–64-character name, then opens a shown-once dialog with a masked field
-  and Copy for the full key; closing drops the secret. Revoke confirms first; failures toast.
-  Connected apps lists one row per client by latest consent, newest first,
-  then clientId ascending, with Name, Website (host) and Connected (hidden
-  on phones). Empty state shows the MCP address. Disconnect confirms,
-  deletes all that user's consents for the client and revokes its refresh
-  tokens in one transaction through `lib/mcp-clients.ts`; issued access
-  tokens remain valid for up to one hour. Success and failure toast.
-- `app/(reader)/admin/`: `/admin` uses `requireAdmin`, has a loading state
-  and the title `Admin · rssify`. Users lists email, joined date and
-  subscription count, oldest first, with a `you` badge and confirmed Delete
-  for other users; success and failure toast. Registration shows open/closed
-  with instructions to change `REGISTRATION_ENABLED` and redeploy. Feeds
-  lists subscribed URLs, subscriber counts, Failing/Gone/OK status, failures,
-  last error (`—` if absent) and relative last success (`Never` if absent),
-  failing then gone then OK, ordered by URL within each status. Neither list
-  pages. Phones hide Joined/Feeds in Users and Subscribers/Failures/Last
-  success in Feeds; feed URLs and errors wrap. Signed-in non-admins see the
-  noindex not-found page without admin data; streaming can leave HTTP 200.
-- `lib/admin.ts`: lists users and subscribed feeds for the admin page.
-  `deleteUser(actorId, userId)` refuses self-deletion; a missing user is a
-  no-op. One transaction locks the user before their feeds, matching
-  subscribe's lock order, deletes the user with cascading sessions, accounts,
-  subscriptions, read marks, API keys and OAuth rows, then deletes feeds
-  nobody else follows with their entries. Shared feeds stay.
-- `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
-  the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
-  v for the original and r to refresh, even when empty. Entries use j/k
-  for next/previous, u/Esc for Back, m and v. Both use a for Add a feed,
-  Shift+A to confirm marking their list read (Enter confirms), and ? for
-  Keyboard shortcuts. The dialog also opens from the email menu and has
-  Turn shortcuts off/on. Tooltips and menus show platform-specific hints.
-  `lib/list-cursor.ts` holds cursor logic; `return-point.ts` saves the page,
-  scope and current entry in sessionStorage. The cursor starts on the first
-  row; Back restores the current entry's row, including after j/k crosses
-  pages, or falls back to the first row. Under Unread, m keeps its index,
-  clamped to the remaining rows.
-- `app/(reader)/actions.ts`: session-only `subscribe`, `unsubscribe`,
-  `markRead`, `markUnread` and `markAllRead` server actions use `requireUser`
-  and its user ID, then revalidate `('/', 'layout')`. Subscribe also returns
-  the feed title (URL fallback) for toasts. `createApiKey` and `revokeApiKey`
-  use `lib/api-keys.ts` with session headers, as does the Settings list
-  loader; a key cannot manage keys. `disconnectApp` uses the session user ID
-  and `lib/mcp-clients.ts`, revalidating the layout on success. `deleteUser`
-  checks `requireAdmin` before parsing, calls `lib/admin.ts` and revalidates
-  the layout. Actions parse inputs after authorization and throw `TypeError`
-  for invalid input. API keys do not grant access.
-- `lib/reader-schemas.ts`: shared Zod 4 inputs for actions, `/api/v1` and MCP.
-  Subscribe accepts exactly one of `{ url }` or `{ source }`; mark-all
-  accepts a Date or ISO datetime `upTo`, preprocessing Dates to ISO strings
-  so MCP can expose its JSON Schema. Zod is a direct dependency.
-- `app/api/v1/`: JSON Route Handlers over `lib/api-v1.ts` and `lib/reader.ts`,
-  each with `maxDuration = 60`. Only `x-api-key` authenticates; cookies do not.
-  GET/POST `subscriptions` list or subscribe (201 new, 200 existing);
-  DELETE `subscriptions/[feedId]` returns 204. Subscription feeds expose
-  `pluginId` (null for plain feeds). GET `entries` accepts `feedId`,
-  `unread=true|false`, `limit` (1–100, default 50) and `cursor`, returning
-  `{ entries, nextCursor, asOf }`. GET `entries/[id]` includes `contentHtml`
-  without marking read. PUT/DELETE `entries/[id]/read` return 204;
-  POST `entries/read` takes `{ feedId?, upTo }` and returns `{ marked }`.
-  Errors use `{ error: { code, message } }`: 400 `invalid_input`, 401,
-  404 for missing or inaccessible data, 422 for subscribe failures (the
-  add-feed sentence and discovery `choices` when present), and 429.
-- `app/api/mcp/route.ts`: POST only, `maxDuration = 60`, delegating to
-  `lib/mcp/route.ts`. SDK v2 `@modelcontextprotocol/server` 2.3.1 serves
-  Streamable HTTP with a fresh server per request and `legacy: "stateless"`
-  for 2025-era clients; GET/DELETE return 405. Before auth, the SDK refuses
-  a present Origin whose hostname differs from `BETTER_AUTH_URL`'s;
-  scheme and port are not compared. A present `x-api-key` takes precedence
-  over OAuth, including an empty or invalid key, with `/api/v1`'s 401/429
-  checks. Otherwise `withMcpAuth` checks the OAuth bearer. `Bearer rss_…`
-  is refused; query `access_token` and cookies are ignored.
-- `lib/mcp/server.ts`: `buildMcpServer(userId)` registers `list_feeds`,
-  `subscribe`, `unsubscribe`, `list_entries`, `get_entry`, `mark_read`,
-  `mark_unread` and `mark_all_read` over `lib/reader.ts`. Successful results
-  use `/api/v1` JSON shapes as `structuredContent` with an `outputSchema`
-  and one JSON text block; mutations returning 204 over HTTP return `{}`.
-  `list_entries` takes `feedId?`, `unreadOnly` (default false), `limit`
-  (1–100, default 50) and `cursor?`; its `asOf` is `mark_all_read`'s `upTo`.
-  `get_entry` never marks read. Reader errors return `isError` with JSON
-  `{ code, message, choices? }` as text; retry `subscribe` with a choice
-  after `multiple`. Unexpected failures are logged and return
-  `internal_error` with the generic page-error sentence; invalid inputs
-  use the SDK's own `isError` text. No resources or prompts are registered.
-  `lib/reader-output.ts` shares error bodies and subscription lookup with
-  `/api/v1`.
-- `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
-  `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
-  sessions, API keys and the MCP OAuth provider (`jwt()`, `mcp()`, `cimd()`).
-  OAuth endpoints and JWKS mount under `/api/auth`; the session-to-JWT
-  endpoint `/api/auth/token` is disabled.
-  `lib/auth-client.ts` uses `oauthProviderClient()` to carry the signed OAuth
-  query through Vercel sign-in and resume authorization.
-- `app/.well-known/`: public RFC 9728 protected-resource metadata at
-  `/.well-known/oauth-protected-resource` and its `/api/mcp` suffix;
-  RFC 8414 issuer metadata at
-  `/.well-known/oauth-authorization-server/api/auth`.
-- `app/consent/`: verifies the signed query before loading the session or
-  client; invalid queries and missing clients return 404. Without a session,
-  redirects to `/sign-in` with the same query. The Card asks to allow the
-  named app, shows its host and every requested scope (`reader` first),
-  and offers Deny/Allow. The title is `Allow {client} · rssify`; failures
-  toast and allow retry. `lib/consent.ts` falls back from client name to
-  website host, HTTPS client-ID host, then client ID; absent hosts are hidden.
-  Existing consent covering the request is reused until disconnected.
-- `lib/actor.ts`: session-only user/admin guards and an `x-api-key` guard.
-  `requireUser` also returns email for display; ownership uses user ID.
-  `requireAdmin` redirects missing sessions to `/sign-in` and calls
-  `notFound()` for signed-in non-admins.
-  Keys never grant admin access or use session cookies; invalid keys return
-  401, and rate-limited keys return 429 with `Retry-After`.
-  `withMcpAuth` authenticates OAuth requests to `/api/mcp`:
-  verifies JWT signature, issuer, audience `MCP_RESOURCE`, expiry, `azp` and
-  `reader` scope, then checks the user still exists. Refusals are 401 with
-  a `resource_metadata` challenge or 403 `insufficient_scope`; never admin.
-- `lib/reader.ts`: user-scoped subscriptions with unread counts, entry
-  queries ordered by `sortAt`/id descending with keyset paging, and scoped
-  neighbours. `getEntryNavigation` also returns a page cursor for Back.
-  `listEntries` accepts `cursor` for older or `before` for newer
-  (`before` wins), returning `nextCursor` and `prevCursor`. Reads do not mark
-  entries read; read/unread writes are idempotent, and mark-all uses the
-  list's `asOf` as its `upTo` cutoff.
-  Inaccessible data returns `not_found`. `subscribe(userId, { url } | { source })`
-  checks the 500-subscription cap first (`limit`), resolves built-in sources
-  (unknown IDs return `not_found`) and canonicalises URLs before looking up
-  stored feeds. Plugin URL spellings share one row; existing feeds need no
-  fetch. New feeds are fetched outside the transaction; one transaction locks
-  the user, rechecks the cap, inserts the feed, first entries, success polling
-  fields and subscription. A URL conflict subscribes
-  to the winner's feed. Failures write nothing; DB errors throw. Last
-  unsubscribe deletes the feed, entries and read marks in one transaction.
-- `lib/reader-view.ts`: reader URL parameters and links, empty states and
-  feed notices. `lib/relative-time.ts` formats short list times and relative
-  sentences with Intl; future dates read as now.
-- `lib/ingest/add.ts`: `fetchForAdd` uses `safeFetch` with a 15 s deadline
-  and parses against the final response URL. The add path discovers HTML
-  after parse failure, using body sniffing or an HTML Content-Type. Subscribe
-  canonicalises and deduplicates discovered URLs: none returns `not_found`,
-  several return `multiple` with `choices`, and one rechecks stored feeds
-  before fetching. Discovery stops there; another HTML page is `not_found`.
-  Direct feeds keep the normalised input URL after redirects; discovered
-  feeds use the canonical discovered URL. Each plain fetch gets 15 s.
-  HTTP 404/410 and non-feeds return `not_found`, other non-2xx responses
-  `unreachable`; `SafeFetchError` codes pass through. A matching plugin gets
-  one 40 s deadline and its canonical URL as `ctx.url` and `siteUrl`. Its
-  title is the built-in title, else `plugin.title(url)`, else null. Fetch
-  errors keep their code; list-page HTTP errors map as above. Other throws
-  or zero entries return `not_found`.
-- `lib/ingest/target.ts`: pure, idempotent `canonicalUrl(input, plugins)`
-  runs `normaliseUrl`, then uses the first plugin's canonical URL or the
-  normalised URL. Invalid inputs return null. `normaliseUrl` trims, parses
-  HTTP(S) URLs and removes fragments; `lib/reader.ts` re-exports it.
-  Changing shipped canonical forms requires a migration merging duplicates.
-- `lib/ingest/discover.ts`: `discoverFeeds(html, pageUrl)` uses cheerio to
-  read alternate RSS/Atom/RDF/JSON Feed links, resolving against `<base>`
-  or the final page URL. It returns deduplicated HTTP(S) URLs in document
-  order, with no path guessing.
-- `sources/`: `builtinSources` lists sources by title: `claude-code` →
-  `https://claude.dev/rss.xml`, `cursor-blog` → `https://cursor.com/blog`,
-  `langchain-blog` → `https://www.langchain.com/blog/rss.xml` and
-  `nodejs-blog` → `https://nodejs.org/en/feed/blog.xml`. The last two are
-  native feeds. Pasting `https://nodejs.org/en/blog` discovers its built-in
-  feed; `https://www.langchain.com/blog` returns `not_found`, so use the
-  built-in source.
-  `SourcePlugin` has a stable `id`, pure `canonical(URL): string | null`,
-  optional `title(url)` and `fetchEntries` with the stored canonical URL,
-  guarded fetch, known-URL lookup and a shared deadline. `pluginFor` returns
-  the first `{ plugin, url }` match or undefined, using own registry keys
-  and a fresh URL per plugin. `cursor-blog` owns exactly
-  `https://cursor.com/blog`. It reads static HTML with
-  cheerio: article links must be same-origin HTTPS `/blog/` post URLs;
-  query/hash are stripped and duplicates removed in document order.
-  It fetches at most 10 unknown posts per run, four at a time, using URLs
-  as guids. Entries use `og:title` minus trailing ` · Cursor`, meta
-  description and the first `.prose--blog`, with normal feed normalisation
-  and sanitising. Dates use the first valid `article:published_time`,
-  post `time[datetime]`, then list date. No post links throws
-  "the page layout changed"; failed post fetches are skipped for this run.
-  A non-2xx list page throws `SourceStatusError` with status and headers.
-  Built-in source feeds are created on subscribe, never seeded.
-- `lib/ingest/fan-out.ts`: `fanOut(enqueue)` claims up to 500 due,
-  subscribed feeds, oldest first, in one SQL statement with
-  `FOR UPDATE SKIP LOCKED`, setting `nextFetchAt` to a 30-minute lease.
-  Gone feeds have null `nextFetchAt` and are not claimed. It enqueues 50
-  at a time with `Promise.allSettled`, logs failed sends and leaves them
-  leased. It stops starting chunks after 240 s; unsent feeds stay leased
-  too. Lost messages and failed sends come due again when the lease expires.
-  Returns `{ claimed, sent, failed }`.
-- `app/api/cron/refresh/route.ts`: GET with `maxDuration = 300`, using
-  `lib/ingest/cron.ts`. Unset or empty `CRON_SECRET` returns 500; a header
-  other than exactly `Authorization: Bearer ${CRON_SECRET}` returns 401.
-  It calls `fanOut` with `@vercel/queue` sends to `feed-refresh`, body
-  `{ feedId }` and ``idempotencyKey: `${feedId}:${tick}```, where `tick` is
-  the run start floored to 15 minutes as an ISO timestamp. After fan-out,
-  `lib/auth-cleanup.ts` deletes expired OAuth refresh tokens, access tokens
-  and client assertions using indexed `expiresAt` queries; CIMD clients stay.
-  Cleanup failures are logged and fan-out counts still return.
-- `app/api/queues/refresh-feed/route.ts`: POST via `handleCallback`, with
-  `maxDuration = 60`. `lib/ingest/consumer.ts` calls `refreshFeed` with
-  `skipIfFreshWithin: 120`; malformed messages without a string `feedId`
-  are logged and acknowledged. Missing feeds and source failures are
-  acknowledged; DB errors throw for redelivery. The consumer has no auth
-  code of its own: it assumes Vercel keeps trigger consumers private
-  (design §5.6). The owner must verify this on the first deploy.
-- `vercel.json`: `crons` runs `/api/cron/refresh` on `*/15 * * * *`;
-  `experimentalTriggers` binds the consumer to `queue/v2beta`, topic
-  `feed-refresh`, with `maxDeliveries: 3`.
-- `lib/ingest/refresh.ts`: `refreshFeed(feedId, { skipIfFreshWithin, fetch,
-  plugins, now })` uses conditional `safeFetch` with a 15 s deadline for
-  feeds, parsing against the final response URL without changing the stored
-  URL. Missing feeds return; `skipIfFreshWithin` skips recent fetches
-  (seconds). Plugin feeds get one 40 s deadline, `ctx.url = feed.url` and
-  `known()` checks stored guids. Success uses the same storage and scheduling,
-  without validators or changing title/siteUrl. Unknown plugin IDs or a
-  `plugin.canonical(new URL(feed.url))` unequal to `feed.url` fail with
-  "the source isn’t supported any more"; fetch errors use the usual texts,
-  list-page HTTP errors use the status handling below, and other throws
-  store their message. Database errors, including in `known()`, throw even
-  if the plugin catches them.
-  Shared `storeEntries` takes the newest 100 items by `sortAt`, with document
-  order breaking ties and `sortAt = min(publishedAt ?? now, now)`.
-  `(feedId, guid)` duplicates keep the first version. In one transaction,
-  it inserts, retains the newest 500 by `(sortAt, id)` descending and
-  updates the feed; DB errors throw and roll back. Retained entries keep
-  read marks; pruning cascades them. Success (including 304) resets
-  failures and schedules +60 min; new feeds use the same `successFields`.
-  Failures use `min(60 min × 2^failureCount, 24 h)` with the incremented
-  count and set `failing` at 3; 429/503
-  honour longer `Retry-After` delays up to 24 h. HTTP 410 sets `gone`
-  with no next fetch. Each fetched outcome writes `lastFetchedAt` once;
-  source failures store `lastError` and return normally.
-- `lib/ingest/safe-fetch.ts`: the only outbound HTTP path for ingest.
-  CIMD metadata uses `@better-auth/cimd/node`'s own fetcher by design:
-  HTTPS only, all DNS answers public (including IPv4-mapped), pinned
-  connection address, no redirects, 5 KiB body cap and 5 s timeout;
-  wrapping safeFetch would add code and weaken the no-redirect rule.
-  `safeFetch(url, { etag, lastModified, deadline })`
-  uses its own undici Agent, conditional GET and feed-preferring headers.
-  Every hop requires HTTP(S), ports 80/443, no credentials and at most
-  2,048 URL characters. All DNS answers must be public unicast addresses;
-  ipaddr.js checks mapped IPv6 as IPv4. The connected remote address is
-  checked again, while TLS keeps the hostname and certificate checks.
-  At most five redirects share one deadline with the body (15 s by default).
-  Bodies are capped at 10 MB after decompression; charset comes from
-  Content-Type, BOM, XML prolog, then UTF-8. Non-2xx statuses return with
-  headers and empty text. Failures throw `SafeFetchError` with code
-  `invalid_url`, `blocked`, `unreachable` or `too_large`.
-- `lib/ingest/parse.ts`: `parseFeed(text, feedUrl)` reads RSS/Atom/RDF
-  with `@rowanmanning/feed-parser` and maps JSON Feed directly. It returns
-  feed metadata and normalised `IngestedEntry` values in document order.
-  `FeedParseError` codes are `not_a_feed` and `invalid_feed`.
-  `normaliseEntry` chooses guid from nonblank id, safe
-  absolute URL, then SHA-1 of title + ISO publishedAt (empty when undated).
-  `publishedAt` uses valid published, then updated, then null, never now.
-  Titles and summaries are plain text; summaries cap at 300 code points.
-  Missing titles use the first 80 summary code points, then `(untitled)`.
-  Atom text constructs and JSON Feed plain text stay literal text.
-- `lib/ingest/sanitize.ts`: `sanitizeContent(html, baseUrl)` uses
-  `sanitize-html` defaults plus media tags and an attribute allowlist.
-  It resolves href/src, allows HTTP(S)/mailto, drops active markup,
-  style and srcset, and forces `rel="noopener noreferrer nofollow"` and
-  `target="_blank"` on links. Output caps at 200 KiB of UTF-8 with tags
-  closed and code points intact; empty output is null. `plainText`
-  strips markup and collapses whitespace; `safeUrl` resolves URLs and
-  allows HTTP(S) only. Fixtures in `test/fixtures/feeds/` and
-  `test/fixtures/cursor-blog/` are local; tests never fetch them. The feeds
-  README documents the Node.js and LangChain capture excerpts.
-- `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, JWKS,
-  OAuth client/resource/consent/token/assertion, feed, entry, subscription
-  and read-mark storage. Generated Prisma code lives in gitignored
-  `lib/generated/prisma/`; regenerate it rather than edit it.
-- `lib/db.ts`: one Prisma client on `globalThis`, reused across hot reloads
-  and warm functions. Uses PrismaNeon for `.neon.tech` hosts, PrismaPg
-  otherwise. `prisma.config.ts` prefers a nonempty
-  `DATABASE_URL_UNPOOLED`, falling back to `DATABASE_URL` for CLI commands.
-- `components/ui/`: shadcn components; `components/theme-provider.tsx`
-  handles light/dark/system themes. `app/globals.css` enables
-  `@tailwindcss/typography` for entry prose and reduces motion when requested.
-  `@/` imports resolve from the repository root.
+## Tests
 
-## Key patterns
+- Colocated `*.test.ts`. `test/db.ts` (preloaded by `bunfig.toml`) only
+  accepts a local `rssify_test` database and truncates tables between tests.
+- Tests never reach the live network, Neon, Vercel or a real queue: feeds
+  are fixtures under `test/fixtures/`, the queue is the `fanOut(enqueue)`
+  seam, safe-fetch tests use 127.0.0.1 sockets.
+- `.well-known` route tests live in `lib/well-known*.test.ts` because Bun
+  skips dot-directories.
 
-- `isAdmin` requires a verified email matching trimmed, case-insensitive
-  `ADMIN_EMAIL`. Registration is open only when `REGISTRATION_ENABLED`
-  is exactly `true`; the verified admin can register while it is closed.
-  Existing users can still sign in.
-- Session cookies are cached for five minutes. API keys use the `rss_`
-  prefix, an eight-character visible start including the prefix and a
-  default limit of 120 requests per minute.
-- MCP OAuth offers only `reader` and `offline_access`, with no OIDC identity
-  scopes. `MCP_RESOURCE` is `${BETTER_AUTH_URL}/api/mcp`; no new env is needed.
-  Keep `BETTER_AUTH_SECRET` stable: it encrypts the signing key in `jwks`.
-  Clients register through HTTPS CIMD metadata URLs; DCR stays off.
-- `lib/keys.ts` defines the key map, switch helpers and `canHandleKey` guard;
-  the theme's d listener also uses the guard. Shortcuts default on; localStorage
-  `rssify:shortcuts` set to "off" disables them. The guard rejects typing
-  targets, open dialogs/sheets/menus and modifiers except Shift. Only
-  handled keys prevent default; Space and / keep browser behaviour.
-  The template's ⌘B/Ctrl+B sidebar chord stays independent of the switch.
-- Keep safe-fetch's `undici/index.js` import: `bun test` substitutes a shim
-  for bare `undici` that ignores the custom Agent and bypasses the guard.
-  Next's build bundles `undici/index.js` into the consumer route.
-  `createSafeFetch({ lookup, allowAddress, ports })` is the test seam; only
-  test files may pass `allowAddress` or `ports`. There is no env or flag
-  bypass. Safe-fetch tests use fake resolvers and only 127.0.0.1 sockets.
-- `bunfig.toml` preloads `test/env.ts` (defaults an unset `BETTER_AUTH_URL`
-  to localhost:3210), then `test/db.ts` for every test file. Before each test
-  it truncates tables except `jwks`, `oauthResource` (seeded once per process)
-  and `_prisma_migrations`. The guard requires a Postgres URL whose
-  driver-parsed host is `localhost` or `127.0.0.1` and database is
-  `rssify_test`, including query overrides.
-  Keep tests serial; never use a real account or contact live services.
-  Well-known route tests live in `lib/well-known*.test.ts` because Bun skips
-  dot-directories.
-- Fan-out and cron tests inject the enqueue seam; consumer tests call
-  `refreshFromMessage` with guarded fetch fixtures. Tests never import
-  `@vercel/queue` or send to a real queue.
-- Keep Prisma migrations committed. Use explicit `--env-file=.env.local`
-  for dev Prisma commands; bare `bunx` and package scripts do not reliably
-  load that file. Tests set both database URL variables themselves.
+## Environment
 
-## Environment Variables
+Names and local defaults are in `.env.example`; never commit a secret.
+`DATABASE_URL`, `DATABASE_URL_UNPOOLED` (Neon via the Vercel integration),
+`BETTER_AUTH_SECRET`, `BETTER_AUTH_URL` (falls back to the deployment URL
+on previews), `VERCEL_CLIENT_ID`/`VERCEL_CLIENT_SECRET` (Sign in with
+Vercel), `ADMIN_EMAIL`, `REGISTRATION_ENABLED` (exactly `true` opens it),
+`CRON_SECRET`.
 
-Copy names and local defaults from `.env.example`; keep secrets out of
-commits, fixtures and messages.
+## Deploy
 
-- `DATABASE_URL`: application DB; local default
-  `postgresql://rssify@localhost:54329/rssify`.
-- `DATABASE_URL_UNPOOLED`: optional CLI migration connection; leave empty
-  locally to use `DATABASE_URL`.
-- `TEST_DATABASE_URL`: test-script override; defaults to
-  `postgresql://rssify@localhost:54329/rssify_test`.
-- `BETTER_AUTH_SECRET`: session-signing and JWKS encryption secret; keep stable.
-- `BETTER_AUTH_URL`: auth origin and MCP resource base,
-  `http://localhost:3210` locally.
-- `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`: Vercel OAuth credentials.
-- `ADMIN_EMAIL`: verified admin email; unset means no admin.
-- `REGISTRATION_ENABLED`: defaults to `false`; change and redeploy to update
-  registration. `/admin` displays the current state.
-- `CRON_SECRET`: required bearer secret for the refresh cron route.
-- `VERCEL_ENV`: supplied by Vercel; `vercel-build` generates Prisma,
-  deploys migrations on production/preview, then builds Next.js.
+Vercel project `katsubadev/rssify`, production at https://rss.katsuba.dev.
+A merge to `main` deploys production; `vercel-build` runs
+`prisma migrate deploy` first, and a failed migration fails the build.
+PRs get preview deployments. Changing Vercel settings, env or Neon is the
+owner's call.
 
-## Local stack
+## Commits
 
-Docker Compose runs Postgres 17 on `127.0.0.1:54329` with trust auth and
-user `rssify`. A fresh volume creates `rssify` and `rssify_test` via
-`docker/postgres-init.sql`. Next.js dev runs on port 3210. Queue and cron
-do not run locally. Deploys, Neon access, real queues and Vercel linking
-or environment changes belong to the owner.
+Conventional messages as `git log` has them, signed, no trailers. One task,
+one branch; never commit on `main`.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
