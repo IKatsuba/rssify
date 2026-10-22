@@ -4,6 +4,7 @@ import {
 } from "@modelcontextprotocol/server"
 
 import { requireApiKey, withMcpAuth } from "@/lib/actor"
+import { AUTH_URL } from "@/lib/auth"
 import type { SubscribeOptions } from "@/lib/reader"
 
 import { buildMcpServer } from "./server"
@@ -18,7 +19,7 @@ function serve(request: Request, userId: string, options?: SubscribeOptions) {
 
 // A browser page on another site must not drive the endpoint; clients that
 // send no Origin are not browsers and pass.
-const allowedHostnames = () => [new URL(process.env.BETTER_AUTH_URL!).hostname]
+const allowedHostnames = () => [new URL(AUTH_URL!).hostname]
 
 // options is the test seam reader.subscribe has; the route passes nothing.
 export async function mcpPost(request: Request, options?: SubscribeOptions) {
