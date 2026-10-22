@@ -4,11 +4,11 @@
 
 rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
-Bun is the package manager and test runner. Vercel sign-in and a session-only,
-read-only reader UI are wired up; opening entries does not mark them read.
-Reader mutation helpers have no UI callers yet. Ingest has guarded HTTP,
-feed parsing, sanitising, refresh and add-feed helpers, cron and queue
-scheduling, and a Cursor blog source plugin.
+Bun is the package manager and test runner. Vercel sign-in and a session-only
+reader UI support adding and removing feeds, marking entries read on open,
+read/unread toggles and bulk marking. Ingest has guarded HTTP, feed parsing,
+sanitising, refresh and add-feed helpers, cron and queue scheduling, and a
+Cursor blog source plugin.
 
 ## Commands
 
@@ -66,14 +66,29 @@ and refresh cycle inline, without a queue.
 - `app/(reader)/`: session-only layout with a responsive sidebar, unread
   badges, failing/gone markers and an email menu for theme and sign-out.
   `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
-  empty states and feed notices. `/entries/[entryId]?feed=&filter=` shows
-  stored sanitised content, falling back to summary or a no-text state,
-  with Back, scoped previous/next and Open original. Opening never marks
-  read; reader mutations have no UI yet. Routes have loading and not-found
-  states; `(reader)/error.tsx` retries page and sidebar queries together
-  through `rssify:retry` and the sidebar's `catchError` boundary.
+  empty states and feed notices. Mark all as read confirms the list scope,
+  uses `asOf` as the cutoff, is disabled at zero unread and toasts the actual
+  marked count. The feed menu opens the website when `siteUrl` exists,
+  copies the feed URL and marks all read. Unsubscribe confirms, then returns
+  to `/` with a toast. The sidebar + and no-feeds state open Add a feed:
+  a URL or built-in source, Subscribed badges, Adding… state, discovered
+  URL choices with Back, and errors under the field or source. Success
+  opens `/feeds/[id]` with a toast; `lib/add-feed-errors.ts` maps error codes.
+  `/entries/[entryId]?feed=&filter=` shows stored sanitised content,
+  falling back to summary or a no-text state, with Back, scoped previous/next,
+  Open original and Mark as read/unread. Opening marks read after client
+  mount, never during server rendering or prefetch. `lib/intent-queue.ts`
+  serialises optimistic read changes so the last intent wins; a failed
+  latest change restores the confirmed state and shows an error toast.
+  Routes have loading and not-found states; `(reader)/error.tsx` retries
+  page and sidebar queries together through `rssify:retry` and the sidebar's
+  `catchError` boundary. Sonner supplies reader toasts.
   `app/error.tsx` catches reader layout failures. `data.ts` caches session
   and subscription reads per request; the layout title includes unread count.
+- `app/(reader)/actions.ts`: session-only `subscribe`, `unsubscribe`,
+  `markRead`, `markUnread` and `markAllRead` server actions use `requireUser`
+  and its user ID, then revalidate `('/', 'layout')`. Subscribe also returns
+  the feed title (URL fallback) for toasts. API keys do not grant access.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
   sessions and API keys; `lib/auth-client.ts` starts browser sign-in.
