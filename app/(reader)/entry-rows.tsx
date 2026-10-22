@@ -72,7 +72,7 @@ export function EntryRows({
   }, [at])
 
   function open(index: number) {
-    writeReturn({ list, href, id: rows[index].id, index })
+    writeReturn({ list, href, id: rows[index].id, ids: rows.map((r) => r.id) })
   }
 
   function move(step: number) {

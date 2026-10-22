@@ -12,7 +12,7 @@ import { cache } from "react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { getEntry, getNeighbours, ReaderError } from "@/lib/reader"
+import { getEntry, getEntryNavigation, ReaderError } from "@/lib/reader"
 import {
   entryHref,
   listHref,
@@ -68,14 +68,17 @@ export default async function EntryPage({
   const unread = subscriptions
     .filter((s) => !feed || s.feed.id === feed.id)
     .reduce((sum, s) => sum + s.unreadCount, 0)
-  const backHref = listHref(feed ? `/feeds/${feed.id}` : "/", {
-    filter: query.filter,
-  })
+  const listPath = feed ? `/feeds/${feed.id}` : "/"
+  const backHref = listHref(listPath, { filter: query.filter })
   const scope = { feedId: feed?.id, filter: query.filter }
-  const { previousId, nextId } = await getNeighbours(userId, entry.id, {
-    feedId: feed?.id,
-    unreadOnly: query.filter === "unread",
-  })
+  const { previousId, nextId, pageCursor } = await getEntryNavigation(
+    userId,
+    entry.id,
+    {
+      feedId: feed?.id,
+      unreadOnly: query.filter === "unread",
+    }
+  )
   const listName = feed ? (feed.title ?? feed.url) : "All feeds"
   const site = entry.url && siteName(entry.url)
   const meta = [
@@ -135,6 +138,10 @@ export default async function EntryPage({
         <EntryKeys
           entryId={entry.id}
           back={backHref}
+          page={listHref(listPath, {
+            filter: query.filter,
+            cursor: pageCursor ?? undefined,
+          })}
           next={nextId && entryHref(nextId, scope)}
           previous={previousId && entryHref(previousId, scope)}
           url={entry.url}

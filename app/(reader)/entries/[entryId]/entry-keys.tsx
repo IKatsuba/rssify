@@ -12,6 +12,7 @@ import { useBackHref, useFollowEntry } from "../../return-point"
 export function EntryKeys({
   entryId,
   back,
+  page,
   next,
   previous,
   url,
@@ -21,6 +22,7 @@ export function EntryKeys({
 }: {
   entryId: string
   back: string
+  page: string
   next: string | null
   previous: string | null
   url: string | null
@@ -30,7 +32,7 @@ export function EntryKeys({
 }) {
   const router = useRouter()
   const [confirm, setConfirm] = useState(false)
-  useFollowEntry(back, entryId)
+  useFollowEntry(back, entryId, page)
   const backTo = useBackHref(back)
   useKeys(
     {
