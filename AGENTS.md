@@ -4,11 +4,11 @@
 
 rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
-Bun is the package manager and test runner. Vercel sign-in and a signed-in
-placeholder are wired up; actor and reader helpers are available but have
-no UI, action or route callers yet. Ingest has guarded HTTP, feed parsing,
-sanitising, refresh and add-feed helpers, cron and queue scheduling, and
-a Cursor blog source plugin.
+Bun is the package manager and test runner. Vercel sign-in and a session-only,
+read-only reader UI are wired up; opening entries does not mark them read.
+Reader mutation helpers have no UI callers yet. Ingest has guarded HTTP,
+feed parsing, sanitising, refresh and add-feed helpers, cron and queue
+scheduling, and a Cursor blog source plugin.
 
 ## Commands
 
@@ -39,9 +39,10 @@ before starting another. The safe-fetch TLS test needs local `node` and
 
 ```bash
 bun run build                        # Production build
-bun run start -p 3210              # Serve that build locally
+bun run start -p 3210                 # Serve that build locally
 bun run format                       # Format TypeScript/TSX
 bun --env-file=.env.local scripts/dev-session.ts [email]
+bun --env-file=.env.local scripts/dev-seed.ts [email]
 bun --env-file=.env.local scripts/refresh.ts
 ```
 
@@ -49,25 +50,43 @@ The session helper creates a local user and session without Vercel and
 prints a session cookie to set on localhost:3210. It accepts only a local
 Postgres host; its default user is `reader@example.com`.
 
+The seed script accepts only a local Postgres host and creates mock feeds
+and entries for reader screen checks, defaulting to `reader@example.com`.
+Reruns replace the mock feeds, moving them to the chosen user when the
+email changes; real feeds are left alone. Mock feeds are not due for refresh.
+
 The refresh script accepts only a local Postgres host and runs one claim
 and refresh cycle inline, without a queue.
 
 ## Architecture
 
-- `app/`: App Router pages, server actions and Route Handlers. `/` requires
-  a session and shows the signed-in placeholder with sign-out. `/sign-in`
+- `app/`: App Router pages, server actions and Route Handlers. `/sign-in`
   redirects signed-in users to `/`; otherwise it shows Vercel sign-in,
   redirecting, registration-closed or error states.
+- `app/(reader)/`: session-only layout with a responsive sidebar, unread
+  badges, failing/gone markers and an email menu for theme and sign-out.
+  `/` and `/feeds/[feedId]` show Unread (default) or All, Older/Newer paging,
+  empty states and feed notices. `/entries/[entryId]?feed=&filter=` shows
+  stored sanitised content, falling back to summary or a no-text state,
+  with Back, scoped previous/next and Open original. Opening never marks
+  read; reader mutations have no UI yet. Routes have loading and not-found
+  states; `(reader)/error.tsx` retries page and sidebar queries together
+  through `rssify:retry` and the sidebar's `catchError` boundary.
+  `app/error.tsx` catches reader layout failures. `data.ts` caches session
+  and subscription reads per request; the layout title includes unread count.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
   sessions and API keys; `lib/auth-client.ts` starts browser sign-in.
 - `lib/actor.ts`: session-only user/admin guards and an `x-api-key` guard.
+  `requireUser` also returns email for display; ownership uses user ID.
   Keys never grant admin access or use session cookies; invalid keys return
   401, and rate-limited keys return 429 with `Retry-After`.
 - `lib/reader.ts`: user-scoped subscriptions with unread counts, entry
   queries ordered by `sortAt`/id descending with keyset paging, and scoped
-  neighbours. Reads do not mark entries read; read/unread writes are
-  idempotent, and mark-all uses the list's `asOf` as its `upTo` cutoff.
+  neighbours. `listEntries` accepts `cursor` for older or `before` for newer
+  (`before` wins), returning `nextCursor` and `prevCursor`. Reads do not mark
+  entries read; read/unread writes are idempotent, and mark-all uses the
+  list's `asOf` as its `upTo` cutoff.
   Inaccessible data returns `not_found`. `subscribe(userId, { url } | { source })`
   checks the 500-subscription cap first (`limit`), resolves built-in sources
   (unknown IDs return `not_found`) and normalises URLs without fragments.
@@ -76,6 +95,9 @@ and refresh cycle inline, without a queue.
   entries, success polling fields and subscription. A URL conflict subscribes
   to the winner's feed. Failures write nothing; DB errors throw. Last
   unsubscribe deletes the feed, entries and read marks in one transaction.
+- `lib/reader-view.ts`: reader URL parameters and links, empty states and
+  feed notices. `lib/relative-time.ts` formats short list times and relative
+  sentences with Intl; future dates read as now.
 - `lib/ingest/add.ts`: `fetchForAdd` uses `safeFetch` with a 15 s deadline
   and parses against the final response URL. The add path discovers HTML
   after parse failure, using body sniffing or an HTML Content-Type:
@@ -105,7 +127,7 @@ and refresh cycle inline, without a queue.
   post `time[datetime]`, then list date. No post links throws
   "the page layout changed"; failed post fetches are skipped for this run.
   A non-2xx list page throws `SourceStatusError` with status and headers.
-  Feed rows are created on subscribe, never seeded.
+  Built-in source feeds are created on subscribe, never seeded.
 - `lib/ingest/fan-out.ts`: `fanOut(enqueue)` claims up to 500 due,
   subscribed feeds, oldest first, in one SQL statement with
   `FOR UPDATE SKIP LOCKED`, setting `nextFetchAt` to a 30-minute lease.
@@ -192,7 +214,9 @@ and refresh cycle inline, without a queue.
   otherwise. `prisma.config.ts` prefers a nonempty
   `DATABASE_URL_UNPOOLED`, falling back to `DATABASE_URL` for CLI commands.
 - `components/ui/`: shadcn components; `components/theme-provider.tsx`
-  handles light/dark themes. `@/` imports resolve from the repository root.
+  handles light/dark/system themes. `app/globals.css` enables
+  `@tailwindcss/typography` for entry prose and reduces motion when requested.
+  `@/` imports resolve from the repository root.
 
 ## Key patterns
 

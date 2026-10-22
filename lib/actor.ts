@@ -7,10 +7,15 @@ export type Actor = { userId: string; isAdmin: boolean }
 
 // Pages and actions: the session cookie only. enableSessionForAPIKeys stays
 // off, so an API key never turns into a session here.
-export async function requireUser(): Promise<Actor> {
+// The email is for the sidebar foot only, never for an ownership check.
+export async function requireUser(): Promise<Actor & { email: string }> {
   const session = await auth.api.getSession({ headers: await headers() })
   if (!session) redirect("/sign-in")
-  return { userId: session.user.id, isAdmin: isAdmin(session.user) }
+  return {
+    userId: session.user.id,
+    isAdmin: isAdmin(session.user),
+    email: session.user.email,
+  }
 }
 
 // notFound rather than 403, so /admin does not reveal that it exists.

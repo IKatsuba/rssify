@@ -142,6 +142,78 @@ describe("listEntries", () => {
     expect(seen).toEqual(["e5", "e4", "e3", "e2", "e1", "b1"])
   })
 
+  test("before steps back up through the same pages", async () => {
+    for (const id of ["e1", "e2", "e3", "e4", "e5"]) {
+      await entry(id, "b", T(10))
+    }
+    const scope = { feedId: "b", limit: 2 }
+    const ids = (page: { entries: { id: string }[] }) =>
+      page.entries.map((e) => e.id)
+    const first = await listEntries("u1", scope)
+    expect(first.prevCursor).toBeNull()
+    const second = await listEntries("u1", {
+      ...scope,
+      cursor: first.nextCursor!,
+    })
+    const third = await listEntries("u1", {
+      ...scope,
+      cursor: second.nextCursor!,
+    })
+    expect([ids(first), ids(second), ids(third)]).toEqual([
+      ["e5", "e4"],
+      ["e3", "e2"],
+      ["e1", "b1"],
+    ])
+    expect(third.nextCursor).toBeNull()
+
+    const backToSecond = await listEntries("u1", {
+      ...scope,
+      before: third.prevCursor!,
+    })
+    expect(ids(backToSecond)).toEqual(["e3", "e2"])
+    expect(backToSecond.nextCursor).toBe(second.nextCursor)
+    expect(backToSecond.prevCursor).not.toBeNull()
+
+    // A page or less above is the first page, not a short one.
+    const backToFirst = await listEntries("u1", {
+      ...scope,
+      before: backToSecond.prevCursor!,
+    })
+    expect(ids(backToFirst)).toEqual(["e5", "e4"])
+    expect(backToFirst.prevCursor).toBeNull()
+    expect(backToFirst.nextCursor).toBe(first.nextCursor)
+
+    // before wins over cursor.
+    const both = await listEntries("u1", {
+      ...scope,
+      cursor: first.nextCursor!,
+      before: third.prevCursor!,
+    })
+    expect(ids(both)).toEqual(["e3", "e2"])
+  })
+
+  test("an empty page past the end steps back up from its cursor", async () => {
+    const scope = { feedId: "a", unreadOnly: true }
+    const first = await listEntries("u1", { ...scope, limit: 1 })
+    expect(first.entries.map((e) => e.id)).toEqual(["a2"])
+    // The only older unread entry is read before the person pages on.
+    await read("u1", "a1")
+    const past = await listEntries("u1", {
+      ...scope,
+      limit: 1,
+      cursor: first.nextCursor!,
+    })
+    expect(past.entries).toEqual([])
+    expect(past.prevCursor).toBe(first.nextCursor)
+    const back = await listEntries("u1", {
+      ...scope,
+      limit: 1,
+      before: past.prevCursor!,
+    })
+    expect(back.entries.map((e) => e.id)).toEqual(["a2"])
+    expect(back.prevCursor).toBeNull()
+  })
+
   test("limit is capped at 100 and defaults to 50", async () => {
     await db.entry.createMany({
       data: Array.from({ length: 120 }, (_, i) => ({
@@ -160,6 +232,9 @@ describe("listEntries", () => {
     expect(await code(listEntries("u1", { feedId: "c" }))).toBe("not_found")
     expect(await code(listEntries("u1", { feedId: "nope" }))).toBe("not_found")
     expect(await code(listEntries("u1", { cursor: "garbage" }))).toBe(
+      "invalid_cursor"
+    )
+    expect(await code(listEntries("u1", { before: "garbage" }))).toBe(
       "invalid_cursor"
     )
   })
