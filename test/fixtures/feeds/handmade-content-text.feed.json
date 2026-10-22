@@ -1,0 +1,27 @@
+{
+  "version": "https://jsonfeed.org/version/1.1",
+  "title": "Plain <text> feed",
+  "home_page_url": "https://ex.com/",
+  "items": [
+    {
+      "id": "1",
+      "url": "https://ex.com/1",
+      "title": "Use <tag> & more",
+      "content_text": "Use the <tag> element & <script>alert(1)</script>",
+      "summary": "About <tag>",
+      "date_modified": "2026-10-03T00:00:00Z",
+      "author": { "name": "Old Author" }
+    },
+    {
+      "id": 2,
+      "title": "Bad date",
+      "content_html": "<p>Hi</p>",
+      "date_published": "yesterday",
+      "authors": [{ "name": "New Author" }]
+    },
+    {
+      "content_text": "No id, no url"
+    },
+    "not an item"
+  ]
+}
