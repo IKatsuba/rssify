@@ -112,6 +112,38 @@ describe("deleteUser", () => {
     expect(await db.readMark.count({ where: { userId: "u1" } })).toBe(2)
   })
 
+  test("waits for a subscribe holding the user, then deletes its feed too", async () => {
+    await user("u2", "2026-01-01T00:00:00Z")
+    let release!: () => void
+    const held = new Promise<void>((resolve) => (release = resolve))
+    let locked!: () => void
+    const lockTaken = new Promise<void>((resolve) => (locked = resolve))
+    // Stands in for subscribe: it locks the user, then adds a feed.
+    const subscribing = db.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "user" WHERE id = 'u2' FOR UPDATE`
+      locked()
+      await held
+      await tx.feed.create({
+        data: {
+          url: "https://new.example/feed",
+          subscriptions: { create: { userId: "u2" } },
+          entries: { create: { guid: "1", title: "One", sortAt: new Date() } },
+        },
+      })
+    })
+    await lockTaken
+    let done = false
+    const deleting = deleteUser("admin", "u2").then(() => (done = true))
+    await Bun.sleep(100)
+    expect(done).toBe(false)
+    release()
+    await subscribing
+    await deleting
+    expect(await db.user.count()).toBe(0)
+    expect(await db.feed.count()).toBe(0)
+    expect(await db.entry.count()).toBe(0)
+  })
+
   test("refuses the actor's own id", async () => {
     await user("u1", "2026-01-01T00:00:00Z")
     expect(deleteUser("u1", "u1")).rejects.toThrow(TypeError)

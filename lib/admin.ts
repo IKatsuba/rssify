@@ -61,18 +61,22 @@ export async function listFeeds(): Promise<AdminFeed[]> {
 
 // Cascades remove the user's sessions, accounts, keys, subscriptions, read
 // marks and OAuth rows; the feeds only they followed go too, as on a last
-// unsubscribe. The feed rows are locked first, like unsubscribe does, so a
-// concurrent subscribe cannot land on a feed about to be deleted.
+// unsubscribe. Locks go user, then feeds, the order subscribe takes them:
+// a subscribe in flight finishes first, so the feed it adds is seen and
+// deleted here, and the two cannot deadlock.
 export async function deleteUser(actorId: string, userId: string) {
   if (actorId === userId) throw new TypeError("You can't delete yourself")
   await db.$transaction(async (tx) => {
+    const user = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM "user" WHERE id = ${userId} FOR UPDATE`
+    if (user.length === 0) return
     const feeds = await tx.$queryRaw<{ id: string }[]>`
       SELECT f.id FROM "Feed" f
       JOIN "Subscription" s ON s."feedId" = f.id
       WHERE s."userId" = ${userId}
       ORDER BY f.id
       FOR UPDATE OF f`
-    await tx.user.deleteMany({ where: { id: userId } })
+    await tx.user.delete({ where: { id: userId } })
     if (feeds.length === 0) return
     await tx.feed.deleteMany({
       where: {
