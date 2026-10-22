@@ -31,6 +31,10 @@ if (process.env.RSSF13_SCHEMA_ACTION_CHILD !== "1") {
   const actions = await import("./actions")
 
   const invalidCalls = [
+    () => actions.createApiKey("   "),
+    () => actions.createApiKey("x".repeat(65)),
+    () => actions.revokeApiKey(""),
+    () => actions.revokeApiKey(null as never),
     () =>
       actions.subscribe({
         url: "https://example.com",
@@ -53,6 +57,26 @@ if (process.env.RSSF13_SCHEMA_ACTION_CHILD !== "1") {
     }
     expect(invalidations).toEqual([])
     expect(await db.subscription.count()).toBe(0)
+  })
+
+  test("a valid API key without a session cannot manage keys through actions", async () => {
+    await db.user.create({
+      data: { id: "key-only", name: "Key", email: "key-only@example.com" },
+    })
+    const { key, id } = await auth.api.createApiKey({
+      body: { userId: "key-only" },
+    })
+    requestHeaders = new Headers({ "x-api-key": key })
+    for (const call of [
+      () => actions.createApiKey("Forbidden"),
+      () => actions.revokeApiKey(id),
+    ]) {
+      await expect(call()).rejects.toMatchObject({
+        digest: expect.stringContaining("NEXT_REDIRECT;replace;/sign-in;"),
+      })
+    }
+    expect(await db.apikey.count()).toBe(1)
+    expect(invalidations).toEqual([])
   })
 
   test("signed-in malformed inputs throw TypeError without writes or revalidation", async () => {
