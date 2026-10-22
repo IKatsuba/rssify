@@ -7,8 +7,10 @@ shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. The session-only reader uses
 Vercel sign-in, marks entries read on open and manages API keys in Settings.
 It shares subscriptions and read-state operations with API-key-only
-`/api/v1`. Ingest has guarded HTTP, feed parsing, sanitising, refresh and
-add-feed helpers, cron and queue scheduling, and a Cursor blog source plugin.
+`/api/v1`. An OAuth provider supplies MCP consent and connected-app
+management; the `/api/mcp` endpoint is not implemented yet. Ingest has
+guarded HTTP, feed parsing, sanitising, refresh and add-feed helpers, cron
+and queue scheduling, and a Cursor blog source plugin.
 
 ## Commands
 
@@ -87,12 +89,17 @@ and refresh cycle inline, without a queue.
   `app/error.tsx` catches reader layout failures. `data.ts` caches session
   and subscription reads per request; the layout title includes unread count.
 - `app/(reader)/settings/`: `/settings` has Account (email and Sign out),
-  API keys and Keyboard shortcuts (Show and Turn off/on) cards, loading and
-  error states, and the title `Settings · rssify`. Keys list newest first
-  with name, eight-character start, Created and Last used (Never if unused);
-  dates are hidden on phones. Create takes a trimmed 1–64-character name,
+  API keys, Connected apps and Keyboard shortcuts (Show and Turn off/on)
+  cards, loading/error states and the title `Settings · rssify`. Keys list
+  newest first with name, eight-character start, Created and Last used
+  (Never if unused); dates are hidden on phones. Create takes a trimmed 1–64-character name,
   then opens a shown-once dialog with a masked field and Copy for the full
   key; closing drops the secret. Revoke confirms first; failures toast.
+  Connected apps lists consented clients newest first, with Name, Website
+  (host) and Connected (hidden on phones). Empty state shows the MCP address.
+  Disconnect confirms, deletes consent and revokes that user's refresh tokens
+  for the client in one transaction through `lib/mcp-clients.ts`; issued
+  access tokens remain valid for up to one hour. Success and failure toast.
 - `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
   the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
   v for the original and r to refresh, even when empty. Entries use j/k
@@ -110,8 +117,10 @@ and refresh cycle inline, without a queue.
   and its user ID, then revalidate `('/', 'layout')`. Subscribe also returns
   the feed title (URL fallback) for toasts. `createApiKey` and `revokeApiKey`
   use `lib/api-keys.ts` with session headers, as does the Settings list
-  loader; a key cannot manage keys. Actions parse inputs after the session
-  check and throw `TypeError` for invalid input. API keys do not grant access.
+  loader; a key cannot manage keys. `disconnectApp` uses the session user ID
+  and `lib/mcp-clients.ts`, revalidating the layout on success. Actions parse
+  inputs after the session check and throw `TypeError` for invalid input.
+  API keys do not grant access.
 - `lib/reader-schemas.ts`: shared Zod 4 inputs for actions and `/api/v1`.
   Subscribe accepts exactly one of `{ url }` or `{ source }`; mark-all
   accepts a Date or ISO datetime `upTo`. Zod is a direct dependency.
@@ -129,11 +138,31 @@ and refresh cycle inline, without a queue.
   add-feed sentence and discovery `choices` when present), and 429.
 - `app/api/auth/[...all]/route.ts`: better-auth GET/POST handler.
   `lib/auth.ts` configures Vercel OAuth, Prisma, the registration gate,
-  sessions and API keys; `lib/auth-client.ts` starts browser sign-in.
+  sessions, API keys and the MCP OAuth provider (`jwt()`, `mcp()`, `cimd()`).
+  OAuth endpoints and JWKS mount under `/api/auth`; the session-to-JWT
+  endpoint `/api/auth/token` is disabled.
+  `lib/auth-client.ts` uses `oauthProviderClient()` to carry the signed OAuth
+  query through Vercel sign-in and resume authorization.
+- `app/.well-known/`: public RFC 9728 protected-resource metadata at
+  `/.well-known/oauth-protected-resource` and its `/api/mcp` suffix;
+  RFC 8414 issuer metadata at
+  `/.well-known/oauth-authorization-server/api/auth`.
+- `app/consent/`: verifies the signed query before loading the session or
+  client; invalid queries and missing clients return 404. Without a session,
+  redirects to `/sign-in` with the same query. The Card asks to allow the
+  named app, shows its host and every requested scope (`reader` first),
+  and offers Deny/Allow. The title is `Allow {client} · rssify`; failures
+  toast and allow retry. `lib/consent.ts` falls back from client name to
+  website host, HTTPS client-ID host, then client ID; absent hosts are hidden.
+  Existing consent covering the request is reused until disconnected.
 - `lib/actor.ts`: session-only user/admin guards and an `x-api-key` guard.
   `requireUser` also returns email for display; ownership uses user ID.
   Keys never grant admin access or use session cookies; invalid keys return
   401, and rate-limited keys return 429 with `Retry-After`.
+  `withMcpAuth` prepares OAuth authentication for the future MCP route:
+  verifies JWT signature, issuer, audience `MCP_RESOURCE`, expiry, `azp` and
+  `reader` scope, then checks the user still exists. Refusals are 401 with
+  a `resource_metadata` challenge or 403 `insufficient_scope`; never admin.
 - `lib/reader.ts`: user-scoped subscriptions with unread counts, entry
   queries ordered by `sortAt`/id descending with keyset paging, and scoped
   neighbours. `getEntryNavigation` also returns a page cursor for Back.
@@ -195,7 +224,10 @@ and refresh cycle inline, without a queue.
   other than exactly `Authorization: Bearer ${CRON_SECRET}` returns 401.
   It calls `fanOut` with `@vercel/queue` sends to `feed-refresh`, body
   `{ feedId }` and ``idempotencyKey: `${feedId}:${tick}```, where `tick` is
-  the run start floored to 15 minutes as an ISO timestamp. Returns counts.
+  the run start floored to 15 minutes as an ISO timestamp. After fan-out,
+  `lib/auth-cleanup.ts` deletes expired OAuth refresh tokens, access tokens
+  and client assertions using indexed `expiresAt` queries; CIMD clients stay.
+  Cleanup failures are logged and fan-out counts still return.
 - `app/api/queues/refresh-feed/route.ts`: POST via `handleCallback`, with
   `maxDuration = 60`. `lib/ingest/consumer.ts` calls `refreshFeed` with
   `skipIfFreshWithin: 120`; malformed messages without a string `feedId`
@@ -230,6 +262,10 @@ and refresh cycle inline, without a queue.
   with no next fetch. Each fetched outcome writes `lastFetchedAt` once;
   source failures store `lastError` and return normally.
 - `lib/ingest/safe-fetch.ts`: the only outbound HTTP path for ingest.
+  CIMD metadata uses `@better-auth/cimd/node`'s own fetcher by design:
+  HTTPS only, all DNS answers public (including IPv4-mapped), pinned
+  connection address, no redirects, 5 KiB body cap and 5 s timeout;
+  wrapping safeFetch would add code and weaken the no-redirect rule.
   `safeFetch(url, { etag, lastModified, deadline })`
   uses its own undici Agent, conditional GET and feed-preferring headers.
   Every hop requires HTTP(S), ports 80/443, no credentials and at most
@@ -260,9 +296,10 @@ and refresh cycle inline, without a queue.
   strips markup and collapses whitespace; `safeUrl` resolves URLs and
   allows HTTP(S) only. Fixtures in `test/fixtures/feeds/` and
   `test/fixtures/cursor-blog/` are local; tests never fetch them.
-- `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, feed,
-  entry, subscription and read-mark storage. Generated Prisma code lives
-  in gitignored `lib/generated/prisma/`; regenerate it rather than edit it.
+- `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, JWKS,
+  OAuth client/resource/consent/token/assertion, feed, entry, subscription
+  and read-mark storage. Generated Prisma code lives in gitignored
+  `lib/generated/prisma/`; regenerate it rather than edit it.
 - `lib/db.ts`: one Prisma client on `globalThis`, reused across hot reloads
   and warm functions. Uses PrismaNeon for `.neon.tech` hosts, PrismaPg
   otherwise. `prisma.config.ts` prefers a nonempty
@@ -281,6 +318,10 @@ and refresh cycle inline, without a queue.
 - Session cookies are cached for five minutes. API keys use the `rss_`
   prefix, an eight-character visible start including the prefix and a
   default limit of 120 requests per minute.
+- MCP OAuth offers only `reader` and `offline_access`, with no OIDC identity
+  scopes. `MCP_RESOURCE` is `${BETTER_AUTH_URL}/api/mcp`; no new env is needed.
+  Keep `BETTER_AUTH_SECRET` stable: it encrypts the signing key in `jwks`.
+  Clients register through HTTPS CIMD metadata URLs; DCR stays off.
 - `lib/keys.ts` defines the key map, switch helpers and `canHandleKey` guard;
   the theme's d listener also uses the guard. Shortcuts default on; localStorage
   `rssify:shortcuts` set to "off" disables them. The guard rejects typing
@@ -293,11 +334,15 @@ and refresh cycle inline, without a queue.
   `createSafeFetch({ lookup, allowAddress, ports })` is the test seam; only
   test files may pass `allowAddress` or `ports`. There is no env or flag
   bypass. Safe-fetch tests use fake resolvers and only 127.0.0.1 sockets.
-- `bunfig.toml` preloads `test/db.ts` for every test file. Before each test
-  it truncates tables except `jwks` and `_prisma_migrations`. The guard
-  requires a Postgres URL whose driver-parsed host is `localhost` or
-  `127.0.0.1` and database is `rssify_test`, including query overrides.
+- `bunfig.toml` preloads `test/env.ts` (defaults an unset `BETTER_AUTH_URL`
+  to localhost:3210), then `test/db.ts` for every test file. Before each test
+  it truncates tables except `jwks`, `oauthResource` (seeded once per process)
+  and `_prisma_migrations`. The guard requires a Postgres URL whose
+  driver-parsed host is `localhost` or `127.0.0.1` and database is
+  `rssify_test`, including query overrides.
   Keep tests serial; never use a real account or contact live services.
+  Well-known route tests live in `lib/well-known*.test.ts` because Bun skips
+  dot-directories.
 - Fan-out and cron tests inject the enqueue seam; consumer tests call
   `refreshFromMessage` with guarded fetch fixtures. Tests never import
   `@vercel/queue` or send to a real queue.
@@ -316,8 +361,9 @@ commits, fixtures and messages.
   locally to use `DATABASE_URL`.
 - `TEST_DATABASE_URL`: test-script override; defaults to
   `postgresql://rssify@localhost:54329/rssify_test`.
-- `BETTER_AUTH_SECRET`: local session-signing secret.
-- `BETTER_AUTH_URL`: auth origin, `http://localhost:3210` locally.
+- `BETTER_AUTH_SECRET`: session-signing and JWKS encryption secret; keep stable.
+- `BETTER_AUTH_URL`: auth origin and MCP resource base,
+  `http://localhost:3210` locally.
 - `VERCEL_CLIENT_ID`, `VERCEL_CLIENT_SECRET`: Vercel OAuth credentials.
 - `ADMIN_EMAIL`: verified admin email; unset means no admin.
 - `REGISTRATION_ENABLED`: defaults to `false`.
