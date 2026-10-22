@@ -131,15 +131,21 @@ export const anthropicEngineering = plugin(
 // `TableView-…__title-link`), not the hash. No path rule: launch pages
 // live at the root and features under /features.
 export const anthropicNews = plugin("anthropic-news", "/news", ($, pageUrl) => {
+  const selector = 'a[href][class*="title-link"], a[href][class*="tileLink"]'
   const posts = new Map<string, Post>()
-  $('a[href][class*="title-link"], a[href][class*="tileLink"]').each(
-    (_, link) => {
-      const url = postUrl($(link).attr("href"), pageUrl)
-      if (!url || posts.has(url)) return
-      // A tile's or row's date is in its nearest container with a time.
-      const time = $(link).closest(":has(time)").find("time").first()
-      posts.set(url, { url, listDate: listDate(time.text()) })
-    }
-  )
+  $(selector).each((_, link) => {
+    const url = postUrl($(link).attr("href"), pageUrl)
+    if (!url || posts.has(url)) return
+    // A tile's or row's date is in its nearest container with a time,
+    // unless that container also holds another post: then the time is
+    // that post's, and this one is undated.
+    const container = $(link).closest(":has(time)")
+    const shared = container
+      .find(selector)
+      .toArray()
+      .some((other) => postUrl($(other).attr("href"), pageUrl) !== url)
+    const time = shared ? "" : container.find("time").first().text()
+    posts.set(url, { url, listDate: listDate(time) })
+  })
   return [...posts.values()]
 })
