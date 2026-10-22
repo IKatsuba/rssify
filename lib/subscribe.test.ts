@@ -633,6 +633,16 @@ describe("subscribe to a new feed", () => {
           `${ORIGIN}/news/cyber-verification-program`,
         ],
       },
+      {
+        source: "bytes",
+        title: "Bytes",
+        list: "https://bytes.dev/archives",
+        pages: saved("bytes", {
+          "https://bytes.dev/archives": "archives",
+          "https://bytes.dev/archives/531": "531",
+        }),
+        guids: ["https://bytes.dev/archives/531"],
+      },
     ]) {
       test(`{ source: "${source}" } subscribes through its plugin`, async () => {
         const result = await subscribe(

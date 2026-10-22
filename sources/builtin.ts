@@ -13,6 +13,12 @@ export const builtinSources = [
     note: "anthropic.com/news — no feed of its own",
   },
   {
+    id: "bytes",
+    title: "Bytes",
+    url: "https://bytes.dev/archives",
+    note: "bytes.dev — no feed of its own",
+  },
+  {
     id: "claude-code",
     title: "Claude Code blog",
     url: "https://claude.dev/rss.xml",
