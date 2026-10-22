@@ -1,15 +1,19 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 import type { z } from "zod"
 
 import { requireUser } from "@/lib/actor"
+import * as apiKeys from "@/lib/api-keys"
 import { db } from "@/lib/db"
 import * as reader from "@/lib/reader"
 import {
+  createApiKeyInput,
   markAllReadInput,
   markReadInput,
   markUnreadInput,
+  revokeApiKeyInput,
   subscribeInput,
   unsubscribeInput,
 } from "@/lib/reader-schemas"
@@ -88,4 +92,21 @@ export async function markAllRead(input: {
     )
     return { ok: true as const, marked }
   })
+}
+
+// Keys are managed with the session only, never with a key (design §9).
+export async function createApiKey(name: string) {
+  await requireUser()
+  const input = parse(createApiKeyInput, { name })
+  const { key } = await apiKeys.createApiKey(await headers(), input.name)
+  revalidatePath("/", "layout")
+  return { key }
+}
+
+export async function revokeApiKey(keyId: string) {
+  await requireUser()
+  const input = parse(revokeApiKeyInput, { keyId })
+  const result = await apiKeys.revokeApiKey(await headers(), input.keyId)
+  if (result.ok) revalidatePath("/", "layout")
+  return result
 }

@@ -41,6 +41,10 @@ export const auth = betterAuth({
   plugins: [
     apiKey({
       defaultPrefix: "rss_",
+      // Settings takes names of 1–64 characters (design §2.5); the default is 32.
+      maximumNameLength: 64,
+      // Settings shows the key by its first 8 characters, prefix included.
+      startingCharactersConfig: { charactersLength: 8 },
       rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 },
     }),
     nextCookies(),

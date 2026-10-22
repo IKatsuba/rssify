@@ -26,6 +26,9 @@ describe("reader actions without a session", () => {
       "markAllRead with junk",
       () => actions.markAllRead({ feedId: "f1", upTo: "nope" }),
     ],
+    ["createApiKey", () => actions.createApiKey("Reader app")],
+    ["createApiKey with junk", () => actions.createApiKey("")],
+    ["revokeApiKey", () => actions.revokeApiKey("k1")],
   ]
   for (const [name, call] of calls) {
     test(`${name} redirects to /sign-in`, async () => {
