@@ -45,6 +45,36 @@ describe("listConnectedApps", () => {
     expect(apps[0].createdAt).toBeInstanceOf(Date)
   })
 
+  test("an app with two consents is one row, dated by the latest", async () => {
+    const { a, bClient } = await setUp()
+    const later = new Date("2030-01-01T00:00:00Z")
+    await db.oauthConsent.create({
+      data: {
+        id: "second",
+        clientId: a.clientId,
+        userId: "u1",
+        scopes: ["reader"],
+        createdAt: later,
+        updatedAt: later,
+      },
+    })
+    const apps = await listConnectedApps("u1")
+    expect(apps.map((app) => app.clientId)).toEqual([a.clientId, bClient])
+    expect(apps[0].createdAt).toEqual(later)
+  })
+
+  test("ties on the date are ordered by clientId", async () => {
+    const { a, bClient } = await setUp()
+    await db.oauthConsent.updateMany({
+      where: { userId: "u1" },
+      data: { createdAt: new Date("2026-01-01T00:00:00Z") },
+    })
+    const apps = await listConnectedApps("u1")
+    expect(apps.map((app) => app.clientId)).toEqual(
+      [a.clientId, bClient].sort()
+    )
+  })
+
   test("none when nothing is connected", async () => {
     expect(await listConnectedApps("nobody")).toEqual([])
   })
@@ -72,6 +102,32 @@ describe("disconnectApp", () => {
     expect(await liveTokens({ userId: "u1", clientId: bClient })).toBe(1)
     expect(await liveTokens({ userId: "u2", clientId: u2.clientId })).toBe(1)
     expect(await db.oauthConsent.count()).toBe(2)
+  })
+
+  test("an app with two consents loses both, and its tokens", async () => {
+    const { a, bClient, u2 } = await setUp()
+    await db.oauthConsent.create({
+      data: {
+        id: "second",
+        clientId: a.clientId,
+        userId: "u1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
+
+    expect(await disconnectApp("u1", a.clientId)).toEqual({ ok: true })
+
+    expect(
+      await db.oauthConsent.count({
+        where: { userId: "u1", clientId: a.clientId },
+      })
+    ).toBe(0)
+    expect(await liveTokens({ userId: "u1", clientId: a.clientId })).toBe(0)
+    expect(await listConnectedApps("u1")).toMatchObject([{ clientId: bClient }])
+    expect(await liveTokens({ userId: "u1", clientId: bClient })).toBe(1)
+    expect(await liveTokens({ userId: "u2", clientId: u2.clientId })).toBe(1)
+    expect(await db.oauthConsent.count({ where: { userId: "u2" } })).toBe(1)
   })
 
   test("the revoked refresh token no longer refreshes", async () => {
