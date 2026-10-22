@@ -211,6 +211,7 @@ export async function refreshFeed(
     let entries
     try {
       entries = await plugin.fetchEntries({
+        url: feed.url,
         fetch,
         deadline,
         // Plugins use the post URL as guid, so a stored guid is a known post.

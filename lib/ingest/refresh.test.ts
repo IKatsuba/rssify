@@ -492,7 +492,11 @@ describe("refreshFeed with a source plugin", () => {
   })
   type Ctx = Parameters<SourcePlugin["fetchEntries"]>[0]
   const registry = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
-    scrape: { id: "scrape", matches: LIST, fetchEntries },
+    scrape: {
+      id: "scrape",
+      canonical: (u: URL) => (u.href === LIST ? LIST : null),
+      fetchEntries,
+    },
   })
   const pluginFeed = (data: Record<string, unknown> = {}) =>
     feed({ url: LIST, pluginId: "scrape", ...data })
@@ -519,6 +523,7 @@ describe("refreshFeed with a source plugin", () => {
     expect(
       await refreshFeed("f1", { fetch: noFetch, plugins, now: NOW })
     ).toEqual({ outcome: "ok", stored: 2 })
+    expect(ctx?.url).toBe(LIST)
     expect(ctx?.fetch).toBe(noFetch)
     expect(ctx?.deadline).toBeInstanceOf(AbortSignal)
     expect(ctx?.deadline.aborted).toBe(false)

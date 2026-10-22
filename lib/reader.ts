@@ -2,7 +2,11 @@ import { db } from "@/lib/db"
 import { Prisma } from "@/lib/generated/prisma/client"
 import { fetchForAdd, type AddOptions, type NewFeed } from "@/lib/ingest/add"
 import { storeEntries, successFields } from "@/lib/ingest/refresh"
+import { normaliseUrl } from "@/lib/ingest/target"
 import { builtinSource } from "@/sources/builtin"
+
+// The reader layout marks subscribed sources by it.
+export { normaliseUrl }
 
 // Every function takes the caller's userId and derives ownership from it;
 // anything not the caller's is not_found, never forbidden, so ids of other
@@ -336,20 +340,6 @@ export type SubscribeInput = { url: string } | { source: string }
 
 // Test seam, like refreshFeed's: production passes nothing.
 export type SubscribeOptions = AddOptions & { now?: Date }
-
-// Minimal for now: a WHATWG parse, http(s) only, no fragment. The ingest
-// unit owns any richer rule.
-export function normaliseUrl(input: string) {
-  let url: URL
-  try {
-    url = new URL(input.trim())
-  } catch {
-    return null
-  }
-  if (url.protocol !== "http:" && url.protocol !== "https:") return null
-  url.hash = ""
-  return url.href
-}
 
 type Target = { url: string } | { code: "invalid_url" | "not_found" }
 

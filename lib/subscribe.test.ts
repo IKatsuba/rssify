@@ -501,7 +501,11 @@ describe("subscribe to a new feed", () => {
       contentHtml: "<p>One</p>",
     }
     const plugin = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
-      scrape: { id: "scrape", matches: LIST, fetchEntries },
+      scrape: {
+        id: "scrape",
+        canonical: (u: URL) => (u.href === LIST ? LIST : null),
+        fetchEntries,
+      },
     })
 
     test("stores its entries with pluginId and no fetch of its own", async () => {
@@ -516,6 +520,7 @@ describe("subscribe to a new feed", () => {
         { fetch: noFetch, plugins, now: NOW }
       )
       expect(result).toMatchObject({ ok: true, existed: false })
+      expect(ctx?.url).toBe(LIST)
       expect(ctx?.fetch).toBe(noFetch)
       expect(ctx?.deadline).toBeInstanceOf(AbortSignal)
       expect(await ctx?.known([post.url!])).toEqual(new Set())

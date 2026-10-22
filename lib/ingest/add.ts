@@ -73,8 +73,8 @@ export async function fetchForAdd(
   url: string,
   { fetch = safeFetch, plugins = registeredPlugins }: AddOptions = {}
 ): Promise<FetchedForAdd> {
-  const plugin = pluginFor(url, plugins)
-  if (plugin) return runPlugin(plugin, url, fetch)
+  const owned = pluginFor(url, plugins)
+  if (owned) return runPlugin(owned.plugin, owned.url, fetch)
 
   let response
   try {
@@ -118,6 +118,7 @@ async function runPlugin(
   let entries
   try {
     entries = await plugin.fetchEntries({
+      url,
       fetch,
       // Nothing of a new feed is stored yet.
       known: async () => new Set(),

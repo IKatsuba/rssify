@@ -7,7 +7,8 @@ import type { SourcePlugin } from "./types"
 
 const fake: SourcePlugin = {
   id: "fake",
-  matches: "https://example.com/blog",
+  canonical: (url) =>
+    url.href === "https://example.com/blog" ? "https://example.com/blog" : null,
   fetchEntries: async () => [],
 }
 
@@ -26,13 +27,16 @@ describe("builtinSources", () => {
 describe("pluginFor", () => {
   test("cursor-blog is the one registered plugin", () => {
     expect(plugins).toEqual({ "cursor-blog": cursorBlog })
-    expect(pluginFor("https://cursor.com/blog")).toBe(cursorBlog)
+    expect(pluginFor("https://cursor.com/blog")).toEqual({
+      plugin: cursorBlog,
+      url: "https://cursor.com/blog",
+    })
     expect(pluginFor("https://claude.dev/rss.xml")).toBeUndefined()
   })
 
   test("matches the exact URL only", () => {
     const registry = { fake }
-    expect(pluginFor("https://example.com/blog", registry)).toBe(fake)
+    expect(pluginFor("https://example.com/blog", registry)?.plugin).toBe(fake)
     expect(pluginFor("https://example.com/blog/", registry)).toBeUndefined()
     expect(pluginFor("https://example.com/blog/post", registry)).toBeUndefined()
   })
