@@ -6,7 +6,8 @@ rssify is a serverless RSS reader built with Next.js App Router, React,
 shadcn/ui (preset b1D0dxmC, Base UI), Tailwind CSS, Prisma 7 and better-auth.
 Bun is the package manager and test runner. Vercel sign-in and a signed-in
 placeholder are wired up; actor and reader helpers are available but have
-no UI, action or route callers yet. Ingest is not implemented.
+no UI, action or route callers yet. Ingest has a guarded HTTP helper;
+refresh, add-feed and plugins are pending.
 
 ## Commands
 
@@ -32,7 +33,8 @@ file to Bun after applying test migrations, just like `bun run test`.
 The test script defaults to local `rssify_test` and needs no env setup.
 Use targeted tests while editing; run the whole check at the unit handoff
 and final gate. Run heavy checks in the background and read their result
-before starting another.
+before starting another. The safe-fetch TLS test needs local `node` and
+`openssl`.
 
 ```bash
 bun run build                        # Production build
@@ -65,6 +67,18 @@ Postgres host; its default user is `reader@example.com`.
   only, with a 500-subscription cap; new-feed fetching and source inputs
   are pending. Last unsubscribe deletes the feed, entries and read marks
   in one transaction.
+- `lib/ingest/safe-fetch.ts`: the only outbound HTTP path for ingest;
+  nothing calls it yet. `safeFetch(url, { etag, lastModified, deadline })`
+  uses its own undici Agent, conditional GET and feed-preferring headers.
+  Every hop requires HTTP(S), ports 80/443, no credentials and at most
+  2,048 URL characters. All DNS answers must be public unicast addresses;
+  ipaddr.js checks mapped IPv6 as IPv4. The connected remote address is
+  checked again, while TLS keeps the hostname and certificate checks.
+  At most five redirects share one deadline with the body (15 s by default).
+  Bodies are capped at 10 MB after decompression; charset comes from
+  Content-Type, BOM, XML prolog, then UTF-8. Non-2xx statuses return with
+  headers and empty text. Failures throw `SafeFetchError` with code
+  `invalid_url`, `blocked`, `unreachable` or `too_large`.
 - `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, feed,
   entry, subscription and read-mark storage. Generated Prisma code lives
   in gitignored `lib/generated/prisma/`; regenerate it rather than edit it.
@@ -83,6 +97,11 @@ Postgres host; its default user is `reader@example.com`.
   Existing users can still sign in.
 - Session cookies are cached for five minutes. API keys use the `rss_`
   prefix and a default limit of 120 requests per minute.
+- Keep safe-fetch's `undici/index.js` import: `bun test` substitutes a shim
+  for bare `undici` that ignores the custom Agent and bypasses the guard.
+  `createSafeFetch({ lookup, allowAddress, ports })` is the test seam; only
+  test files may pass `allowAddress` or `ports`. There is no env or flag
+  bypass. Safe-fetch tests use fake resolvers and only 127.0.0.1 sockets.
 - `bunfig.toml` preloads `test/db.ts` for every test file. Before each test
   it truncates tables except `jwks` and `_prisma_migrations`. The guard
   requires a Postgres URL whose driver-parsed host is `localhost` or
