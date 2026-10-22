@@ -16,7 +16,7 @@ export const builtinSources = [
     id: "langchain-blog",
     title: "LangChain blog",
     url: "https://www.langchain.com/blog/rss.xml",
-    note: "The LangChain blog’s own feed",
+    note: "langchain.com — the LangChain blog’s own feed",
   },
   {
     id: "nodejs-blog",
