@@ -59,7 +59,7 @@ export function KeysProvider({ children }: { children: React.ReactNode }) {
       const context = all.find((r) => r.context)?.context ?? "list"
       const action = keyAction(event, context)
       if (!action) return
-      const handler =
+      const handler: Handlers[KeyAction] =
         action === "add"
           ? addFeed
           : action === "help"
