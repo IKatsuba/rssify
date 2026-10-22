@@ -23,38 +23,33 @@ export function ReadButton({
   const router = useRouter()
   const [read, setRead] = useState(initialRead)
   const [push] = useState(() =>
-    intentQueue(async (next: boolean, isLatest) => {
-      try {
+    intentQueue({
+      confirmed: initialRead,
+      send: async (next: boolean) => {
         const result = await (next ? markRead : markUnread)(entryId)
         // Pruned or unsubscribed meanwhile: the page shows that state.
         if (!result.ok) router.refresh()
-      } catch {
-        if (isLatest()) setRead(!next)
+      },
+      show: setRead,
+      failed: (next) =>
         toast.error(
           next
             ? "Couldn’t mark it as read. Try again."
             : "Couldn’t mark it as unread. Try again."
-        )
-      }
+        ),
     })
   )
   const opened = useRef(false)
-
-  function change(next: boolean) {
-    setRead(next)
-    push(next)
-  }
 
   useEffect(() => {
     // Development runs effects twice; once is enough.
     if (opened.current || initialRead) return
     opened.current = true
-    setRead(true)
     push(true)
   }, [initialRead, push])
 
   return (
-    <Button variant="outline" onClick={() => change(!read)}>
+    <Button variant="outline" onClick={() => push(!read)}>
       {read ? <MailOpenIcon /> : <MailIcon />}
       <span className="max-sm:sr-only">
         {read ? "Mark as unread" : "Mark as read"}
