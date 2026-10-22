@@ -1,6 +1,7 @@
 import {
   CheckCheckIcon,
   CircleOffIcon,
+  PlusIcon,
   RssIcon,
   TriangleAlertIcon,
 } from "lucide-react"
@@ -37,11 +38,15 @@ import {
 import { shortAgo } from "@/lib/relative-time"
 
 import { subscriptionsOf } from "./data"
+import { AddFeedButton } from "./add-feed"
+import { ListActions } from "./list-actions"
 import { ListHeader } from "./list-header"
 
 type Feed = {
   id: string
   title: string
+  url: string
+  siteUrl: string | null
   status: "ok" | "failing" | "gone"
   lastError: string | null
   lastSuccessAt: Date | null
@@ -80,12 +85,17 @@ export async function EntryList({
       ? (await listEntries(userId, { feedId: feed.id, limit: 1 })).entries
           .length > 0
       : undefined
+  const subscriptions = await subscriptionsOf(userId)
+  // The confirm's n: the scope's unread count, whatever the filter shows.
+  const unread = subscriptions
+    .filter((s) => !feed || s.feed.id === feed.id)
+    .reduce((sum, s) => sum + s.unreadCount, 0)
   const empty = emptyState({
     rows: list.entries.length,
     paged,
     feedId: feed?.id,
     filter,
-    subscriptions: (await subscriptionsOf(userId)).length,
+    subscriptions: subscriptions.length,
     feedHasEntries,
   })
   const notice = feed && feedNotice(feed)
@@ -95,6 +105,18 @@ export async function EntryList({
     <>
       <ListHeader title={feed?.title ?? "All feeds"}>
         <FilterLinks path={path} filter={filter} />
+        <ListActions
+          feed={
+            feed && {
+              id: feed.id,
+              title: feed.title,
+              url: feed.url,
+              siteUrl: feed.siteUrl,
+            }
+          }
+          unread={unread}
+          asOf={list.asOf}
+        />
       </ListHeader>
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-2">
         {notice && (
@@ -243,6 +265,14 @@ function EmptyList({ state, path }: { state: EmptyState; path: string }) {
         <EmptyTitle>{title}</EmptyTitle>
         <EmptyDescription>{description}</EmptyDescription>
       </EmptyHeader>
+      {state === "no_feeds" && (
+        <EmptyContent>
+          <AddFeedButton>
+            <PlusIcon />
+            Add feed
+          </AddFeedButton>
+        </EmptyContent>
+      )}
       {state === "caught_up" && (
         <EmptyContent>
           <Button

@@ -27,7 +27,7 @@ export function SignInButton() {
     <Button className="w-full" disabled={redirecting} onClick={signIn}>
       {redirecting ? (
         <>
-          <Spinner data-icon="inline-start" />
+          <Spinner data-icon="inline-start" aria-hidden />
           Redirecting to Vercel…
         </>
       ) : (

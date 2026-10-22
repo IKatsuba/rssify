@@ -4,6 +4,7 @@ import {
   ChevronDownIcon,
   CircleOffIcon,
   InboxIcon,
+  PlusIcon,
   RssIcon,
   TriangleAlertIcon,
 } from "lucide-react"
@@ -31,6 +32,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
@@ -41,6 +43,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
+
+import { useAddFeed } from "./add-feed"
 
 export type SidebarFeed = {
   id: string
@@ -97,6 +101,7 @@ export function SidebarNav({
 }) {
   const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
+  const addFeed = useAddFeed()
   // Below 768 px the sidebar is a sheet; choosing a place closes it.
   const close = () => setOpenMobile(false)
 
@@ -120,6 +125,15 @@ export function SidebarNav({
       </SidebarGroup>
       <SidebarGroup>
         <SidebarGroupLabel>Feeds</SidebarGroupLabel>
+        <SidebarGroupAction
+          onClick={() => {
+            close()
+            addFeed()
+          }}
+        >
+          <PlusIcon />
+          <span className="sr-only">Add feed</span>
+        </SidebarGroupAction>
         <SidebarGroupContent>
           <SidebarMenu>
             {feeds.map((feed) => (

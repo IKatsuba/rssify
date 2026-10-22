@@ -121,3 +121,8 @@ export function feedNotice(
     description: `${when}${why} We’ll keep trying.`,
   }
 }
+
+// "1 entry", "2 entries": the mark-all confirm and its toast.
+export function entryCount(n: number) {
+  return `${n} ${n === 1 ? "entry" : "entries"}`
+}
