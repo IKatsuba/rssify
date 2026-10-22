@@ -92,14 +92,15 @@ and refresh cycle inline, without a queue.
   API keys, Connected apps and Keyboard shortcuts (Show and Turn off/on)
   cards, loading/error states and the title `Settings · rssify`. Keys list
   newest first with name, eight-character start, Created and Last used
-  (Never if unused); dates are hidden on phones. Create takes a trimmed 1–64-character name,
-  then opens a shown-once dialog with a masked field and Copy for the full
-  key; closing drops the secret. Revoke confirms first; failures toast.
-  Connected apps lists consented clients newest first, with Name, Website
-  (host) and Connected (hidden on phones). Empty state shows the MCP address.
-  Disconnect confirms, deletes consent and revokes that user's refresh tokens
-  for the client in one transaction through `lib/mcp-clients.ts`; issued
-  access tokens remain valid for up to one hour. Success and failure toast.
+  (Never if unused); dates are hidden on phones. Create takes a trimmed
+  1–64-character name, then opens a shown-once dialog with a masked field
+  and Copy for the full key; closing drops the secret. Revoke confirms first; failures toast.
+  Connected apps lists one row per client by latest consent, newest first,
+  then clientId ascending, with Name, Website (host) and Connected (hidden
+  on phones). Empty state shows the MCP address. Disconnect confirms,
+  deletes all that user's consents for the client and revokes its refresh
+  tokens in one transaction through `lib/mcp-clients.ts`; issued access
+  tokens remain valid for up to one hour. Success and failure toast.
 - `app/(reader)/keys.tsx`: one reader shortcut listener. Lists use j/k for
   the cursor, o/Enter to open (Enter on body or a row), m to toggle read,
   v for the original and r to refresh, even when empty. Entries use j/k
