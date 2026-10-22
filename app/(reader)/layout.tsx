@@ -5,7 +5,12 @@ import { Suspense } from "react"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
-import { AppSidebar, SidebarNav, SidebarNavSkeleton } from "./app-sidebar"
+import {
+  AppSidebar,
+  SidebarNav,
+  SidebarNavBoundary,
+  SidebarNavSkeleton,
+} from "./app-sidebar"
 import { currentUser, subscriptionsOf, totalUnread } from "./data"
 
 // The add-feed actions (a later unit) run under this layout and fetch.
@@ -13,7 +18,8 @@ export const maxDuration = 60
 
 export async function generateMetadata(): Promise<Metadata> {
   const { userId } = await currentUser()
-  const unread = await totalUnread(userId)
+  // A failed count leaves the plain title; the page shows the error.
+  const unread = await totalUnread(userId).catch(() => 0)
   return { title: unread > 0 ? `${unread} unread · rssify` : "rssify" }
 }
 
@@ -30,9 +36,11 @@ export default async function ReaderLayout({
     <TooltipProvider>
       <SidebarProvider defaultOpen={defaultOpen}>
         <AppSidebar email={email}>
-          <Suspense fallback={<SidebarNavSkeleton />}>
-            <ReaderNav userId={userId} />
-          </Suspense>
+          <SidebarNavBoundary>
+            <Suspense fallback={<SidebarNavSkeleton />}>
+              <ReaderNav userId={userId} />
+            </Suspense>
+          </SidebarNavBoundary>
         </AppSidebar>
         {/* min-w-0: a long <pre> would otherwise widen the column past a phone. */}
         <SidebarInset className="min-w-0">{children}</SidebarInset>

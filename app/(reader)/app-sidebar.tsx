@@ -7,6 +7,7 @@ import {
   RssIcon,
   TriangleAlertIcon,
 } from "lucide-react"
+import { catchError } from "next/error"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -216,6 +217,12 @@ function UserMenu({ email }: { email: string }) {
     </SidebarMenu>
   )
 }
+
+// A failed feeds query keeps the frame and All feeds, without counts, so
+// the page beside it can show its own error instead of Next's root one.
+export const SidebarNavBoundary = catchError(function SidebarNavFallback() {
+  return <SidebarNav feeds={[]} totalUnread={0} />
+})
 
 // The feeds' Suspense fallback: All feeds without its count, and skeleton
 // rows for the feeds until the counts arrive.
