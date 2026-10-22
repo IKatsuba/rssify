@@ -171,3 +171,99 @@ describe("plugin refresh tester acceptance", () => {
     expect(await db.entry.count()).toBe(0)
   }, 50000)
 })
+
+describe("canonical refresh tester regressions", () => {
+  test("a narrowed shape keeps entries and metadata while failures reach failing", async () => {
+    await seed()
+    await db.feed.update({
+      where: { id: "plugin-tester" },
+      data: {
+        title: "Keep title",
+        siteUrl: LIST,
+        etag: "keep-validator",
+        lastSuccessAt: NOW,
+      },
+    })
+    await db.entry.create({
+      data: {
+        id: "keep-entry",
+        feedId: "plugin-tester",
+        guid: "keep",
+        title: "Keep content",
+        sortAt: NOW,
+      },
+    })
+    const before = await db.entry.findUniqueOrThrow({
+      where: { id: "keep-entry" },
+    })
+    let invoked = 0
+    const plugins = {
+      "cursor-blog": {
+        id: "cursor-blog",
+        canonical: () => `${LIST}/`,
+        title: () => {
+          throw new Error("refresh must not recompute titles")
+        },
+        fetchEntries: async () => {
+          invoked++
+          return []
+        },
+      },
+    }
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const now = new Date(+NOW + attempt * HOUR)
+      expect(
+        await refreshFeed("plugin-tester", { plugins, fetch: noFetch, now })
+      ).toEqual({
+        outcome: "failed",
+        error: "the source isn’t supported any more",
+      })
+      expect(await row()).toMatchObject({
+        url: LIST,
+        title: "Keep title",
+        siteUrl: LIST,
+        etag: "keep-validator",
+        lastSuccessAt: NOW,
+        failureCount: attempt,
+        lastFetchedAt: now,
+        nextFetchAt: new Date(+now + 2 ** attempt * HOUR),
+        status: attempt === 3 ? "failing" : "ok",
+      })
+    }
+    expect(invoked).toBe(0)
+    expect(
+      await db.entry.findUniqueOrThrow({ where: { id: "keep-entry" } })
+    ).toEqual(before)
+  })
+
+  test("a plain stored feed is not promoted when a new plugin owns its URL", async () => {
+    await db.feed.create({
+      data: { id: "plugin-tester", url: LIST, pluginId: null, etag: "old" },
+    })
+    const plugins = registry(async () => {
+      throw new Error("plain feed must stay plain")
+    })
+    const calls: string[] = []
+    const fetch: SafeFetch = async (url, options) => {
+      calls.push(url)
+      expect(options?.etag).toBe("old")
+      return {
+        status: 304,
+        url,
+        headers: new Headers(),
+        text: "",
+        kind: "unknown",
+      }
+    }
+    expect(
+      await refreshFeed("plugin-tester", { plugins, fetch, now: NOW })
+    ).toEqual({ outcome: "not_modified" })
+    expect(calls).toEqual([LIST])
+    expect(await row()).toMatchObject({
+      pluginId: null,
+      etag: "old",
+      lastSuccessAt: NOW,
+      failureCount: 0,
+    })
+  })
+})
