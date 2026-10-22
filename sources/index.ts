@@ -1,9 +1,11 @@
 import { cursorBlog } from "./cursor-blog"
+import { githubTrending } from "./github-trending"
 import type { SourcePlugin } from "./types"
 
 // Registering a plugin is a code change.
 export const plugins: Record<string, SourcePlugin> = {
   "cursor-blog": cursorBlog,
+  "github-trending": githubTrending,
 }
 
 // The plugin owning an address, with the URL it stores for it. Shapes are

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 
 import { builtinSource, builtinSources } from "./builtin"
 import { cursorBlog } from "./cursor-blog"
+import { githubTrending } from "./github-trending"
 import { pluginFor, plugins } from "./index"
 import type { SourcePlugin } from "./types"
 
@@ -35,8 +36,11 @@ describe("builtinSources", () => {
 })
 
 describe("pluginFor", () => {
-  test("cursor-blog is the one registered plugin", () => {
-    expect(plugins).toEqual({ "cursor-blog": cursorBlog })
+  test("the registered plugins", () => {
+    expect(plugins).toEqual({
+      "cursor-blog": cursorBlog,
+      "github-trending": githubTrending,
+    })
     expect(pluginFor("https://cursor.com/blog")).toEqual({
       plugin: cursorBlog,
       url: "https://cursor.com/blog",

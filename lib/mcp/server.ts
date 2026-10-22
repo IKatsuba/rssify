@@ -116,7 +116,7 @@ export function buildMcpServer(
     "subscribe",
     {
       description:
-        "Follow a feed by its URL or a site's address, or a built-in source by id. If a site has several feeds, the error lists them as choices; call again with one.",
+        "Follow a feed by its URL or a site's address (a GitHub Trending page works too), or a built-in source by id. If a site has several feeds, the error lists them as choices; call again with one.",
       inputSchema: subscribeInput,
       outputSchema: z.object({ subscription }),
       annotations: { openWorldHint: true, idempotentHint: true },
