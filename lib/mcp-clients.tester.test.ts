@@ -70,11 +70,77 @@ test("equal connection times have stable ordering, and merely owning a client do
   }
   const apps = await listConnectedApps("list-user")
   expect(apps.map((app) => app.name)).toEqual([
-    "z.example.invalid",
     "a.example.invalid",
+    "z.example.invalid",
   ])
   expect(apps.map((app) => app.host)).toEqual([
-    "z.example.invalid",
     "a.example.invalid",
+    "z.example.invalid",
+  ])
+})
+
+test("duplicate scope grants collapse per user without taking another user's newer connection date", async () => {
+  const now = new Date("2026-10-22T00:00:00Z")
+  for (const id of ["duplicate-one", "duplicate-two"]) {
+    await db.user.create({
+      data: { id, name: id, email: `${id}@example.invalid` },
+    })
+  }
+  await db.oauthClient.create({
+    data: {
+      id: "shared-duplicate",
+      clientId: "shared-duplicate",
+      name: "Shared app",
+    },
+  })
+  await db.oauthConsent.createMany({
+    data: [
+      {
+        id: "old",
+        clientId: "shared-duplicate",
+        userId: "duplicate-one",
+        createdAt: new Date(now.getTime() - 1000),
+        updatedAt: new Date(now.getTime() + 5000),
+        scopes: ["reader"],
+      },
+      {
+        id: "same-time-one",
+        clientId: "shared-duplicate",
+        userId: "duplicate-one",
+        createdAt: now,
+        updatedAt: now,
+        scopes: ["reader"],
+      },
+      {
+        id: "same-time-two",
+        clientId: "shared-duplicate",
+        userId: "duplicate-one",
+        createdAt: now,
+        updatedAt: now,
+        scopes: ["reader", "offline_access"],
+      },
+      {
+        id: "other-user",
+        clientId: "shared-duplicate",
+        userId: "duplicate-two",
+        createdAt: new Date(now.getTime() + 1000),
+        updatedAt: now,
+        scopes: ["reader"],
+      },
+    ],
+  })
+  expect(await listConnectedApps("duplicate-one")).toEqual([
+    {
+      clientId: "shared-duplicate",
+      name: "Shared app",
+      host: undefined,
+      createdAt: now,
+    },
+  ])
+  expect(await disconnectApp("duplicate-one", "shared-duplicate")).toEqual({
+    ok: true,
+  })
+  expect(await db.oauthConsent.findMany({ select: { id: true } })).toEqual([
+    { id: "other-user" },
   ])
 })
