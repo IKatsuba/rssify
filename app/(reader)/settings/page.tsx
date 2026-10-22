@@ -11,12 +11,15 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { listApiKeys } from "@/lib/api-keys"
+import { MCP_RESOURCE } from "@/lib/auth"
+import { listConnectedApps } from "@/lib/mcp-clients"
 import { longAgo } from "@/lib/relative-time"
 
 import { currentUser } from "../data"
 import { ListHeader } from "../list-header"
 
 import { ApiKeysCard, type KeyRow } from "./api-keys"
+import { type AppRow, ConnectedAppsCard } from "./connected-apps"
 import { ShortcutsCard } from "./shortcuts-card"
 
 export const metadata: Metadata = { title: "Settings · rssify" }
@@ -24,7 +27,7 @@ export const metadata: Metadata = { title: "Settings · rssify" }
 const day = new Intl.DateTimeFormat("en", { dateStyle: "medium" })
 
 export default async function SettingsPage() {
-  const { email } = await currentUser()
+  const { userId, email } = await currentUser()
   const now = new Date()
   const keys: KeyRow[] = (await listApiKeys(await headers())).map((key) => ({
     id: key.id,
@@ -32,6 +35,12 @@ export default async function SettingsPage() {
     start: key.start ?? "",
     created: day.format(key.createdAt),
     lastUsed: key.lastRequest ? longAgo(key.lastRequest, now) : "Never",
+  }))
+  const apps: AppRow[] = (await listConnectedApps(userId)).map((app) => ({
+    clientId: app.clientId,
+    name: app.name,
+    website: app.host ?? "",
+    connected: day.format(app.createdAt),
   }))
 
   return (
@@ -52,6 +61,7 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
         <ApiKeysCard keys={keys} />
+        <ConnectedAppsCard apps={apps} mcpAddress={MCP_RESOURCE} />
         <ShortcutsCard />
       </div>
     </>

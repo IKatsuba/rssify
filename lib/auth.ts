@@ -1,10 +1,21 @@
 import { apiKey } from "@better-auth/api-key"
+import { cimd } from "@better-auth/cimd"
+import { fetchClientMetadataResource } from "@better-auth/cimd/node"
+import { mcp } from "@better-auth/mcp"
 import { betterAuth } from "better-auth"
 import { prismaAdapter } from "better-auth/adapters/prisma"
 import { APIError } from "better-auth/api"
 import { nextCookies } from "better-auth/next-js"
+import { jwt } from "better-auth/plugins"
 
 import { db } from "@/lib/db"
+
+// The RFC 8707 resource MCP tokens are bound to; their aud must equal it.
+export const MCP_RESOURCE = `${process.env.BETTER_AUTH_URL}/api/mcp`
+export const MCP_SCOPE = "reader"
+// Explicit, because the provider default also offers the OIDC identity
+// scopes, which rssify does not use (design §9).
+const MCP_SCOPES = ["offline_access", MCP_SCOPE]
 
 type EmailUser = { email: string; emailVerified: boolean }
 
@@ -38,7 +49,26 @@ export const auth = betterAuth({
   },
   session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   databaseHooks: { user: { create: { before: registrationGate } } },
+  // jwt()'s session-to-JWT endpoint; nothing here needs it.
+  disabledPaths: ["/token"],
   plugins: [
+    jwt(),
+    mcp({
+      loginPage: "/sign-in",
+      consentPage: "/consent",
+      resource: MCP_RESOURCE,
+      scopes: MCP_SCOPES,
+      resources: [
+        {
+          identifier: MCP_RESOURCE,
+          name: "rssify MCP",
+          allowedScopes: MCP_SCOPES,
+        },
+      ],
+      clientRegistrationDefaultScopes: MCP_SCOPES,
+      // Dynamic client registration stays off: CIMD only (design §5.5).
+    }),
+    cimd({ fetchClientMetadataResource, metadataProfile: "mcp-2026-07-28" }),
     apiKey({
       defaultPrefix: "rss_",
       // Settings takes names of 1–64 characters (design §2.5); the default is 32.

@@ -1,7 +1,11 @@
+import { requireMcpAuth } from "@better-auth/mcp"
+import { createResourceServerChallenge } from "@better-auth/oauth-provider"
+import { APIError } from "better-auth/api"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
 
-import { auth, isAdmin } from "@/lib/auth"
+import { auth, isAdmin, MCP_RESOURCE, MCP_SCOPE } from "@/lib/auth"
+import { db } from "@/lib/db"
 
 export type Actor = { userId: string; isAdmin: boolean }
 
@@ -58,4 +62,47 @@ export async function requireApiKey(
     })
   }
   return apiError(401, "unauthorized", "Invalid API key")
+}
+
+// The same JSON-RPC 401 and challenge requireMcpAuth gives a bad token, so a
+// client whose user is gone starts the authorization flow again.
+function mcpUnauthorized() {
+  const challenge = createResourceServerChallenge(
+    new APIError("UNAUTHORIZED", { message: "Unknown user" }),
+    MCP_RESOURCE,
+    { challengeScopes: [MCP_SCOPE] }
+  )!
+  const responseHeaders = new Headers(challenge.headers)
+  responseHeaders.set("Content-Type", "application/json")
+  return Response.json(
+    {
+      jsonrpc: "2.0",
+      error: { code: -32000, message: challenge.message },
+      id: null,
+    },
+    { status: 401, headers: responseHeaders }
+  )
+}
+
+// The OAuth branch of /api/mcp. requireMcpAuth checks the JWT against our
+// JWKS (iss, aud = MCP_RESOURCE, exp, azp) and the reader scope, and answers
+// 401 or 403 insufficient_scope itself. Tokens are not stored, so one lookup
+// by primary key refuses a deleted user's token at once. Never admin.
+export function withMcpAuth(
+  handler: (request: Request, actor: Actor) => Promise<Response>
+) {
+  return requireMcpAuth(
+    auth,
+    async (request, claims) => {
+      const user = claims.sub
+        ? await db.user.findUnique({
+            where: { id: claims.sub },
+            select: { id: true },
+          })
+        : null
+      if (!user) return mcpUnauthorized()
+      return handler(request, { userId: user.id, isAdmin: false })
+    },
+    { resource: MCP_RESOURCE, requiredScopes: [MCP_SCOPE] }
+  )
 }

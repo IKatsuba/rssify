@@ -29,6 +29,8 @@ describe("reader actions without a session", () => {
     ["createApiKey", () => actions.createApiKey("Reader app")],
     ["createApiKey with junk", () => actions.createApiKey("")],
     ["revokeApiKey", () => actions.revokeApiKey("k1")],
+    ["disconnectApp", () => actions.disconnectApp("c1")],
+    ["disconnectApp with junk", () => actions.disconnectApp("")],
   ]
   for (const [name, call] of calls) {
     test(`${name} redirects to /sign-in`, async () => {

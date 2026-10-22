@@ -16,7 +16,9 @@ export function assertTestDatabaseUrl(url: string | undefined) {
 assertTestDatabaseUrl(process.env.DATABASE_URL)
 
 // jwks survives so one signing key lives for the whole test process.
-const KEEP = ["jwks", "_prisma_migrations"]
+// oauthResource survives because the provider seeds the MCP resource row
+// from config only once per process, the first time it is needed.
+const KEEP = ["jwks", "oauthResource", "_prisma_migrations"]
 
 export async function truncateAll() {
   const tables = await db.$queryRaw<{ tablename: string }[]>`

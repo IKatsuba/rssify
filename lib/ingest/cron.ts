@@ -1,5 +1,7 @@
 import { timingSafeEqual } from "node:crypto"
 
+import { deleteExpiredAuthRows } from "@/lib/auth-cleanup"
+
 import { fanOut, tickOf } from "./fan-out"
 
 export type CronEnqueue = (
@@ -30,5 +32,10 @@ export async function handleCronRefresh(
   }
   const tick = tickOf(now)
   const counts = await fanOut((feedId) => enqueue(feedId, `${feedId}:${tick}`))
+  // At the end of every run (design §5.5): no cron or job of its own. A
+  // failure is logged, so the claimed feeds are still reported.
+  await deleteExpiredAuthRows(now).catch((error) =>
+    console.error("auth cleanup failed", error)
+  )
   return Response.json(counts)
 }
