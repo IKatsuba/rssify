@@ -351,3 +351,37 @@ describe("subscribe tester acceptance edges", () => {
     expect(await db.entry.count()).toBe(1)
   })
 })
+
+test("a failed discovery choice can be retried with another choice without partial subscriptions", async () => {
+  const first = "https://site.example/first"
+  const second = "https://site.example/second"
+  const calls: string[] = []
+  const fetch: SafeFetch = async (url) => {
+    calls.push(url)
+    if (url === PAGE) return response(url, `${page(first)}${page(second)}`)
+    if (url === first)
+      throw new SafeFetchError("unreachable", "fixture timeout")
+    expect(url).toBe(second)
+    return response(url)
+  }
+  expect(await subscribe("tester", { url: PAGE }, { fetch })).toEqual({
+    ok: false,
+    code: "multiple",
+    choices: [first, second],
+  })
+  await assertEmpty()
+  expect(await subscribe("tester", { url: first }, { fetch })).toEqual({
+    ok: false,
+    code: "unreachable",
+  })
+  await assertEmpty()
+  const selected = await subscribe("tester", { url: second }, { fetch })
+  expect(selected).toMatchObject({ ok: true, existed: false })
+  expect(
+    await subscribe("tester", { url: second }, { fetch: noFetch })
+  ).toMatchObject({ ok: true, existed: true })
+  expect(calls).toEqual([PAGE, first, second])
+  expect(await db.feed.count()).toBe(1)
+  expect(await db.subscription.count()).toBe(1)
+  expect(await db.entry.count()).toBe(1)
+})
