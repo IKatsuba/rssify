@@ -2,7 +2,8 @@
 
 Saved once with `curl -L --compressed -A 'rssify/1.0
 (+https://github.com/IKatsuba/rssify)'` on 2026-10-22; raw response
-bodies, never edited, never fetched by tests.
+bodies, never edited unless a note below says how they were cut, and
+never fetched by tests.
 
 | File | Source URL | Notes |
 | --- | --- | --- |
