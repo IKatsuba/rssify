@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:github.com,2008:/vercel/next.js/discussions/categories/ideas</id>
+  <link type="text/html" rel="alternate" href="https://github.com/vercel/next.js/discussions/categories/ideas"/>
+  <link type="application/atom+xml" rel="self" href="https://github.com/vercel/next.js/discussions/categories/ideas.atom"/>
+  <title>Recent discussions in vercel/next.js, category: ideas</title>
+  <updated>2026-10-21T22:56:44+00:00</updated>
+  <entry>
+    <id>tag:github.com,2008:11099151</id>
+    <link type="text/html" rel="alternate" href="https://github.com/vercel/next.js/discussions/100547"/>
+    <title>
+      `next build` fails on TypeScript 7.1 projects that use content mappers (TS18068)
+    </title>
+    <published>2026-10-21T22:45:56+00:00</published>
+    <updated>2026-10-21T22:56:44+00:00</updated>
+    <media:thumbnail height="30" width="30" url="https://avatars.githubusercontent.com/u/3084745?s=30&amp;v=4"/>
+    <author>
+      <name>colinhacks</name>
+      <uri>https://github.com/colinhacks</uri>
+    </author>
+    <content type="html">
+      &lt;p dir=&quot;auto&quot;&gt;TypeScript 7.1 adds content mappers: a tsconfig names a package that turns a file TypeScript does not read (&lt;code class=&quot;notranslate&quot;&gt;.mdx&lt;/code&gt;, &lt;code class=&quot;notranslate&quot;&gt;.vue&lt;/code&gt;, &lt;code class=&quot;notranslate&quot;&gt;.svelte&lt;/code&gt;, …) into a module it type-checks. Mappers run only when &lt;code class=&quot;notranslate&quot;&gt;tsc&lt;/code&gt; is started with &lt;code class=&quot;notranslate&quot;&gt;--runExternalCode&lt;/code&gt;, a command-line flag with no tsconfig equivalent.&lt;/p&gt;
+&lt;p dir=&quot;auto&quot;&gt;&lt;code class=&quot;notranslate&quot;&gt;next build&lt;/code&gt;&#39;s TypeScript CLI checker (&lt;code class=&quot;notranslate&quot;&gt;experimental.useTypeScriptCli&lt;/code&gt;, the default since 16.3) spawns the project&#39;s &lt;code class=&quot;notranslate&quot;&gt;tsc&lt;/code&gt; with a fixed argument list, so a project whose tsconfig lists a content mapper fails &lt;code class=&quot;notranslate&quot;&gt;next build&lt;/code&gt; with TS18068, and TS2307 on every mapped import, though &lt;code class=&quot;notranslate&quot;&gt;tsc --noEmit --runExternalCode&lt;/code&gt; passes.&lt;/p&gt;
+&lt;h4 dir=&quot;auto&quot;&gt;Reproduction (next 16.4.2 and canary, typescript 7.1.0-beta)&lt;/h4&gt;
+&lt;p dir=&quot;auto&quot;&gt;&lt;code class=&quot;notranslate&quot;&gt;app/hello.m... (truncated)
