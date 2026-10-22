@@ -37,11 +37,9 @@ export async function listSubscriptions(userId: string) {
     unreadCounts(userId),
   ])
   return subscriptions
-    .map(({ feed: { pluginId, ...feed }, ...subscription }) => ({
+    .map((subscription) => ({
       ...subscription,
-      unreadCount: counts.get(feed.id) ?? 0,
-      // The API calls the stored plugin id sourceId; null for a plain feed.
-      feed: { ...feed, sourceId: pluginId },
+      unreadCount: counts.get(subscription.feed.id) ?? 0,
     }))
     .sort((a, b) =>
       (a.feed.title ?? a.feed.url).localeCompare(b.feed.title ?? b.feed.url)

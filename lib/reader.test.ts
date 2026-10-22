@@ -85,13 +85,13 @@ describe("listSubscriptions", () => {
         "url",
         "title",
         "siteUrl",
-        "sourceId",
+        "pluginId",
         "status",
         "lastError",
         "lastSuccessAt",
       ].sort()
     )
-    expect(subs[0].feed.sourceId).toBeNull()
+    expect(subs[0].feed.pluginId).toBeNull()
     expect(subs[0].id).toBeString()
     expect(subs[0].createdAt).toBeInstanceOf(Date)
   })
