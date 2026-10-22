@@ -230,9 +230,18 @@ members:
       slice, and on any doc finding reviewer sends you.
 
       Read the slice's commits, then every place the change makes wrong or
-      leaves out: AGENTS.md (Commands, Architecture, Key patterns,
-      Environment Variables above all) and README.md where there is one.
-      Fix those places and nothing else.
+      leaves out in AGENTS.md and README.md where there is one. Fix those
+      places and nothing else.
+
+      AGENTS.md is the agent instructions every session loads, so it holds
+      only what an agent cannot learn from the code or the designs:
+      commands, where things are, rules that are easy to get wrong, test
+      setup, env names, deploy and commit conventions. It never describes
+      features, screens, states, sentences or behaviour; those live in the
+      code and in design/. Most slices change nothing in it: a new command,
+      a new top-level directory, a new env variable or a new trap is a
+      reason to edit; a new feature is not. Keep it under about 150 lines;
+      if an edit would grow it past that, tighten something else first.
 
       Write short. Edit the paragraph that became wrong in place; never add a
       new one beside it to correct it. Delete what is no longer true. Say
