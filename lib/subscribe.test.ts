@@ -625,6 +625,158 @@ describe("subscribe to a new feed", () => {
     }
   })
 
+  describe("spellings of one plugin address reach one feed", () => {
+    // A parameterised plugin like the trending one to come: http, www and a
+    // trailing slash are spellings of one list, and `since` picks a list.
+    const LIST = "https://lists.example/top"
+    const post: IngestedEntry = {
+      guid: "https://lists.example/one",
+      url: "https://lists.example/one",
+      title: "One",
+      author: null,
+      publishedAt: new Date(NOW.getTime() - HOUR),
+      summary: null,
+      contentHtml: "<p>One</p>",
+    }
+    const lists = (fetchEntries: SourcePlugin["fetchEntries"]) => ({
+      lists: {
+        id: "lists",
+        canonical: (u: URL) => {
+          if (u.hostname.replace(/^www\./, "") !== "lists.example") return null
+          if (u.pathname.replace(/\/$/, "") !== "/top") return null
+          const since = u.searchParams.get("since") ?? "daily"
+          return since === "daily" ? LIST : `${LIST}?since=${since}`
+        },
+        fetchEntries,
+      } satisfies SourcePlugin,
+    })
+    const counted = () => {
+      const urls: string[] = []
+      const plugins = lists(async (ctx) => {
+        urls.push(ctx.url)
+        return [post]
+      })
+      return { plugins, urls }
+    }
+
+    test("a second spelling subscribes to the stored feed without a fetch", async () => {
+      const { plugins, urls } = counted()
+      const first = await subscribe(
+        "u1",
+        { url: "http://www.lists.example/top/" },
+        { fetch: noFetch, plugins, now: NOW }
+      )
+      const second = await subscribe(
+        "u2",
+        { url: `${LIST}?since=daily#x` },
+        { fetch: noFetch, plugins, now: NOW }
+      )
+      expect(first).toMatchObject({ ok: true, existed: false })
+      expect(second).toMatchObject({ ok: true, existed: false })
+      expect(urls).toEqual([LIST])
+      const feeds = await db.feed.findMany()
+      expect(feeds.map((feed) => feed.url)).toEqual([LIST])
+      expect(
+        await db.subscription.count({ where: { feedId: feeds[0].id } })
+      ).toBe(2)
+    })
+
+    test("two spellings added at once share one feed", async () => {
+      let release!: () => void
+      const gate = new Promise<void>((resolve) => (release = resolve))
+      let arrived = 0
+      const plugins = lists(async () => {
+        arrived++
+        await gate
+        return [post]
+      })
+      const first = subscribe(
+        "u1",
+        { url: `${LIST}/` },
+        { fetch: noFetch, plugins, now: NOW }
+      )
+      const second = subscribe(
+        "u2",
+        { url: "http://lists.example/top" },
+        { fetch: noFetch, plugins, now: NOW }
+      )
+      while (arrived < 2) await Bun.sleep(5)
+      release()
+      const results = await Promise.all([first, second])
+      expect(results.map((r) => r.ok)).toEqual([true, true])
+      const [a, b] = results as { feedId: string }[]
+      expect(a.feedId).toBe(b.feedId)
+      expect((await db.feed.findMany()).map((feed) => feed.url)).toEqual([LIST])
+      expect(await db.subscription.count({ where: { feedId: a.feedId } })).toBe(
+        2
+      )
+    })
+
+    test("discovery offers canonical choices", async () => {
+      const { plugins } = counted()
+      const { fetch } = site({
+        [PAGE]: {
+          text: html(
+            "http://www.lists.example/top/",
+            `${LIST}?since=daily`,
+            "https://lists.example/top?since=weekly",
+            "/rss.xml"
+          ),
+        },
+      })
+      expect(
+        await subscribe("u1", { url: PAGE }, { fetch, plugins, now: NOW })
+      ).toEqual({
+        ok: false,
+        code: "multiple",
+        choices: [
+          LIST,
+          `${LIST}?since=weekly`,
+          "https://blog.example.com/rss.xml",
+        ],
+      })
+      await nothingWritten()
+    })
+
+    test("one discovered spelling is stored canonical and reaches the stored feed", async () => {
+      const { plugins, urls } = counted()
+      const { fetch } = site({
+        [PAGE]: { text: html("http://www.lists.example/top/") },
+      })
+      const first = await subscribe(
+        "u1",
+        { url: PAGE },
+        { fetch, plugins, now: NOW }
+      )
+      expect(first).toMatchObject({ ok: true, existed: false })
+      expect(urls).toEqual([LIST])
+      const again = await subscribe(
+        "u2",
+        { url: PAGE },
+        { fetch, plugins, now: NOW }
+      )
+      expect(again).toMatchObject({ ok: true, existed: false })
+      expect(urls).toEqual([LIST])
+      expect((await db.feed.findMany()).map((feed) => feed.url)).toEqual([LIST])
+    })
+
+    test("a built-in source still subscribes under its own URL", async () => {
+      const { plugins } = counted()
+      const CLAUDE = "https://claude.dev/rss.xml"
+      const { fetch } = site({ [CLAUDE]: { text: rss([{ guid: "a" }]) } })
+      expect(
+        await subscribe(
+          "u1",
+          { source: "claude-code" },
+          { fetch, plugins, now: NOW }
+        )
+      ).toMatchObject({ ok: true, existed: false })
+      expect((await db.feed.findMany()).map((feed) => feed.url)).toEqual([
+        CLAUDE,
+      ])
+    })
+  })
+
   test("two users adding one new URL at once share one feed", async () => {
     let release!: () => void
     const gate = new Promise<void>((resolve) => (release = resolve))

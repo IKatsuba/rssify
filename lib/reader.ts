@@ -2,7 +2,7 @@ import { db } from "@/lib/db"
 import { Prisma } from "@/lib/generated/prisma/client"
 import { fetchForAdd, type AddOptions, type NewFeed } from "@/lib/ingest/add"
 import { storeEntries, successFields } from "@/lib/ingest/refresh"
-import { normaliseUrl } from "@/lib/ingest/target"
+import { canonicalUrl, normaliseUrl } from "@/lib/ingest/target"
 import { builtinSource } from "@/sources/builtin"
 
 // The reader layout marks subscribed sources by it.
@@ -343,13 +343,18 @@ export type SubscribeOptions = AddOptions & { now?: Date }
 
 type Target = { url: string } | { code: "invalid_url" | "not_found" }
 
-function resolveTarget(input: SubscribeInput): Target {
+// Canonical before the known-feed lookup, so every spelling of a plugin
+// address reaches the same row.
+function resolveTarget(
+  input: SubscribeInput,
+  plugins: AddOptions["plugins"]
+): Target {
   if ("source" in input) {
     const source = builtinSource(input.source)
     if (!source) return { code: "not_found" }
     input = { url: source.url }
   }
-  const url = normaliseUrl(input.url)
+  const url = canonicalUrl(input.url, plugins)
   return url ? { url } : { code: "invalid_url" }
 }
 
@@ -427,7 +432,7 @@ export async function subscribe(
   input: SubscribeInput,
   { now = new Date(), ...options }: SubscribeOptions = {}
 ): Promise<SubscribeResult> {
-  const target = resolveTarget(input)
+  const target = resolveTarget(input, options.plugins)
   const known = await subscribeKnown(userId, target)
   if (known) return known
   // subscribeKnown answers every non-URL target, so this is a URL.
@@ -436,7 +441,11 @@ export async function subscribe(
   let fetched = await fetchForAdd(url, options)
   if (fetched.kind === "page") {
     const feeds = [
-      ...new Set(fetched.feeds.flatMap((feed) => normaliseUrl(feed) ?? [])),
+      ...new Set(
+        fetched.feeds.flatMap(
+          (feed) => canonicalUrl(feed, options.plugins) ?? []
+        )
+      ),
     ]
     if (feeds.length === 0) return { ok: false, code: "not_found" }
     if (feeds.length > 1) return { ok: false, code: "multiple", choices: feeds }
