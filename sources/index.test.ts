@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
 
+import { anthropicEngineering, anthropicNews } from "./anthropic"
 import { builtinSource, builtinSources } from "./builtin"
 import { cursorBlog } from "./cursor-blog"
 import { githubTrending } from "./github-trending"
@@ -16,6 +17,8 @@ const fake: SourcePlugin = {
 describe("builtinSources", () => {
   test("lists the built-in sources ordered by title", () => {
     expect(builtinSources.map((s) => s.id)).toEqual([
+      "anthropic-engineering",
+      "anthropic-news",
       "claude-code",
       "cursor-blog",
       "langchain-blog",
@@ -23,6 +26,12 @@ describe("builtinSources", () => {
     ])
     const titles = builtinSources.map((s) => s.title)
     expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)))
+    expect(builtinSource("anthropic-engineering")?.url).toBe(
+      "https://www.anthropic.com/engineering"
+    )
+    expect(builtinSource("anthropic-news")?.url).toBe(
+      "https://www.anthropic.com/news"
+    )
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
     expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
     expect(builtinSource("langchain-blog")?.url).toBe(
@@ -38,6 +47,8 @@ describe("builtinSources", () => {
 describe("pluginFor", () => {
   test("the registered plugins", () => {
     expect(plugins).toEqual({
+      "anthropic-engineering": anthropicEngineering,
+      "anthropic-news": anthropicNews,
       "cursor-blog": cursorBlog,
       "github-trending": githubTrending,
     })

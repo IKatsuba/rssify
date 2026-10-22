@@ -1,6 +1,18 @@
 // What the add dialog lists and what { source } maps to a URL.
 export const builtinSources = [
   {
+    id: "anthropic-engineering",
+    title: "Anthropic engineering",
+    url: "https://www.anthropic.com/engineering",
+    note: "anthropic.com/engineering — no feed of its own",
+  },
+  {
+    id: "anthropic-news",
+    title: "Anthropic news",
+    url: "https://www.anthropic.com/news",
+    note: "anthropic.com/news — no feed of its own",
+  },
+  {
     id: "claude-code",
     title: "Claude Code blog",
     url: "https://claude.dev/rss.xml",
