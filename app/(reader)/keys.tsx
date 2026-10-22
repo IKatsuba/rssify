@@ -135,10 +135,12 @@ export function KeyHint({
   label,
   keys,
   render,
+  side,
   children,
 }: {
   label: string
   keys: string[]
+  side?: React.ComponentProps<typeof TooltipContent>["side"]
   render: React.ComponentProps<typeof TooltipTrigger>["render"]
   children: React.ReactNode
 }) {
@@ -146,7 +148,7 @@ export function KeyHint({
   return (
     <Tooltip>
       <TooltipTrigger render={render}>{children}</TooltipTrigger>
-      <TooltipContent>
+      <TooltipContent side={side}>
         {label}
         <KbdGroup>
           {keyNames(keys, labels).map((key) => (

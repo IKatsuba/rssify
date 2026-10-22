@@ -130,6 +130,8 @@ export function SidebarNav({
         <KeyHint
           label="Add feed"
           keys={["A"]}
+          // Above, it would cover the All feeds count.
+          side="right"
           render={
             <SidebarGroupAction
               onClick={() => {
