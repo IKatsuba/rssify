@@ -84,8 +84,9 @@ and refresh cycle inline, without a queue.
   marked count. The feed menu opens the website when `siteUrl` exists,
   copies the feed URL and marks all read. Unsubscribe confirms, then returns
   to `/` with a toast. The sidebar + and no-feeds state open Add a feed:
-  a URL or built-in source, Subscribed badges, Adding… state, discovered
-  URL choices with Back, and errors under the field or source. Success
+  a URL field above a scrolling built-in source list (max 50vh), Subscribed
+  badges, Adding… state, discovered URL choices with Back, and errors under
+  the field or source. Success
   opens `/feeds/[id]` with a toast; `lib/add-feed-errors.ts` maps error codes.
   `/entries/[entryId]?feed=&filter=` shows stored sanitised content,
   falling back to summary or a no-text state, with Back, scoped previous/next,
@@ -260,8 +261,13 @@ and refresh cycle inline, without a queue.
   read alternate RSS/Atom/RDF/JSON Feed links, resolving against `<base>`
   or the final page URL. It returns deduplicated HTTP(S) URLs in document
   order, with no path guessing.
-- `sources/`: `builtinSources` maps `claude-code` to
-  `https://claude.dev/rss.xml` and `cursor-blog` to `https://cursor.com/blog`.
+- `sources/`: `builtinSources` lists sources by title: `claude-code` →
+  `https://claude.dev/rss.xml`, `cursor-blog` → `https://cursor.com/blog`,
+  `langchain-blog` → `https://www.langchain.com/blog/rss.xml` and
+  `nodejs-blog` → `https://nodejs.org/en/feed/blog.xml`. The last two are
+  native feeds. Pasting `https://nodejs.org/en/blog` discovers its built-in
+  feed; `https://www.langchain.com/blog` returns `not_found`, so use the
+  built-in source.
   `SourcePlugin` has a stable `id`, pure `canonical(URL): string | null`,
   optional `title(url)` and `fetchEntries` with the stored canonical URL,
   guarded fetch, known-URL lookup and a shared deadline. `pluginFor` returns
@@ -363,7 +369,8 @@ and refresh cycle inline, without a queue.
   closed and code points intact; empty output is null. `plainText`
   strips markup and collapses whitespace; `safeUrl` resolves URLs and
   allows HTTP(S) only. Fixtures in `test/fixtures/feeds/` and
-  `test/fixtures/cursor-blog/` are local; tests never fetch them.
+  `test/fixtures/cursor-blog/` are local; tests never fetch them. The feeds
+  README documents the Node.js and LangChain capture excerpts.
 - `prisma/schema.prisma` and `prisma/migrations/`: auth, API-key, JWKS,
   OAuth client/resource/consent/token/assertion, feed, entry, subscription
   and read-mark storage. Generated Prisma code lives in gitignored

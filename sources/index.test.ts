@@ -13,13 +13,23 @@ const fake: SourcePlugin = {
 }
 
 describe("builtinSources", () => {
-  test("holds the Claude Code feed and the Cursor blog page", () => {
+  test("lists the built-in sources ordered by title", () => {
     expect(builtinSources.map((s) => s.id)).toEqual([
       "claude-code",
       "cursor-blog",
+      "langchain-blog",
+      "nodejs-blog",
     ])
+    const titles = builtinSources.map((s) => s.title)
+    expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)))
     expect(builtinSource("claude-code")?.url).toBe("https://claude.dev/rss.xml")
     expect(builtinSource("cursor-blog")?.url).toBe("https://cursor.com/blog")
+    expect(builtinSource("langchain-blog")?.url).toBe(
+      "https://www.langchain.com/blog/rss.xml"
+    )
+    expect(builtinSource("nodejs-blog")?.url).toBe(
+      "https://nodejs.org/en/feed/blog.xml"
+    )
     expect(builtinSource("nope")).toBeUndefined()
   })
 })
