@@ -1,9 +1,11 @@
+import { anthropicEngineering } from "./anthropic"
 import { cursorBlog } from "./cursor-blog"
 import { githubTrending } from "./github-trending"
 import type { SourcePlugin } from "./types"
 
 // Registering a plugin is a code change.
 export const plugins: Record<string, SourcePlugin> = {
+  "anthropic-engineering": anthropicEngineering,
   "cursor-blog": cursorBlog,
   "github-trending": githubTrending,
 }
