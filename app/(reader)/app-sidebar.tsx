@@ -44,6 +44,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { cn } from "@/lib/utils"
 
 import { useAddFeed } from "./add-feed"
 import { KeyHint, useShowShortcuts } from "./keys"
@@ -54,6 +55,10 @@ export type SidebarFeed = {
   status: "ok" | "failing" | "gone"
   unreadCount: number
 }
+
+// The count sits over the row's right edge; with it present, a long title
+// stops before it and truncates, as the template does for a menu action.
+const ROOM_FOR_COUNT = "group-has-data-[sidebar=menu-badge]/menu-item:pr-8"
 
 const statusTooltip = {
   failing: "Not updating — open for details",
@@ -116,6 +121,7 @@ export function SidebarNav({
           <SidebarMenuItem>
             <SidebarMenuButton
               isActive={pathname === "/"}
+              className={ROOM_FOR_COUNT}
               render={<Link href="/" onClick={close} />}
             >
               <InboxIcon />
@@ -182,9 +188,10 @@ function FeedItem({
     <SidebarMenuItem>
       <SidebarMenuButton
         isActive={isActive}
-        className={
-          feed.status === "failing" ? "text-muted-foreground" : undefined
-        }
+        className={cn(
+          ROOM_FOR_COUNT,
+          feed.status === "failing" && "text-muted-foreground"
+        )}
         // The template shows menu tooltips only when collapsed; these say
         // why a feed looks different, so they show whenever hovered.
         tooltip={
