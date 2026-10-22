@@ -14,6 +14,7 @@ import {
   EmptyTitle,
 } from "@/components/ui/empty"
 
+import { RETRY_EVENT } from "./app-sidebar"
 import { ListHeader } from "./list-header"
 
 export default function ReaderError({
@@ -42,7 +43,13 @@ export default function ReaderError({
           </EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <Button variant="outline" onClick={() => retry()}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              window.dispatchEvent(new Event(RETRY_EVENT))
+              retry()
+            }}
+          >
             Try again
           </Button>
         </EmptyContent>

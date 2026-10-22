@@ -7,10 +7,11 @@ import {
   RssIcon,
   TriangleAlertIcon,
 } from "lucide-react"
-import { catchError } from "next/error"
+import { catchError, type ErrorInfo } from "next/error"
 import { useTheme } from "next-themes"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect } from "react"
 
 import { signOut } from "@/app/actions"
 import {
@@ -220,9 +221,24 @@ function UserMenu({ email }: { email: string }) {
 
 // A failed feeds query keeps the frame and All feeds, without counts, so
 // the page beside it can show its own error instead of Next's root one.
-export const SidebarNavBoundary = catchError(function SidebarNavFallback() {
-  return <SidebarNav feeds={[]} totalUnread={0} />
+export const SidebarNavBoundary = catchError(function SidebarNavFallback(
+  _props: object,
+  { retry }: ErrorInfo
+) {
+  return <NavFallback retry={retry} />
 })
+
+// The page's Try again sends this, so the sidebar retries with it instead
+// of staying empty until the next navigation.
+export const RETRY_EVENT = "rssify:retry"
+
+function NavFallback({ retry }: { retry: () => void }) {
+  useEffect(() => {
+    window.addEventListener(RETRY_EVENT, retry)
+    return () => window.removeEventListener(RETRY_EVENT, retry)
+  }, [retry])
+  return <SidebarNav feeds={[]} totalUnread={0} />
+}
 
 // The feeds' Suspense fallback: All feeds without its count, and skeleton
 // rows for the feeds until the counts arrive.
