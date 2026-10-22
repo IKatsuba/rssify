@@ -9,10 +9,17 @@ const SCOPE_SENTENCES: Record<string, string> = {
 }
 
 // Every requested scope gets a line, so nothing is granted that was not
-// shown; a scope without a sentence shows its raw name.
+// shown. What the app may do comes before how long; a scope without a
+// sentence follows, by its raw name, in the order requested.
 export function scopeLines(scope: string | null) {
-  const scopes = [...new Set((scope ?? "").split(" ").filter(Boolean))]
-  return scopes.map((name) => SCOPE_SENTENCES[name] ?? name)
+  const requested = new Set((scope ?? "").split(" ").filter(Boolean))
+  const known = Object.keys(SCOPE_SENTENCES).filter((name) =>
+    requested.has(name)
+  )
+  const others = [...requested].filter(
+    (name) => !Object.hasOwn(SCOPE_SENTENCES, name)
+  )
+  return [...known.map((name) => SCOPE_SENTENCES[name]), ...others]
 }
 
 function hostOf(url: string | undefined, httpsOnly = false) {
@@ -55,11 +62,11 @@ export type ConsentRequest =
   | { kind: "sign_in"; query: string }
   | { kind: "ask"; name: string; host?: string; scopes: string[] }
 
+// query is the page's whole query string, as oauthQueryOf builds it.
 export async function loadConsent(
-  searchParams: SearchParams,
+  query: string,
   requestHeaders: Headers
 ): Promise<ConsentRequest> {
-  const query = oauthQueryOf(searchParams)
   const { secret } = await auth.$context
   if (!(await verifyOAuthQueryParams(query, secret))) {
     return { kind: "not_found" }

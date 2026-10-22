@@ -1,5 +1,7 @@
+import type { Metadata } from "next"
 import { headers } from "next/headers"
 import { notFound, redirect } from "next/navigation"
+import { cache } from "react"
 
 import {
   Card,
@@ -9,18 +11,34 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { loadConsent } from "@/lib/consent"
+import { Toaster } from "@/components/ui/sonner"
+import { loadConsent, oauthQueryOf } from "@/lib/consent"
 
 import { ConsentButtons } from "./consent-buttons"
 
+type Props = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+// Once per request, for both the title and the page.
+const consentFor = cache(async (query: string) =>
+  loadConsent(query, await headers())
+)
+
+async function load({ searchParams }: Props) {
+  return consentFor(oauthQueryOf(await searchParams))
+}
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const request = await load(props)
+  if (request.kind !== "ask") return {}
+  return { title: `Allow ${request.name} · rssify` }
+}
+
 // The provider sends the browser here with a signed query; consent is never
 // skipped, and every requested scope is shown before it can be granted.
-export default async function ConsentPage({
-  searchParams,
-}: {
-  searchParams: Promise<Record<string, string | string[] | undefined>>
-}) {
-  const request = await loadConsent(await searchParams, await headers())
+export default async function ConsentPage(props: Props) {
+  const request = await load(props)
   if (request.kind === "not_found") notFound()
   if (request.kind === "sign_in") redirect(`/sign-in?${request.query}`)
 
@@ -43,9 +61,10 @@ export default async function ConsentPage({
           </ul>
         </CardContent>
         <CardFooter className="justify-end gap-2">
-          <ConsentButtons />
+          <ConsentButtons name={request.name} />
         </CardFooter>
       </Card>
+      <Toaster />
     </main>
   )
 }

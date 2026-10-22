@@ -18,12 +18,18 @@ const READER =
 const OFFLINE = "Stay connected until you disconnect it in Settings."
 
 describe("scopeLines", () => {
-  test("one sentence per requested scope, in order", () => {
+  test("one sentence per requested scope: reader, then offline_access", () => {
     expect(scopeLines("reader offline_access")).toEqual([READER, OFFLINE])
+    expect(scopeLines("offline_access reader")).toEqual([READER, OFFLINE])
   })
 
-  test("a scope without a sentence shows its raw name", () => {
-    expect(scopeLines("reader openid")).toEqual([READER, "openid"])
+  test("a scope without a sentence follows by its raw name", () => {
+    expect(scopeLines("zeta constructor offline_access reader")).toEqual([
+      READER,
+      OFFLINE,
+      "zeta",
+      "constructor",
+    ])
   })
 
   test("repeats and blanks are dropped", () => {
@@ -107,17 +113,19 @@ describe("loadConsent", () => {
 
   test("a signed query with a session asks, naming client and scopes", async () => {
     const { cookie, params } = await signedQuery()
-    expect(await loadConsent(params, new Headers({ cookie }))).toEqual({
+    expect(
+      await loadConsent(oauthQueryOf(params), new Headers({ cookie }))
+    ).toEqual({
       kind: "ask",
       name: "Test client",
       host: "client.example.com",
-      scopes: [OFFLINE, READER],
+      scopes: [READER, OFFLINE],
     })
   })
 
   test("without a session: sign in, with the same query", async () => {
     const { params } = await signedQuery()
-    expect(await loadConsent(params, new Headers())).toEqual({
+    expect(await loadConsent(oauthQueryOf(params), new Headers())).toEqual({
       kind: "sign_in",
       query: oauthQueryOf(params),
     })
@@ -126,12 +134,14 @@ describe("loadConsent", () => {
   test("a changed parameter fails the signature", async () => {
     const { cookie, params } = await signedQuery()
     const tampered = { ...params, scope: "reader" }
-    expect(await loadConsent(tampered, new Headers({ cookie }))).toEqual({
+    expect(
+      await loadConsent(oauthQueryOf(tampered), new Headers({ cookie }))
+    ).toEqual({
       kind: "not_found",
     })
   })
 
   test("no query at all is not found", async () => {
-    expect(await loadConsent({}, new Headers())).toEqual({ kind: "not_found" })
+    expect(await loadConsent("", new Headers())).toEqual({ kind: "not_found" })
   })
 })
