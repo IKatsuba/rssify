@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test"
 
 import {
   emptyState,
+  entryCount,
   entryHref,
   feedNotice,
   listHref,
@@ -171,5 +172,13 @@ describe("feedNotice", () => {
       description:
         "The site says this feed is gone, so we no longer check it. Its entries stay until you unsubscribe.",
     })
+  })
+})
+
+describe("entryCount", () => {
+  test("singular for one, plural otherwise", () => {
+    expect(entryCount(0)).toBe("0 entries")
+    expect(entryCount(1)).toBe("1 entry")
+    expect(entryCount(37)).toBe("37 entries")
   })
 })
