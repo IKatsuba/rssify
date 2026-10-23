@@ -135,40 +135,40 @@ describe("githubTrending.fetchEntries", () => {
     expect(s.calls).toEqual([{ url: JS_MONTHLY, options: { deadline } }])
     expect(entries).toHaveLength(17)
     expect(entries.map((e) => e.title).slice(0, 3)).toEqual([
-      "cloudflare/security-audit-skill",
-      "affaan-m/ECC",
-      "addyosmani/agent-skills",
+      "lantern-works/wick-kit",
+      "harbour-lab/TIDE",
+      "orchard-co/apple-press",
     ])
     expect(entries[0]).toEqual({
-      guid: "https://github.com/cloudflare/security-audit-skill",
-      url: "https://github.com/cloudflare/security-audit-skill",
-      title: "cloudflare/security-audit-skill",
+      guid: "https://github.com/lantern-works/wick-kit",
+      url: "https://github.com/lantern-works/wick-kit",
+      title: "lantern-works/wick-kit",
       author: null,
       publishedAt: null,
       summary:
-        "A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings",
+        "A sample kit for trimming invented lantern wicks, with measured, repeatable steps",
       contentHtml:
-        "<p>A coding-agent skill for multi-phase security audits with independently verified, machine-readable findings</p>" +
-        "<p>JavaScript · 38,199 stars · 2,385 forks · 16,694 stars this month</p>",
+        "<p>A sample kit for trimming invented lantern wicks, with measured, repeatable steps</p>" +
+        "<p>JavaScript · 41,207 stars · 3,118 forks · 17,452 stars this month</p>",
     })
     // The guid is lowercased; the link keeps GitHub's casing.
     expect(entries[1]).toMatchObject({
-      guid: "https://github.com/affaan-m/ecc",
-      url: "https://github.com/affaan-m/ECC",
+      guid: "https://github.com/harbour-lab/tide",
+      url: "https://github.com/harbour-lab/TIDE",
     })
     expect(entries.every((e) => e.publishedAt === null)).toBe(true)
   })
 
   test("a row without a description keeps its stats", async () => {
     const entries = await run(page(fixture("javascript-monthly.html")).fetch)
-    const taxonomy = entries.find(
-      (e) => e.title === "withmarbleapp/os-taxonomy"
+    const undescribed = entries.find(
+      (e) => e.title === "pebble-yard/stone-index"
     )
-    expect(taxonomy).toMatchObject({
+    expect(undescribed).toMatchObject({
       summary:
-        "JavaScript · 7,158 stars · 1,153 forks · 2,478 stars this month",
+        "JavaScript · 7,342 stars · 1,201 forks · 2,519 stars this month",
       contentHtml:
-        "<p>JavaScript · 7,158 stars · 1,153 forks · 2,478 stars this month</p>",
+        "<p>JavaScript · 7,342 stars · 1,201 forks · 2,519 stars this month</p>",
     })
   })
 
@@ -177,11 +177,11 @@ describe("githubTrending.fetchEntries", () => {
     const entries = await run(page(fixture("unknown-weekly.html")).fetch, url)
     expect(entries).toHaveLength(7)
     expect(entries[0]).toMatchObject({
-      guid: "https://github.com/mlabonne/llm-course",
-      title: "mlabonne/llm-course",
+      guid: "https://github.com/meadow-school/seed-course",
+      title: "meadow-school/seed-course",
     })
     expect(entries[0].contentHtml).toEndWith(
-      "<p>84,592 stars · 9,834 forks · 1,029 stars this week</p>"
+      "<p>62,481 stars · 7,206 forks · 1,184 stars this week</p>"
     )
   })
 
