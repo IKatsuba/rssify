@@ -3,7 +3,6 @@ import { bytes } from "./bytes"
 import { cursorBlog } from "./cursor-blog"
 import { firefoxReleases } from "./firefox-releases"
 import { githubTrending } from "./github-trending"
-import { perplexityBlog } from "./perplexity-blog"
 import type { SourcePlugin } from "./types"
 
 // Registering a plugin is a code change.
@@ -14,7 +13,6 @@ export const plugins: Record<string, SourcePlugin> = {
   "cursor-blog": cursorBlog,
   "firefox-releases": firefoxReleases,
   "github-trending": githubTrending,
-  "perplexity-blog": perplexityBlog,
 }
 
 // The plugin owning an address, with the URL it stores for it. Shapes are
