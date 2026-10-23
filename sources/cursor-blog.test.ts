@@ -85,7 +85,7 @@ function run(
   })
 }
 
-const realPosts = {
+const fixturePages = {
   [LIST]: { text: fixture("feeds/cursor-blog.html") },
   [post("projects")]: { text: fixture("cursor-blog/projects.html") },
   [post("git-at-any-scale")]: {
@@ -113,7 +113,7 @@ describe("cursorBlog", () => {
       (slug) =>
         !["projects", "git-at-any-scale", "self-hosted-machines"].includes(slug)
     ).map(post)
-    const s = site(realPosts)
+    const s = site(fixturePages)
     const entries = await run(s.fetch, known)
 
     expect(entries.map((e) => e.url)).toEqual([
@@ -141,7 +141,7 @@ describe("cursorBlog", () => {
   })
 
   test("drops off-site, non-blog and duplicate links, keeping document order", async () => {
-    const s = site({ [LIST]: realPosts[LIST] })
+    const s = site({ [LIST]: fixturePages[LIST] })
     const asked: string[][] = []
     await cursorBlog.fetchEntries({
       url: LIST,

@@ -25,7 +25,7 @@ function parseError(run: () => unknown): FeedParseError {
 
 const sha1 = (value: string) => createHash("sha1").update(value).digest("hex")
 
-describe("parseFeed: saved real feeds", () => {
+describe("parseFeed: synthetic feed fixtures", () => {
   const cases = [
     {
       file: "claude-dev.rss.xml",
