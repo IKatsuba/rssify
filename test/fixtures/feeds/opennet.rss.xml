@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="koi8-r"?>
+<rss version="2.0">
+<channel>
+    <title>Новости примера: общая лента</title>
+    <description>Вымышленные новости для тестов разбора</description>
+    <link>https://novosti.example/opennews/</link>
+<item>
+    <title>Открыт вымышленный читальный зал Пример</title>
+    <link>https://novosti.example/opennews/art.shtml?num=101</link>
+    <pubDate>Wed, 21 Oct 2026 22:39:07 +0300</pubDate>
+    <description>В придуманном городе открылся читальный зал с длинными столами, лампами и тихими стульями. На полках стоят книги о садах, реках и старых мостах. По вечерам здесь читают вслух, а по утрам поливают цветы на подоконниках. Вход свободный, чай бесплатный, кот спит у батареи. Этот вымышленный текст нужен, чтобы описание было длиннее трёхсот символов.</description>
+    <guid>https://novosti.example/opennews/art.shtml?num=101</guid>
+</item>
+<item>
+    <title>В парке посадили вымышленные липы</title>
+    <link>https://novosti.example/opennews/art.shtml?num=100</link>
+    <pubDate>Wed, 21 Oct 2026 20:10:00 +0300</pubDate>
+    <description>Двадцать придуманных лип выросли вдоль аллеи.</description>
+    <guid>https://novosti.example/opennews/art.shtml?num=100</guid>
+</item>
+<item>
+    <title>Пекарня примера испекла круглый хлеб</title>
+    <link>https://novosti.example/opennews/art.shtml?num=99</link>
+    <pubDate>Tue, 20 Oct 2026 09:00:00 +0300</pubDate>
+    <description>Хлеб получился вымышленным, но тёплым.</description>
+    <guid>https://novosti.example/opennews/art.shtml?num=99</guid>
+</item>
+</channel>
+</rss>

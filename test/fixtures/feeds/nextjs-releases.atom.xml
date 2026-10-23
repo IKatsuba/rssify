@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:media="http://search.yahoo.com/mrss/" xml:lang="en-US">
+  <id>tag:code.example,2008:https://code.example/sample/kit/releases</id>
+  <link type="text/html" rel="alternate" href="https://code.example/sample/kit/releases"/>
+  <link type="application/atom+xml" rel="self" href="https://code.example/sample/kit/releases.atom"/>
+  <title>Release notes from sample-kit</title>
+  <updated>2026-10-20T23:23:05Z</updated>
+  <entry>
+    <id>tag:code.example,2008:Repository/1001/v3.1.0-canary.4</id>
+    <updated>2026-10-20T23:51:32Z</updated>
+    <link rel="alternate" type="text/html" href="https://code.example/sample/kit/releases/tag/v3.1.0-canary.4"/>
+    <title>v3.1.0-canary.4</title>
+    <content type="html">&lt;h3&gt;Core Changes&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Add a sample widget option: &lt;a class=&quot;issue-link&quot; data-hovercard-type=&quot;pull_request&quot; href=&quot;https://code.example/sample/kit/pull/42&quot;&gt;#42&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Contributors&lt;/h3&gt;
+&lt;p&gt;&lt;a class=&quot;user-mention&quot; href=&quot;https://code.example/sample-dev&quot;&gt;@sample-dev&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>release-bot[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://img.example/avatar.png"/>
+  </entry>
+  <entry>
+    <id>tag:code.example,2008:Repository/1001/v3.1.0-canary.3</id>
+    <updated>2026-10-19T10:00:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://code.example/sample/kit/releases/tag/v3.1.0-canary.3"/>
+    <title>v3.1.0-canary.3</title>
+    <content type="html">&lt;h3&gt;Core Changes&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Rename an invented flag: &lt;a class=&quot;issue-link&quot; data-hovercard-type=&quot;pull_request&quot; href=&quot;https://code.example/sample/kit/pull/42&quot;&gt;#42&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Contributors&lt;/h3&gt;
+&lt;p&gt;&lt;a class=&quot;user-mention&quot; href=&quot;https://code.example/sample-dev&quot;&gt;@sample-dev&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>release-bot[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://img.example/avatar.png"/>
+  </entry>
+  <entry>
+    <id>tag:code.example,2008:Repository/1001/v3.0.2</id>
+    <updated>2026-10-18T08:30:00Z</updated>
+    <link rel="alternate" type="text/html" href="https://code.example/sample/kit/releases/tag/v3.0.2"/>
+    <title>v3.0.2</title>
+    <content type="html">&lt;h3&gt;Core Changes&lt;/h3&gt;
+&lt;ul&gt;
+&lt;li&gt;Fix an invented cache key: &lt;a class=&quot;issue-link&quot; data-hovercard-type=&quot;pull_request&quot; href=&quot;https://code.example/sample/kit/pull/42&quot;&gt;#42&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3&gt;Contributors&lt;/h3&gt;
+&lt;p&gt;&lt;a class=&quot;user-mention&quot; href=&quot;https://code.example/sample-dev&quot;&gt;@sample-dev&lt;/a&gt;&lt;/p&gt;</content>
+    <author>
+      <name>release-bot[bot]</name>
+    </author>
+    <media:thumbnail height="30" width="30" url="https://img.example/avatar.png"/>
+  </entry>
+</feed>

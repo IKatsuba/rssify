@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<channel>
+<title>Example Code Blog</title>
+<link>https://code.example/</link>
+<description>Invented posts for parser tests.</description>
+<language>en</language>
+<lastBuildDate>Thu, 15 Oct 2026 12:00:00 GMT</lastBuildDate>
+<atom:link href="https://code.example/rss.xml" rel="self" type="application/rss+xml"/>
+<item>
+<title>Keeping a garden log through the seasons</title>
+<link>https://code.example/blog/keeping-a-garden-log/</link>
+<guid isPermaLink="true">https://code.example/blog/keeping-a-garden-log/</guid>
+<pubDate>Thu, 15 Oct 2026 12:00:00 GMT</pubDate>
+<description>A garden log is a notebook of what was planted, where and when. Ours started as a list of seed packets and grew into a record of frosts, harvests and the beds that never dry out. It doesn&apos;t need to be tidy. This invented description runs past three hundred characters so the summary is cut at its limit and the full text stays in the content.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Watering herb pots, part 1</title>
+<link>https://code.example/blog/post-01/</link>
+<guid isPermaLink="true">https://code.example/blog/post-01/</guid>
+<pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Pruning bean rows, part 2</title>
+<link>https://code.example/blog/post-02/</link>
+<guid isPermaLink="true">https://code.example/blog/post-02/</guid>
+<pubDate>Tue, 13 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Mulching apple trees, part 3</title>
+<link>https://code.example/blog/post-03/</link>
+<guid isPermaLink="true">https://code.example/blog/post-03/</guid>
+<pubDate>Mon, 12 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about apple trees.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Sowing tomato beds, part 4</title>
+<link>https://code.example/blog/post-04/</link>
+<guid isPermaLink="true">https://code.example/blog/post-04/</guid>
+<pubDate>Sun, 11 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about tomato beds.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Weeding herb pots, part 5</title>
+<link>https://code.example/blog/post-05/</link>
+<guid isPermaLink="true">https://code.example/blog/post-05/</guid>
+<pubDate>Sat, 10 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Staking bean rows, part 6</title>
+<link>https://code.example/blog/post-06/</link>
+<guid isPermaLink="true">https://code.example/blog/post-06/</guid>
+<pubDate>Fri, 09 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Harvesting apple trees, part 7</title>
+<link>https://code.example/blog/post-07/</link>
+<guid isPermaLink="true">https://code.example/blog/post-07/</guid>
+<pubDate>Thu, 08 Oct 2026 12:00:00 GMT</pubDate>
+<description>The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Planting tomato beds, part 8</title>
+<link>https://code.example/blog/post-08/</link>
+<guid isPermaLink="true">https://code.example/blog/post-08/</guid>
+<pubDate>Wed, 07 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about tomato beds.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Watering herb pots, part 9</title>
+<link>https://code.example/blog/post-09/</link>
+<guid isPermaLink="true">https://code.example/blog/post-09/</guid>
+<pubDate>Tue, 06 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Pruning bean rows, part 10</title>
+<link>https://code.example/blog/post-10/</link>
+<guid isPermaLink="true">https://code.example/blog/post-10/</guid>
+<pubDate>Mon, 05 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Mulching apple trees, part 11</title>
+<link>https://code.example/blog/post-11/</link>
+<guid isPermaLink="true">https://code.example/blog/post-11/</guid>
+<pubDate>Sun, 04 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about apple trees.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Sowing tomato beds, part 12</title>
+<link>https://code.example/blog/post-12/</link>
+<guid isPermaLink="true">https://code.example/blog/post-12/</guid>
+<pubDate>Sat, 03 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about tomato beds.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Weeding herb pots, part 13</title>
+<link>https://code.example/blog/post-13/</link>
+<guid isPermaLink="true">https://code.example/blog/post-13/</guid>
+<pubDate>Fri, 02 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Staking bean rows, part 14</title>
+<link>https://code.example/blog/post-14/</link>
+<guid isPermaLink="true">https://code.example/blog/post-14/</guid>
+<pubDate>Thu, 01 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Harvesting apple trees, part 15</title>
+<link>https://code.example/blog/post-15/</link>
+<guid isPermaLink="true">https://code.example/blog/post-15/</guid>
+<pubDate>Thu, 01 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about apple trees.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+</channel>
+</rss>

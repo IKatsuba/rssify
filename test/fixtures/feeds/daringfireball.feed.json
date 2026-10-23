@@ -1,0 +1,56 @@
+{
+   "version" : "https://jsonfeed.org/version/1.1",
+   "title" : "Fireside Notes",
+   "home_page_url" : "https://fireside.example/",
+   "feed_url" : "https://fireside.example/feeds/json",
+   "authors" : [
+      {
+         "url" : "https://fireside.example/about",
+         "name" : "Pat Example"
+      }
+   ],
+   "icon" : "https://fireside.example/graphics/icon.png",
+   "items" : [
+      {
+         "title" : "[Sponsor] Widgetly",
+         "date_published" : "2026-10-20T13:09:38Z",
+         "date_modified" : "2026-10-20T13:09:39Z",
+         "id" : "https://fireside.example/feeds/sponsors/2026/10/widgetly_1",
+         "url" : "https://fireside.example/feeds/sponsors/2026/10/widgetly_1",
+         "external_url" : "https://widgetly.example/",
+         "authors" : [
+            {
+               "name" : "Fireside Sponsorship Desk"
+            }
+         ],
+         "content_html" : "\n<p>All your invented widgets in one place.</p>\n\n<p class=\"x-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://widgetly.example/\">widgetly.example/</a></strong></em></p>\n"
+      },
+      {
+         "title" : "On hedges",
+         "date_published" : "2026-10-20T01:12:26Z",
+         "date_modified" : "2026-10-20T01:40:55Z",
+         "id" : "https://fireside.example/linked/2026/10/19/hedges",
+         "url" : "https://fireside.example/linked/2026/10/19/hedges",
+         "external_url" : "https://hedges.example/1",
+         "authors" : [
+            {
+               "name" : "Pat Example"
+            }
+         ],
+         "content_html" : "\n<p>A neighbour, on hedges:</p>\n\n<blockquote>\n  <p>Hedges grow whether or not\nanyone trims them. [...]</p>\n</blockquote>\n"
+      },
+      {
+         "title" : "★ A Longer Invented Column",
+         "date_published" : "2026-10-19T18:00:00Z",
+         "id" : "https://fireside.example/2026/10/longer_column",
+         "url" : "https://fireside.example/2026/10/longer_column",
+         "authors" : [
+            {
+               "name" : "Pat Example"
+            }
+         ],
+         "summary" : "A column of invented text.",
+         "content_html" : "<p>A column of invented text.</p>"
+      }
+   ]
+}

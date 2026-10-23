@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+  <channel>
+    <title>Example Changelog</title>
+    <description>Invented notes from a sample bicycle shop.</description>
+    <link>https://app.example/changelog</link>
+    <language>en-US</language>
+    <lastBuildDate>Wed, 21 Oct 2026 21:53:16 GMT</lastBuildDate>
+    <atom:link href="https://app.example/changelog/rss.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Spoke Sets and a Weekend Truing Bench</title>
+      <link>https://app.example/changelog/spoke-sets</link>
+      <guid isPermaLink="true">https://app.example/changelog/spoke-sets</guid>
+      <pubDate>Fri, 16 Oct 2026 00:00:00 GMT</pubDate>
+      <description>Riders can now order spoke sets online. The truing bench opens on weekends.</description>
+
+      <content:encoded><![CDATA[<h2>Spoke sets online</h2>
+<p><a href="https://app.example/docs/spokes">Spoke sets</a> can now be ordered by <a href="https://app.example/docs/wheels">wheel size</a>. Pick one up at the counter.</p>
+<p>&lt;figure&gt;&lt;video src=&quot;https://app.example/static/spokes.mp4&quot; controls&gt;&lt;/video&gt;&lt;/figure&gt;</p>
+<h2>Truing bench</h2>
+<p>The <a href="/docs/bench#weekends">truing bench</a> opens on weekends.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Bell Shelf</title>
+      <link>https://app.example/changelog/bell-shelf</link>
+      <guid isPermaLink="true">https://app.example/changelog/bell-shelf</guid>
+      <pubDate>Tue, 13 Oct 2026 00:00:00 GMT</pubDate>
+      <description>A shelf of invented bells.</description>
+
+      <content:encoded><![CDATA[<h2>Bell shelf</h2>
+<p>Ring an invented bell before you buy it.</p>]]></content:encoded>
+    </item>
+    <item>
+      <title>Longer Opening Hours</title>
+      <link>https://app.example/changelog/longer-hours</link>
+      <guid isPermaLink="true">https://app.example/changelog/longer-hours</guid>
+      <pubDate>Thu, 08 Oct 2026 00:00:00 GMT</pubDate>
+      <description>The shop now opens an invented hour earlier.</description>
+
+      <content:encoded><![CDATA[<p>The shop now opens an invented hour earlier.</p>]]></content:encoded>
+    </item>
+  </channel>
+</rss>

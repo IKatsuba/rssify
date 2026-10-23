@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      # Same user, database and port as docker compose, so `bun run test`
+      # reaches its default rssify_test URL without an override.
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: rssify
+          POSTGRES_DB: rssify_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U rssify"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.3
+      - run: bun install --frozen-lockfile
+      - run: bunx prisma generate
+      - run: bun run lint
+      # PageProps and other route types live in .next/types, which a fresh
+      # checkout lacks until Next generates them.
+      - run: bunx next typegen
+      - run: bun run typecheck
+      - run: bun run test
+      - run: bun run build
+        # next build imports lib/db.ts and lib/auth.ts while collecting
+        # route config; these are CI dummies, not secrets.
+        env:
+          DATABASE_URL: postgresql://rssify@localhost:54329/rssify_test
+          BETTER_AUTH_URL: http://localhost:3210
+          BETTER_AUTH_SECRET: ci-dummy-secret-not-used-for-anything-real

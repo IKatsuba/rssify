@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<rdf:RDF
+ xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+ xmlns="http://purl.org/rss/1.0/"
+ xmlns:dc="http://purl.org/dc/elements/1.1/"
+ xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
+>
+
+<channel rdf:about="https://digest.example/">
+<title>Byte Digest</title>
+<link>https://digest.example/</link>
+<description>Invented news for parser tests</description>
+<dc:language>en-us</dc:language>
+<dc:date>2026-10-21T22:14:28+00:00</dc:date>
+<items>
+ <rdf:Seq>
+  <rdf:li rdf:resource="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+  <rdf:li rdf:resource="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+  <rdf:li rdf:resource="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+ </rdf:Seq>
+</items>
+</channel>
+
+<item rdf:about="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Zürich café ships Ångström-scale sensors</title>
+<link>https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
+
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Ödön Exämple</dc:creator>
+<dc:date>2026-10-21T22:00:00+00:00</dc:date>
+<dc:subject>sample</dc:subject>
+<slash:section>linux</slash:section>
+</item>
+<item rdf:about="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Invented bakery opens a second oven</title>
+<link>https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
+
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Fixture Editor</dc:creator>
+<dc:date>2026-10-21T17:29:00+00:00</dc:date>
+<dc:subject>sample</dc:subject>
+<slash:section>yro</slash:section>
+</item>
+<item rdf:about="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Sample lighthouse gets a new lamp</title>
+<link>https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
+
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Fixture Editor</dc:creator>
+<dc:date>2026-10-21T18:02:00+00:00</dc:date>
+<dc:subject>sample</dc:subject>
+<slash:section>games</slash:section>
+</item>
+</rdf:RDF>

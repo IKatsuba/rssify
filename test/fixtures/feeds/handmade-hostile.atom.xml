@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xml:base="https://example.com/blog/">
+  <title>Hostile &amp; based</title>
+  <link href="./" rel="alternate"/>
+  <id>urn:example:hostile</id>
+  <updated>2026-10-01T00:00:00Z</updated>
+  <entry>
+    <title type="html">&lt;b&gt;Post&lt;/b&gt; one</title>
+    <link href="post-1" rel="alternate"/>
+    <id>urn:example:post-1</id>
+    <published>2026-10-01T10:00:00Z</published>
+    <updated>2026-10-02T10:00:00Z</updated>
+    <author><name>Eve</name></author>
+    <summary>Short summary</summary>
+    <content type="html">&lt;p style="color:red"&gt;Hello&lt;/p&gt;&lt;script&gt;alert(1)&lt;/script&gt;&lt;img src=x onerror=alert(1)&gt;&lt;a href="javascript:x"&gt;bad&lt;/a&gt;&lt;a href="../about"&gt;about&lt;/a&gt;&lt;img src="pic.png" srcset="pic-2x.png 2x"&gt;&lt;iframe src="https://evil.example/"&gt;&lt;/iframe&gt;</content>
+  </entry>
+</feed>

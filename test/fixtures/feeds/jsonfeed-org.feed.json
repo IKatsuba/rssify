@@ -1,0 +1,25 @@
+{
+	"version": "https://jsonfeed.org/version/1",
+	"title": "Sample JSON Feed",
+	"icon": "https://img.example/avatar.jpg",
+	"home_page_url": "https://jsonfeed.example/",
+	"feed_url": "https://jsonfeed.example/feed.json",
+	"items": [
+			{
+				"id": "http://mirror.example/2020/08/07/repainting-the-shed.html",
+				"title": "Repainting the shed",
+				"content_html": "<p>We&rsquo;ve repainted the sample shed <a href=\"https://jsonfeed.example/colours/blue\">blue</a>. It now has <code>shelves</code> and <code>hooks</code>.</p>\n",
+				
+				"date_published": "2020-08-07T11:44:36-05:00",
+				"url": "https://jsonfeed.example/2020/08/07/repainting-the-shed.html"
+			},
+			{
+				"id": "http://mirror.example/2017/05/17/building-the-shed.html",
+				"title": "Building the shed",
+				"content_html": "\n\n<p>An invented shed, built from <a href=\"http://wood.example/\">planks</a> over one long weekend.</p>\n",
+				
+				"date_published": "2017-05-17T08:02:12-07:00",
+				"url": "https://jsonfeed.example/2017/05/17/building-the-shed.html"
+			}
+	]
+}
