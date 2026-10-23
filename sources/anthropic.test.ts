@@ -98,7 +98,7 @@ describe("anthropicEngineering", () => {
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  test("reads the saved posts: title, date and the whole body", async () => {
+  test("reads the fixture posts: title, date and the whole body", async () => {
     const wanted = [
       research("redesigning-source-control"),
       research("managed-agents"),

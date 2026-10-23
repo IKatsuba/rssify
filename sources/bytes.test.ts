@@ -116,7 +116,7 @@ describe("bytes", () => {
     expect(latest.contentHtml).toContain("Today’s issue:")
     expect(latest.contentHtml).toContain("doesn’t mutate the original pile")
 
-    // #400 is past the 30 candidates, so its own card from the saved
+    // #400 is past the 30 candidates, so its own card from the fixture
     // archive is the whole list; the site does not pad its date.
     const $ = load(list)
     const old = await read(

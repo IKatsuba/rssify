@@ -127,7 +127,7 @@ describe("githubTrending.title", () => {
 })
 
 describe("githubTrending.fetchEntries", () => {
-  test("reads every row of the saved page with one GET", async () => {
+  test("reads every row of the fixture page with one GET", async () => {
     const deadline = new AbortController().signal
     const s = page(fixture("javascript-monthly.html"))
     const entries = await run(s.fetch, JS_MONTHLY, deadline)

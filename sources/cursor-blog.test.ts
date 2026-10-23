@@ -108,7 +108,7 @@ describe("cursorBlog", () => {
     }
   })
 
-  test("reads posts from the saved list and post pages", async () => {
+  test("reads posts from the fixture list and post pages", async () => {
     const known = LIST_POSTS.filter(
       (slug) =>
         !["projects", "git-at-any-scale", "self-hosted-machines"].includes(slug)

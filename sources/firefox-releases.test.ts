@@ -96,7 +96,7 @@ describe("firefox-releases", () => {
       ].map(notes)
     )
     expect(listed.at(-1)).toBe(notes("150.0.3"))
-    // The saved list links 153.0esr and 153.1.0 right after 153.0.4.
+    // The fixture list links 153.0esr and 153.1.0 right after 153.0.4.
     expect(listed).not.toContain(notes("153.0esr"))
     expect(listed).not.toContain(notes("153.1.0"))
   })

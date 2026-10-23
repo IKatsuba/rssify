@@ -740,10 +740,10 @@ describe("refreshFeed with a source plugin", () => {
     expect(await db.entry.count()).toBe(0)
   })
 
-  test("a cursor-blog feed runs the registered plugin on saved pages", async () => {
+  test("a cursor-blog feed runs the registered plugin on fixture pages", async () => {
     const CURSOR = "https://cursor.com/blog"
     await feed({ url: CURSOR, pluginId: "cursor-blog" })
-    const saved: Record<string, string> = {
+    const pages: Record<string, string> = {
       [CURSOR]: readFileSync("test/fixtures/feeds/cursor-blog.html", "utf8"),
       [`${CURSOR}/projects`]: readFileSync(
         "test/fixtures/cursor-blog/projects.html",
@@ -763,10 +763,10 @@ describe("refreshFeed with a source plugin", () => {
     const fetch: SafeFetch = async (url) => {
       calls.push(url)
       return {
-        status: saved[url] === undefined ? 404 : 200,
+        status: pages[url] === undefined ? 404 : 200,
         url,
         headers: new Headers(),
-        text: saved[url] ?? "",
+        text: pages[url] ?? "",
         kind: "unknown",
       }
     }
