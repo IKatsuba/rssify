@@ -754,7 +754,7 @@ describe("refreshFeed with a source plugin", () => {
     await db.entry.create({
       data: {
         ...entry("x"),
-        guid: `${CURSOR}/joining-spacex`,
+        guid: `${CURSOR}/first-note`,
         feedId: "f1",
         sortAt: NOW,
       },
@@ -775,12 +775,12 @@ describe("refreshFeed with a source plugin", () => {
       stored: 1,
     })
     expect(calls).toHaveLength(11)
-    expect(calls).not.toContain(`${CURSOR}/joining-spacex`)
+    expect(calls).not.toContain(`${CURSOR}/first-note`)
     expect(
       await db.entry.findUniqueOrThrow({
         where: { feedId_guid: { feedId: "f1", guid: `${CURSOR}/projects` } },
       })
-    ).toMatchObject({ title: "Introducing Projects" })
+    ).toMatchObject({ title: "Weekend projects: a pottery wheel" })
   })
 
   test("a cursor-blog run reading none of its new posts fails with backoff", async () => {

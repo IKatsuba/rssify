@@ -546,8 +546,8 @@ describe("subscribe to a new feed", () => {
         orderBy: { guid: "asc" },
       })
       expect(entries.map((e) => [e.guid, e.title])).toEqual([
-        [`${LIST}/git-at-any-scale`, "Git at any scale"],
-        [`${LIST}/projects`, "Introducing Projects"],
+        [`${LIST}/git-at-any-scale`, "Rope knots at any scale"],
+        [`${LIST}/projects`, "Weekend projects: a pottery wheel"],
       ])
       expect(await db.subscription.count({ where: { feedId: feed.id } })).toBe(
         1
