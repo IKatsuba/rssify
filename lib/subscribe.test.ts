@@ -415,7 +415,7 @@ describe("subscribe to a new feed", () => {
     const feed = await db.feed.findUniqueOrThrow({
       where: { url: "https://claude.dev/rss.xml" },
     })
-    expect(feed).toMatchObject({ pluginId: null, title: "claude.dev Blog" })
+    expect(feed).toMatchObject({ pluginId: null, title: "Example Code Blog" })
     expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(16)
   })
 
@@ -433,7 +433,7 @@ describe("subscribe to a new feed", () => {
     expect(result).toMatchObject({ ok: true, existed: false })
     expect(calls.map((c) => c.url)).toEqual([url])
     const feed = await db.feed.findUniqueOrThrow({ where: { url } })
-    expect(feed).toMatchObject({ pluginId: null, title: "LangChain Blog" })
+    expect(feed).toMatchObject({ pluginId: null, title: "Example Agents Blog" })
     const entries = await db.entry.findMany({ where: { feedId: feed.id } })
     expect(entries).toHaveLength(3)
     for (const entry of entries) {
@@ -457,11 +457,14 @@ describe("subscribe to a new feed", () => {
       expect(result).toMatchObject({ ok: true, existed: false })
       expect(calls.map((c) => c.url)).toEqual([url])
       const feed = await db.feed.findUniqueOrThrow({ where: { url } })
-      expect(feed).toMatchObject({ pluginId: null, title: "Node.js Blog" })
+      expect(feed).toMatchObject({
+        pluginId: null,
+        title: "Example Runtime Blog",
+      })
       const entries = await db.entry.findMany({ where: { feedId: feed.id } })
       expect(entries.map((e) => e.guid).sort()).toEqual([
-        "/blog/release/v24.22.1?1792579154786",
-        "/blog/release/v26.12.1?1792579160400",
+        "/blog/release/v8.4.1?1792579154786",
+        "/blog/release/v9.2.1?1792579160400",
         "/blog/vulnerability/october-2026-security-releases?1792620000000",
       ])
       for (const entry of entries) {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed xmlns="http://www.w3.org/2005/Atom" xml:base="https://ex.com/blog/">
+<feed xmlns="http://www.w3.org/2005/Atom" xml:base="https://example.com/blog/">
   <title>Hostile &amp; based</title>
   <link href="./" rel="alternate"/>
   <id>urn:example:hostile</id>

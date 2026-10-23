@@ -1,29 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0">
     <channel>
-        <title>Node.js Blog</title>
-        <link>https://nodejs.org/en</link>
+        <title>Example Runtime Blog</title>
+        <link>https://runtime.example/en</link>
         <description></description>
         <lastBuildDate>Thu, 22 Oct 2026 11:53:10 GMT</lastBuildDate>
-        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
-        <generator>https://github.com/jpmonette/feed</generator>
         <language>en</language>
         <item>
             <title><![CDATA[Wednesday, October 21, 2026 Security Releases]]></title>
-            <link>https://nodejs.org/en/blog/vulnerability/october-2026-security-releases</link>
+            <link>https://runtime.example/en/blog/vulnerability/october-2026-security-releases</link>
             <guid isPermaLink="false">/blog/vulnerability/october-2026-security-releases?1792620000000</guid>
             <pubDate>Wed, 21 Oct 2026 22:00:00 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[Node.js 26.12.1 (Current)]]></title>
-            <link>https://nodejs.org/en/blog/release/v26.12.1</link>
-            <guid isPermaLink="false">/blog/release/v26.12.1?1792579160400</guid>
+            <title><![CDATA[Runtime 9.2.1 (Current)]]></title>
+            <link>https://runtime.example/en/blog/release/v9.2.1</link>
+            <guid isPermaLink="false">/blog/release/v9.2.1?1792579160400</guid>
             <pubDate>Wed, 21 Oct 2026 10:39:20 GMT</pubDate>
         </item>
         <item>
-            <title><![CDATA[Node.js 24.22.1 (LTS)]]></title>
-            <link>https://nodejs.org/en/blog/release/v24.22.1</link>
-            <guid isPermaLink="false">/blog/release/v24.22.1?1792579154786</guid>
+            <title><![CDATA[Runtime 8.4.1 (LTS)]]></title>
+            <link>https://runtime.example/en/blog/release/v8.4.1</link>
+            <guid isPermaLink="false">/blog/release/v8.4.1?1792579154786</guid>
             <pubDate>Wed, 21 Oct 2026 10:39:14 GMT</pubDate>
         </item>
     </channel>

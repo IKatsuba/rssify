@@ -29,28 +29,28 @@ describe("parseFeed: saved real feeds", () => {
   const cases = [
     {
       file: "claude-dev.rss.xml",
-      url: "https://claude.dev/rss.xml",
-      title: "claude.dev Blog",
-      siteUrl: "https://claude.dev/",
+      url: "https://code.example/rss.xml",
+      title: "Example Code Blog",
+      siteUrl: "https://code.example/",
       count: 16,
       first: {
-        guid: "https://claude.dev/blog/solving-code-review-at-anthropic/",
-        url: "https://claude.dev/blog/solving-code-review-at-anthropic/",
-        title: "How the Claude Code team does code review",
-        author: "Addy Osmani, Morgan Westlee Lunt, and Qing Wang",
+        guid: "https://code.example/blog/how-the-sample-team-reviews-code/",
+        url: "https://code.example/blog/how-the-sample-team-reviews-code/",
+        title: "How the sample team reviews code",
+        author: "Ada Example, Bo Sample, and Cy Placeholder",
         publishedAt: "2026-10-15T12:00:00.000Z",
       },
     },
     {
       file: "cursor-changelog.rss.xml",
-      url: "https://cursor.com/changelog/rss.xml",
-      title: "Cursor Changelog",
-      siteUrl: "https://cursor.com/changelog",
-      count: 50,
+      url: "https://app.example/changelog/rss.xml",
+      title: "Example Changelog",
+      siteUrl: "https://app.example/changelog",
+      count: 3,
       first: {
-        guid: "https://cursor.com/changelog/cloud-agent-canvases-and-environments",
-        url: "https://cursor.com/changelog/cloud-agent-canvases-and-environments",
-        title: "Cloud Agent Canvases and Environment Improvements",
+        guid: "https://app.example/changelog/shared-boards",
+        url: "https://app.example/changelog/shared-boards",
+        title: "Shared Boards and Faster Workspaces",
         author: null,
         publishedAt: "2026-10-16T00:00:00.000Z",
       },
@@ -58,15 +58,14 @@ describe("parseFeed: saved real feeds", () => {
     {
       // No <guid>: identity falls back to the item's link.
       file: "hacker-news.rss.xml",
-      url: "https://news.ycombinator.com/rss",
-      title: "Hacker News",
-      siteUrl: "https://news.ycombinator.com/",
-      count: 30,
+      url: "https://links.example/rss",
+      title: "Link Board",
+      siteUrl: "https://links.example/",
+      count: 3,
       first: {
-        guid: "https://thephp.foundation/blog/2026/10/21/todays-php-security-release-and-how-were-strengthening-php-security/",
-        url: "https://thephp.foundation/blog/2026/10/21/todays-php-security-release-and-how-were-strengthening-php-security/",
-        title:
-          "Today's PHP security release, and how we're strengthening security",
+        guid: "https://one.example/blog/2026/10/21/todays-sample-release/",
+        url: "https://one.example/blog/2026/10/21/todays-sample-release/",
+        title: "Today's sample release, and how we're hardening it",
         author: null,
         publishedAt: "2026-10-21T15:48:56.000Z",
       },
@@ -74,29 +73,29 @@ describe("parseFeed: saved real feeds", () => {
     {
       file: "slashdot.rdf.xml",
       charset: "iso-8859-1",
-      url: "https://rss.slashdot.org/Slashdot/slashdotMain",
-      title: "Slashdot",
-      siteUrl: "https://slashdot.org/",
-      count: 15,
+      url: "https://digest.example/rss",
+      title: "Byte Digest",
+      siteUrl: "https://digest.example/",
+      count: 3,
       first: {
-        guid: "https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0mainlinkanon&utm_medium=feed",
-        url: "https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0mainlinkanon&utm_medium=feed",
-        title: "AMD Brings Ryzen Overclocking Driver to Linux",
-        author: "BeauHD",
+        guid: "https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&utm_medium=feed",
+        url: "https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&utm_medium=feed",
+        title: "Zürich café ships Ångström-scale sensors",
+        author: "Ödön Exämple",
         publishedAt: "2026-10-21T22:00:00.000Z",
       },
     },
     {
       file: "opennet.rss.xml",
       charset: "koi8-r",
-      url: "https://www.opennet.ru/opennews/opennews_all.rss",
-      title: "OpenNews.opennet.ru: Общая лента новостей",
-      siteUrl: "https://www.opennet.ru/opennews/",
-      count: 40,
+      url: "https://novosti.example/opennews/opennews_all.rss",
+      title: "Новости примера: общая лента",
+      siteUrl: "https://novosti.example/opennews/",
+      count: 3,
       first: {
-        guid: "https://www.opennet.ru/opennews/art.shtml?num=66522",
-        url: "https://www.opennet.ru/opennews/art.shtml?num=66522",
-        title: "Выпуск пользовательского окружения Dux Shell 2.0",
+        guid: "https://novosti.example/opennews/art.shtml?num=101",
+        url: "https://novosti.example/opennews/art.shtml?num=101",
+        title: "Выпуск вымышленной среды Пример 2.0",
         author: null,
         publishedAt: "2026-10-21T19:39:07.000Z",
       },
@@ -104,57 +103,57 @@ describe("parseFeed: saved real feeds", () => {
     {
       // Atom with only <updated>: that is the entry's date.
       file: "nextjs-releases.atom.xml",
-      url: "https://github.com/vercel/next.js/releases.atom",
-      title: "Release notes from next.js",
-      siteUrl: "https://github.com/vercel/next.js/releases",
-      count: 10,
+      url: "https://code.example/sample/kit/releases.atom",
+      title: "Release notes from sample-kit",
+      siteUrl: "https://code.example/sample/kit/releases",
+      count: 3,
       first: {
-        guid: "tag:github.com,2008:Repository/70107786/v16.5.0-canary.21",
-        url: "https://github.com/vercel/next.js/releases/tag/v16.5.0-canary.21",
-        title: "v16.5.0-canary.21",
-        author: "next-js-bot[bot]",
+        guid: "tag:code.example,2008:Repository/1001/v3.1.0-canary.4",
+        url: "https://code.example/sample/kit/releases/tag/v3.1.0-canary.4",
+        title: "v3.1.0-canary.4",
+        author: "release-bot[bot]",
         publishedAt: "2026-10-20T23:51:32.000Z",
       },
     },
     {
       file: "xkcd.atom.xml",
-      url: "https://xkcd.com/atom.xml",
-      title: "xkcd.com",
-      siteUrl: "https://xkcd.com/",
+      url: "https://doodle.example/atom.xml",
+      title: "Daily Doodle",
+      siteUrl: "https://doodle.example/",
       count: 4,
       first: {
-        guid: "https://xkcd.com/3314/",
-        url: "https://xkcd.com/3314/",
-        title: "Vulnerability",
+        guid: "https://doodle.example/104/",
+        url: "https://doodle.example/104/",
+        title: "Patch Day",
         author: null,
         publishedAt: "2026-10-21T00:00:00.000Z",
       },
     },
     {
       file: "jsonfeed-org.feed.json",
-      url: "https://www.jsonfeed.org/feed.json",
-      title: "JSON Feed",
-      siteUrl: "https://www.jsonfeed.org/",
+      url: "https://jsonfeed.example/feed.json",
+      title: "Sample JSON Feed",
+      siteUrl: "https://jsonfeed.example/",
       count: 2,
       first: {
-        guid: "http://jsonfeed.micro.blog/2020/08/07/json-feed-version.html",
-        url: "https://www.jsonfeed.org/2020/08/07/json-feed-version.html",
-        title: "JSON Feed version 1.1",
+        guid: "http://mirror.example/2020/08/07/sample-version.html",
+        url: "https://jsonfeed.example/2020/08/07/sample-version.html",
+        title: "Sample format version 1.1",
         author: null,
         publishedAt: "2020-08-07T16:44:36.000Z",
       },
     },
     {
       file: "daringfireball.feed.json",
-      url: "https://daringfireball.net/feeds/json",
-      title: "Daring Fireball",
-      siteUrl: "https://daringfireball.net/",
-      count: 48,
+      url: "https://fireside.example/feeds/json",
+      title: "Fireside Notes",
+      siteUrl: "https://fireside.example/",
+      count: 3,
       first: {
-        guid: "https://daringfireball.net/feeds/sponsors/2026/10/sunnny_1",
-        url: "https://daringfireball.net/feeds/sponsors/2026/10/sunnny_1",
-        title: "[Sponsor] Sunnny",
-        author: "Daring Fireball Department of Commerce",
+        guid: "https://fireside.example/feeds/sponsors/2026/10/widgetly_1",
+        url: "https://fireside.example/feeds/sponsors/2026/10/widgetly_1",
+        title: "[Sponsor] Widgetly",
+        author: "Fireside Sponsorship Desk",
         publishedAt: "2026-10-20T13:09:38.000Z",
       },
     },
@@ -186,13 +185,13 @@ describe("parseFeed: saved real feeds", () => {
   test("keeps document order and HTML content", () => {
     const feed = parseFeed(
       fixture("cursor-changelog.rss.xml"),
-      "https://cursor.com/changelog/rss.xml"
+      "https://app.example/changelog/rss.xml"
     )
     expect(feed.entries[0].contentHtml).toStartWith(
-      '<h2>Canvases from cloud agents</h2>\n<p><a href="https://cursor.com/docs/cloud-agent" rel="noopener noreferrer nofollow" target="_blank">Cloud agents</a>'
+      '<h2>Boards from workers</h2>\n<p><a href="https://app.example/docs/workers" rel="noopener noreferrer nofollow" target="_blank">Workers</a>'
     )
     expect(feed.entries[0].summary).toStartWith(
-      "Cloud agents can now build and share interactive canvases."
+      "Workers can now build and share boards."
     )
   })
 })
@@ -237,11 +236,11 @@ describe("parseFeed: failures", () => {
   test("a truncated RSS file gives the items before the cut", () => {
     const feed = parseFeed(
       fixture("handmade-truncated.rss.xml"),
-      "https://claude.dev/rss.xml"
+      "https://code.example/rss.xml"
     )
     expect(feed.entries).toHaveLength(8)
     expect(feed.entries[0].guid).toBe(
-      "https://claude.dev/blog/solving-code-review-at-anthropic/"
+      "https://code.example/blog/how-the-sample-team-reviews-code/"
     )
   })
 
@@ -250,7 +249,7 @@ describe("parseFeed: failures", () => {
       parseError(() =>
         parseFeed(
           fixture("handmade-truncated.atom.xml"),
-          "https://github.com/vercel/next.js/releases.atom"
+          "https://code.example/sample/kit/releases.atom"
         )
       ).code
     ).toBe("invalid_feed")
@@ -258,7 +257,9 @@ describe("parseFeed: failures", () => {
 
   test("a leading BOM and whitespace are ignored", () => {
     const body = "﻿\n  " + fixture("xkcd.atom.xml")
-    expect(parseFeed(body, "https://xkcd.com/atom.xml").entries).toHaveLength(4)
+    expect(
+      parseFeed(body, "https://doodle.example/atom.xml").entries
+    ).toHaveLength(4)
   })
 })
 
@@ -266,23 +267,23 @@ describe("parseFeed: hand-made edge cases", () => {
   test("xml:base and hostile HTML are resolved and sanitised", () => {
     const feed = parseFeed(
       fixture("handmade-hostile.atom.xml"),
-      "https://ex.com/feed.atom"
+      "https://example.com/feed.atom"
     )
     expect(feed.title).toBe("Hostile & based")
-    expect(feed.siteUrl).toBe("https://ex.com/blog/")
+    expect(feed.siteUrl).toBe("https://example.com/blog/")
     expect(feed.entries).toEqual([
       {
         guid: "urn:example:post-1",
-        url: "https://ex.com/blog/post-1",
+        url: "https://example.com/blog/post-1",
         title: "Post one",
         author: "Eve",
         publishedAt: new Date("2026-10-01T10:00:00Z"),
         summary: "Short summary",
         contentHtml:
-          '<p>Hello</p><img src="https://ex.com/blog/x" />' +
+          '<p>Hello</p><img src="https://example.com/blog/x" />' +
           '<a rel="noopener noreferrer nofollow" target="_blank">bad</a>' +
-          '<a href="https://ex.com/about" rel="noopener noreferrer nofollow" target="_blank">about</a>' +
-          '<img src="https://ex.com/blog/pic.png" />',
+          '<a href="https://example.com/about" rel="noopener noreferrer nofollow" target="_blank">about</a>' +
+          '<img src="https://example.com/blog/pic.png" />',
       },
     ])
   })
@@ -290,7 +291,7 @@ describe("parseFeed: hand-made edge cases", () => {
   test("Atom text constructs keep literal tags as text", () => {
     const feed = parseFeed(
       fixture("handmade-text-constructs.atom.xml"),
-      "https://ex.com/feed.atom"
+      "https://example.com/feed.atom"
     )
     expect(feed.title).toBe("Notes on <tag>")
     const [plain, explicit, html, noIdA, noIdB] = feed.entries
@@ -353,15 +354,15 @@ describe("parseFeed: hand-made edge cases", () => {
   test("JSON Feed content_text is escaped, not parsed", () => {
     const feed = parseFeed(
       fixture("handmade-content-text.feed.json"),
-      "https://ex.com/feed.json"
+      "https://example.com/feed.json"
     )
     expect(feed.title).toBe("Plain <text> feed")
-    expect(feed.siteUrl).toBe("https://ex.com/")
+    expect(feed.siteUrl).toBe("https://example.com/")
     expect(feed.entries).toHaveLength(3)
     const [text, html, bare] = feed.entries
     expect(text).toEqual({
       guid: "1",
-      url: "https://ex.com/1",
+      url: "https://example.com/1",
       title: "Use <tag> & more",
       author: "Old Author",
       publishedAt: new Date("2026-10-03T00:00:00Z"),

@@ -3,393 +3,62 @@
 <rdf:RDF
  xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
  xmlns="http://purl.org/rss/1.0/"
- xmlns:admin="http://webns.net/mvcb/"
- xmlns:content="http://purl.org/rss/1.0/modules/content/"
  xmlns:dc="http://purl.org/dc/elements/1.1/"
  xmlns:slash="http://purl.org/rss/1.0/modules/slash/"
- xmlns:syn="http://purl.org/rss/1.0/modules/syndication/"
- xmlns:taxo="http://purl.org/rss/1.0/modules/taxonomy/"
 >
 
-<channel rdf:about="https://slashdot.org/">
-<title>Slashdot</title>
-<link>https://slashdot.org/</link>
-<description>News for nerds, stuff that matters</description>
+<channel rdf:about="https://digest.example/">
+<title>Byte Digest</title>
+<link>https://digest.example/</link>
+<description>Invented news for parser tests</description>
 <dc:language>en-us</dc:language>
-<dc:rights>Copyright Slashdot Media. All Rights Reserved.</dc:rights>
 <dc:date>2026-10-21T22:14:28+00:00</dc:date>
-<dc:publisher>Slashdot Media</dc:publisher>
-<dc:creator>feedback@slashdot.org</dc:creator>
-<dc:subject>Technology</dc:subject>
-<syn:updateBase>1970-01-01T00:00+00:00</syn:updateBase>
-<syn:updateFrequency>1</syn:updateFrequency>
-<syn:updatePeriod>hourly</syn:updatePeriod>
 <items>
  <rdf:Seq>
-  <rdf:li rdf:resource="https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://yro.slashdot.org/story/26/10/21/1729218/more-than-15-million-canadian-crime-stoppers-tips-leaked?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://games.slashdot.org/story/26/10/21/180214/microsoft-reportedly-projects-1200-to-1800-price-for-next-gen-xbox?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://yro.slashdot.org/story/26/10/21/188251/meta-ordered-to-pay-new-mexico-25-billion-for-deceiving-users-about-privacy-on-facebook?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://games.slashdot.org/story/26/10/21/1738206/ea-is-shutting-down-bioware?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://tech.slashdot.org/story/26/10/21/1637221/openai-models-are-now-on-all-three-major-us-cloud-platforms?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://developers.slashdot.org/story/26/10/21/1644235/government-websites-go-dark-after-severe-php-vulnerabilities-disclosed?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://tech.slashdot.org/story/26/10/21/054204/php-warns-it-plans-to-release-2-emergency-patches-imminently?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://tech.slashdot.org/story/26/10/21/0458211/tesla-spacex-merger-being-considered?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://science.slashdot.org/story/26/10/21/0449230/russian-satellites-close-shadowing-of-radar-imaging-satellite-is-a-big-deal?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://yro.slashdot.org/story/26/10/20/2055251/judge-orders-meta-to-name-employees-who-approved-torrenting-annas-archive-libgen?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://tech.slashdot.org/story/26/10/20/1929211/ukraine-claims-worlds-first-drone-evacuation-of-wounded-soldier?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://hardware.slashdot.org/story/26/10/20/1923237/sony-updates-the-walkman-as-a-5900-gold-plated-mp3-player?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://games.slashdot.org/story/26/10/20/1917248/amd-is-bringing-fsr-41-to-xbox-consoles-and-handhelds?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
-  <rdf:li rdf:resource="https://tech.slashdot.org/story/26/10/20/199206/google-support-pages-start-defaulting-to-ai-chatbots?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+  <rdf:li rdf:resource="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+  <rdf:li rdf:resource="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
+  <rdf:li rdf:resource="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed" />
  </rdf:Seq>
 </items>
-<image rdf:resource="https://a.fsdn.com/sd/topics/topicslashdot.gif" />
-<textinput rdf:resource="https://slashdot.org/search.pl" />
 </channel>
-<image rdf:about="https://a.fsdn.com/sd/topics/topicslashdot.gif">
-<title>Slashdot</title>
-<url>https://a.fsdn.com/sd/topics/topicslashdot.gif</url>
-<link>https://slashdot.org/</link>
-</image>
-<item rdf:about="https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>AMD Brings Ryzen Overclocking Driver to Linux</title>
-<link>https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>AMD has published Linux kernel patches for an official Ryzen overclocking driver that allows users to adjust CPU power and current limits through a firmware interface exposed via sysfs. Phoronix reports: AMD engineer Shyam Sundar S K posted the patches for the AMD Overclocking "AOD" WMI driver as an interface to the platform firmware for managing overclocking and power/current limits of modern Ryzen CPUs.
- 
-The driver in its initial form allows setting via sysfs a number of CPU tunables including the Package Power Tracking (PPT), Thermal Design Current (TDC), and Electrical Design Current (EDC) limits along with reading their supported range. SMT toggling can also be done via the interface as an alternative to the likes of Linux's "nosmt" option in disabling SMT at the platform level rather than kernel disabling. The current memory clocks can also be read via this AOD driver.
- 
-The power tunables aren't applied in real-time but go into effect at next reboot. The firmware does support many more commands compared to the few initially wired up and hopefully in time more of these controls will be enabled with this driver.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=AMD+Brings+Ryzen+Overclocking+Driver+to+Linux%3A+https%3A%2F%2Flinux.slashdot.org%2Fstory%2F26%2F10%2F21%2F2030239%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Flinux.slashdot.org%2Fstory%2F26%2F10%2F21%2F2030239%2Famd-brings-ryzen-overclocking-driver-to-linux%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
 
+<item rdf:about="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Zürich café ships Ångström-scale sensors</title>
+<link>https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
 
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://linux.slashdot.org/story/26/10/21/2030239/amd-brings-ryzen-overclocking-driver-to-linux?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130384&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://linux.digest.example/story/2026/10/21/2200/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Ödön Exämple</dc:creator>
 <dc:date>2026-10-21T22:00:00+00:00</dc:date>
-<dc:subject>amd</dc:subject>
-<slash:department>officially-supported</slash:department>
+<dc:subject>sample</dc:subject>
 <slash:section>linux</slash:section>
-<slash:hit_parade>0,0,0,0,0,0,0</slash:hit_parade>
 </item>
-<item rdf:about="https://yro.slashdot.org/story/26/10/21/1729218/more-than-15-million-canadian-crime-stoppers-tips-leaked?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>More Than 1.5 Million Canadian Crime Stoppers Tips Leaked</title>
-<link>https://yro.slashdot.org/story/26/10/21/1729218/more-than-15-million-canadian-crime-stoppers-tips-leaked?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>A CBC investigation found that more than 1.5 million Canadian Crime Stoppers tips spanning 25 years were exposed in a breach of the P3 Global Intel tip-management platform. About 850,000 records contained personally identifiable information, including addresses, phone numbers, emails, license plates and some banking details. Longtime Slashdot reader doconnor shares the report: The data was stolen last March by hacktivist collective Internet Yiff Machine. In a manifesto, the group said it wanted to disprove the claim by P3 Global Intel -- the company hired by Crime Stoppers to manage its tips -- that the platform was "anonymous" and "secure." A copy of the hacked data was made available to researchers and journalists, including CBC, by Distributed Denial of Secrets, a U.S. non-profit that archives and publishes hacked and leaked documents it deems to be in the public interest. The report found that more than 4,300 Crime Stoppers tipsters identified themselves by their full name, with hundreds of records containing staff warnings that individuals had "self-identified" or been "exposed," yet their information remained unredacted.
- 
-The leaked data included sensitive allegations involving murder, terrorism, drug trafficking and organized crime, with nearly 49,000 tips linked to cases cleared through arrests or criminal charges. Cybersecurity experts criticized the retention of decades-old records... "If a tip is closed, does that need to stay online?" asked cybersecurity expert Ben Coon. "The answer to that, to me, is no."
- 
-The RCMP was initially told Canadian data was unaffected, then assured that exposed Canadian records contained no personally identifiable information. This appears to contradict the CBC's findings. Furthermore, affected individuals have not been systematically notified because contacting them could further jeopardize their anonymity.
- 
-"For a system that has been designed to promise anonymity to the users, that has failed categorically," said Prof. Ali Dehghantanha, the Canada Research Chair in Cybersecurity and Threat Intelligence at the University of Guelph.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=More+Than+1.5+Million+Canadian+Crime+Stoppers+Tips+Leaked%3A+https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F21%2F1729218%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F21%2F1729218%2Fmore-than-15-million-canadian-crime-stoppers-tips-leaked%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
+<item rdf:about="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Invented archive of tips goes public</title>
+<link>https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
 
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://yro.slashdot.org/story/26/10/21/1729218/more-than-15-million-canadian-crime-stoppers-tips-leaked?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130218&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T21:00:00+00:00</dc:date>
-<dc:subject>crime</dc:subject>
-<slash:department>not-very-anonymous-or-secure</slash:department>
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://yro.digest.example/story/2026/10/21/1729/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Fixture Editor</dc:creator>
+<dc:date>2026-10-21T17:29:00+00:00</dc:date>
+<dc:subject>sample</dc:subject>
 <slash:section>yro</slash:section>
-<slash:comments>6</slash:comments>
-<slash:hit_parade>6,6,5,4,2,1,0</slash:hit_parade>
 </item>
-<item rdf:about="https://games.slashdot.org/story/26/10/21/180214/microsoft-reportedly-projects-1200-to-1800-price-for-next-gen-xbox?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Microsoft Reportedly Projects $1,200 To $1,800 Price For Next-Gen Xbox</title>
-<link>https://games.slashdot.org/story/26/10/21/180214/microsoft-reportedly-projects-1200-to-1800-price-for-next-gen-xbox?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>An anonymous reader quotes a report from Ars Technica: We haven't heard many details about Microsoft's upcoming "Project Helix" gaming hardware since the company announced it in March as a device that will "play your Xbox and PC games." In a new wide-ranging profile of Xbox CEO Asha Sharma, though, Fortune alludes to a dual release strategy for upcoming Microsoft gaming hardware, with "a next-generation handheld device" planned by the end of next year and a 2028 holiday season console release that could cost between $1,200 and $1,800.
- 
-That future console price range is based on what has "internally been projected" at the company, according to Fortune. But the price for consumers could come down if "Microsoft decides to subsidize the cost," the outlet says, as many console makers have done in the past. While a $1,200 starting price would be historically high for the game console market, even accounting for inflation, it also reflects a new normal: The slowdown in Moore's Law and AI-driven component shortages mean cutting-edge gaming hardware just isn't as cheap as it used to be. This year, the Steam Machine broke the $1,000 starting price, while the 2-year-old technology in the PlayStation 5 Pro is now going for $900, and the 6-year-old Xbox Series X now starts at $750.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Microsoft+Reportedly+Projects+%241%2C200+To+%241%2C800+Price+For+Next-Gen+Xbox%3A+https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F21%2F180214%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F21%2F180214%2Fmicrosoft-reportedly-projects-1200-to-1800-price-for-next-gen-xbox%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
+<item rdf:about="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
+<title>Sample console priced at three numbers</title>
+<link>https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
+<description>An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich. An invented report about a sensor that measures très small things in a café in Zürich.
 
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://games.slashdot.org/story/26/10/21/180214/microsoft-reportedly-projects-1200-to-1800-price-for-next-gen-xbox?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130256&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T20:00:00+00:00</dc:date>
-<dc:subject>xbox</dc:subject>
-<slash:department>new-normal</slash:department>
+Second paragraph of invented text, with "quotes" and an apostrophe's use.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
+&lt;a class="slashpop" href="http://share.example/home?status=invented"&gt;&lt;img src="https://img.example/share.png"&gt;&lt;/a&gt;
+&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://games.digest.example/story/2026/10/21/1802/invented-story?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Byte Digest.&lt;/p&gt;&lt;iframe src="https://digest.example/discuss.pl?op=discuss&amp;amp;id=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
+<dc:creator>Fixture Editor</dc:creator>
+<dc:date>2026-10-21T18:02:00+00:00</dc:date>
+<dc:subject>sample</dc:subject>
 <slash:section>games</slash:section>
-<slash:comments>25</slash:comments>
-<slash:hit_parade>25,24,19,17,4,2,0</slash:hit_parade>
 </item>
-<item rdf:about="https://yro.slashdot.org/story/26/10/21/188251/meta-ordered-to-pay-new-mexico-25-billion-for-deceiving-users-about-privacy-on-facebook?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Meta Ordered to Pay New Mexico $25 Billion for Deceiving Users About Privacy On Facebook</title>
-<link>https://yro.slashdot.org/story/26/10/21/188251/meta-ordered-to-pay-new-mexico-25-billion-for-deceiving-users-about-privacy-on-facebook?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>A New Mexico judge has ordered Meta to pay $25 billion after a jury found Facebook liable for deceiving users about privacy during the Cambridge Analytica scandal. State Attorney General Raul Torrez called it "one of the largest, if not the single largest state verdict against a company in American history." While Meta plans to appeal the ruling, the funds that are to be collected will go toward state education spending. The Associated Press reports: Jurors in September found Meta liable for over 43 million violations of New Mexico consumer protection laws when a political consulting firm, Cambridge Analytica, harvested Facebook user data to generate targeted political ads for the 2016 election. Forty-eight other states settled with Facebook in a nationwide case, but New Mexico chose to take the social media company to court on its own. [...] During the trial, jurors assessed whether Facebook misled users about privacy and content moderation 34 separate times. State prosecutors, though, argued Facebook's statements deceived the entire population of New Mexico and extended beyond social media users.
- 
-In the end, jurors agreed with this premise and found Facebook liable for 2.1 million violations on certain counts, bringing the total number of violations to over 43 million. Facebook's attorneys have argued in subsequent court filings that the state's consumer protection laws don't apply to people in New Mexico who weren't using the platform at the time. [...] In one of the few wins for the defense, jurors found the state didn't prove that Facebook made false claims about removing harmful content, including misinformation about the COVID-19 pandemic.
- 
-The state said the company favored certain accounts and allowed for violent or inaccurate content to proliferate. Attorney Randi McGinn said in her closing argument for the state that Facebook profited off harmful content, which CEO Mark Zuckerberg denied during his video deposition. Zuckerberg said the company has to carefully balance freedom of speech with content moderation. Attorneys for Facebook said the company has adapted its policies since the state's lawsuit was filed in 2021 and that it removes 99% of content that violates standards.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Meta+Ordered+to+Pay+New+Mexico+%2425+Billion+for+Deceiving+Users+About+Privacy+On+Facebook%3A+https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F21%2F188251%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F21%2F188251%2Fmeta-ordered-to-pay-new-mexico-25-billion-for-deceiving-users-about-privacy-on-facebook%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://yro.slashdot.org/story/26/10/21/188251/meta-ordered-to-pay-new-mexico-25-billion-for-deceiving-users-about-privacy-on-facebook?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130258&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T19:00:00+00:00</dc:date>
-<dc:subject>court</dc:subject>
-<slash:department>forty-three-million-violations-later</slash:department>
-<slash:section>yro</slash:section>
-<slash:comments>17</slash:comments>
-<slash:hit_parade>17,16,15,15,5,3,1</slash:hit_parade>
-</item>
-<item rdf:about="https://games.slashdot.org/story/26/10/21/1738206/ea-is-shutting-down-bioware?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>EA Is Shutting Down BioWare</title>
-<link>https://games.slashdot.org/story/26/10/21/1738206/ea-is-shutting-down-bioware?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>"According to a recent report by Bloomberg's Jason Schreier (paywalled), EA has reportedly decided to shut down BioWare," the studio behind the Dragon Age and Mass Effect games, writes longtime Slashdot reader atari_kid. Quartz reports: Chief Studios Officer Cam Weber and Chief Operating Officer David Tinson wrote that "over the past several months, we've taken a hard look at our business." They said a small BioWare team had been doing early groundwork on a Mass Effect game, but EA chose to drop the effort. That decision means closing the studio and its Edmonton workspace, they wrote. "We do not take this decision lightly," Weber and Tinson said of the BioWare closure, according to Variety.
- 
-EA will keep investing in Apex Legends and is continuing work on two upcoming launches, Marvel's Iron Man and the next Star Wars Jedi game, the executives said. They added that EA's Respawn and DICE studios will join forces on an upcoming project, in addition to new Battlefield titles. Bloomberg said the project is probably a new installment of the Star Wars: Battlefront franchise.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=EA+Is+Shutting+Down+BioWare%3A+https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F21%2F1738206%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F21%2F1738206%2Fea-is-shutting-down-bioware%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://games.slashdot.org/story/26/10/21/1738206/ea-is-shutting-down-bioware?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130232&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T18:30:00+00:00</dc:date>
-<dc:subject>games</dc:subject>
-<slash:department>end-of-the-road</slash:department>
-<slash:section>games</slash:section>
-<slash:comments>17</slash:comments>
-<slash:hit_parade>17,17,14,11,6,0,0</slash:hit_parade>
-</item>
-<item rdf:about="https://tech.slashdot.org/story/26/10/21/1637221/openai-models-are-now-on-all-three-major-us-cloud-platforms?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>OpenAI Models Are Now On All Three Major US Cloud Platforms</title>
-<link>https://tech.slashdot.org/story/26/10/21/1637221/openai-models-are-now-on-all-three-major-us-cloud-platforms?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>OpenAI is bringing its models to Google Cloud's model garden and Antigravity coding tool, putting its technology on all three major U.S. cloud platforms after Microsoft's exclusive license ended earlier this year. "Google Cloud's longstanding investment in machine learning and AI has made it a destination for AI workloads and the developers and data scientists building them," OpenAI said in a blog post. It continues: [...] The integration will pair OpenAI's frontier models with Google Cloud's built-in access controls, centralized data governance, and high-performance infrastructure to support demanding enterprise workloads.
- 
-Google Cloud customers will be able to purchase OpenAI frontier models via model garden, transacted through the Google Cloud Marketplace. Enterprises with Google Cloud spend commitments will be able to draw down their GCP commitments for these purchases.
- 
-Additionally, OpenAI models will soon be available in Google Antigravity and the Gemini Agent, providing enterprise customers with model choice flexibility and the best model for each task. [...] For context, Microsoft previously held exclusive licensing rights to OpenAI's intellectual property, but that arrangement ended less than six months ago as OpenAI began expanding its partnerships with other cloud providers.
- 
-Just one day after Microsoft's exclusivity ended, Amazon announced plans to host OpenAI's models on its cloud platform in April.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=OpenAI+Models+Are+Now+On+All+Three+Major+US+Cloud+Platforms%3A+https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F1637221%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F1637221%2Fopenai-models-are-now-on-all-three-major-us-cloud-platforms%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://tech.slashdot.org/story/26/10/21/1637221/openai-models-are-now-on-all-three-major-us-cloud-platforms?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130188&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T18:00:00+00:00</dc:date>
-<dc:subject>cloud</dc:subject>
-<slash:department>what-to-expect</slash:department>
-<slash:section>technology</slash:section>
-<slash:comments>8</slash:comments>
-<slash:hit_parade>8,7,5,4,0,0,0</slash:hit_parade>
-</item>
-<item rdf:about="https://developers.slashdot.org/story/26/10/21/1644235/government-websites-go-dark-after-severe-php-vulnerabilities-disclosed?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Government Websites Go Dark After Severe PHP Vulnerabilities Disclosed</title>
-<link>https://developers.slashdot.org/story/26/10/21/1644235/government-websites-go-dark-after-severe-php-vulnerabilities-disclosed?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>"PHP disclosed two critical vulnerabilities in their programming language and urged web site operators to immediately apply the fix," writes longtime Slashdot reader smooth wombat. "As a result, government web sites in Europe and elsewhere temporarily went dark on Wednesday as operators worked to protect their systems." The Independent reports: Dane Knecht, the chief technology officer of Web and cloud security firm Cloudflare, said that attacks were emerging and Cloudflare was updating its firewall rules as a stopgap measure. "We are seeing early attacks emerging and are updating mitigations as new vectors show up. This is a STOPGAP only. Patch as soon as PHP releases the update," he said on X.
- 
-Officials have said that all PHP versions from PHP 5 onward could be affected, although PHP has not yet disclosed which versions are vulnerable. Special thanks to Slashdot readers Alain Williams and mrspoonsi for sharing this critical PHP security release.
- 
-For more details, read the official PHP announcement and guidance on what to do next.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Government+Websites+Go+Dark+After+Severe+PHP+Vulnerabilities+Disclosed%3A+https%3A%2F%2Fdevelopers.slashdot.org%2Fstory%2F26%2F10%2F21%2F1644235%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fdevelopers.slashdot.org%2Fstory%2F26%2F10%2F21%2F1644235%2Fgovernment-websites-go-dark-after-severe-php-vulnerabilities-disclosed%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://developers.slashdot.org/story/26/10/21/1644235/government-websites-go-dark-after-severe-php-vulnerabilities-disclosed?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24130190&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T17:00:00+00:00</dc:date>
-<dc:subject>php</dc:subject>
-<slash:department>patch-ASAP</slash:department>
-<slash:section>developers</slash:section>
-<slash:comments>30</slash:comments>
-<slash:hit_parade>30,29,26,24,8,3,1</slash:hit_parade>
-</item>
-<item rdf:about="https://tech.slashdot.org/story/26/10/21/054204/php-warns-it-plans-to-release-2-emergency-patches-imminently?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>PHP Warns It Plans To Release 2 Emergency Patches Imminently</title>
-<link>https://tech.slashdot.org/story/26/10/21/054204/php-warns-it-plans-to-release-2-emergency-patches-imminently?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>An anonymous reader quotes a report from Ars Technica: Website admins, brace yourselves. Fixes for what are believed to be uncommonly severe vulnerabilities are scheduled to drop in a little more than 12 hours for PHP, a programming language that powers websites and Web applications everywhere. PHP maintainers said Monday that they planned to release patches for two vulnerabilities, both with severity ratings of 9.2 out of a possible 10.
- 
-"All PHP users are encouraged to prepare now so they can upgrade as soon as the release is available," the advisory stated. "We reserve the right to release earlier should details of either vulnerability become public, or should evidence of active exploitation appear in the wild." The maintainers published the advisory following the leaking of purported details, which have yet to be confirmed. The report showed a video of an exploit tool dubbed PHP2Shell executing code on webservers running WordPress 7.1.3, MediaWiki 1.46.2, phpBB 3.3.17, Magento 2.4.9, Joomla 6.2.0, Laravel 13.36.0, Laravel 8.83.29, Symphony 8.1.9, Drupal 11.4.10, and WHMCS 9.0.9, all of which use PHP. A video depicting the tool has been reposted here.
- 
-Attempts to locate the unconfirmed report were unsuccessful, but security firm watchTowr said it claimed to affect every PHP version from PHP 5, released in 2004, onward. The security firm went on to say it has confirmed that the vulnerabilities, tracked as CVE-2026-109618 and CVE-2026-109619, are real. Researchers from separate security firm Sansec said they "expect mass attacks to start within 15 minutes of the release." A third security firm, Webfence, also urged admins to prepare now. Huntress has also issued an advisory.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=PHP+Warns+It+Plans+To+Release+2+Emergency+Patches+Imminently%3A+https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F054204%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F054204%2Fphp-warns-it-plans-to-release-2-emergency-patches-imminently%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://tech.slashdot.org/story/26/10/21/054204/php-warns-it-plans-to-release-2-emergency-patches-imminently?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129760&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T15:00:00+00:00</dc:date>
-<dc:subject>internet</dc:subject>
-<slash:department>PSA</slash:department>
-<slash:section>technology</slash:section>
-<slash:comments>45</slash:comments>
-<slash:hit_parade>45,45,38,34,11,5,3</slash:hit_parade>
-</item>
-<item rdf:about="https://tech.slashdot.org/story/26/10/21/0458211/tesla-spacex-merger-being-considered?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Tesla-SpaceX Merger Being Considered</title>
-<link>https://tech.slashdot.org/story/26/10/21/0458211/tesla-spacex-merger-being-considered?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>Elon Musk says a merger between Tesla and SpaceX is under active consideration, with special committees at both companies evaluating a deal that could combine businesses valued at roughly $3.5 trillion. "Do I think it would be a good idea? Yes," Musk said during a call with financial analysts over the quarterly business results of SpaceX on Tuesday. The BBC reports: While Musk noted the certainty of such a merger should not be assumed, and it would need shareholders' support, he said special committees within both companies have been formed to examine the move. "The special committees have not reached agreement on terms of any transaction and there's no guarantee that they will," Musk added. "But I do think there is a lot of merit to merging and a lot to be gained."
- 
-[...] The company, which builds space rockets and Starlink internet satellites, is now expanding into offering cloud compute capacity for other tech companies, like Anthropic and Google. That line of business has become the most profitable part of SpaceX, bringing in $7.5bn according to the latest quarterly results (PDF). Starlink also tallied revenue of $5.2bn. SpaceX as a whole, however, is not profitable and has lost $1.1bn so far this year.
- 
-[...] Musk said on Tuesday a full merger between the two companies would make sense for the work each is doing around chips, artificial intelligence, software and more. He described himself as a "conflicted party" as the chief executive of Tesla and of SpaceX. Even commenting on the possibility of a merger between the two companies, Musk compared to "tap dancing through a minefield." He added a merger would ultimately be decided by shareholders. At least 50% of Tesla's shareholders would need to approve the merger, which Musk described as "quite a high hurdle to achieve."&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Tesla-SpaceX+Merger+Being+Considered%3A+https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F0458211%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F21%2F0458211%2Ftesla-spacex-merger-being-considered%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://tech.slashdot.org/story/26/10/21/0458211/tesla-spacex-merger-being-considered?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129756&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T11:00:00+00:00</dc:date>
-<dc:subject>business</dc:subject>
-<slash:department>what-to-expect</slash:department>
-<slash:section>technology</slash:section>
-<slash:comments>101</slash:comments>
-<slash:hit_parade>101,100,91,81,31,16,9</slash:hit_parade>
-</item>
-<item rdf:about="https://science.slashdot.org/story/26/10/21/0449230/russian-satellites-close-shadowing-of-radar-imaging-satellite-is-a-big-deal?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Russian Satellite's Close Shadowing of Radar Imaging Satellite Is a Big Deal</title>
-<link>https://science.slashdot.org/story/26/10/21/0449230/russian-satellites-close-shadowing-of-radar-imaging-satellite-is-a-big-deal?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>Longtime Slashdot reader schwit1 shares a report from TWZ: A Russian satellite, Kosmos 2612, may have passed within approximately 85 feet (26 meters) of a U.S.-registered satellite belonging to commercial imagery provider ICEYE. This would be an extraordinarily close and potentially dangerous pass-by for two objects in space traveling at thousands of miles per hour. For weeks beforehand, ICEYE-X36, which would be of special interest to Russia, had already found itself in increasingly close orbital alignment with its pursuer. The two satellites now look to be drifting further and further apart, but the episode has been a clear sign of what is to come as the potential for conflict in space only continues to grow.
-
- Publicly available space tracking data from the satellitemap.space and orbitalradar.com websites show that Kosmos 2612 (also written sometimes Cosmos 2612 and abbreviated K2612) and ICEYE X36 had their especially close encounter at approximately 16:07 UTC today. Private space services company LeoLabs also told TWZ today that it could not "confirm or contradict what other data sources have stated publicly," but that it has "high-confidence that the objects came within approximately [emphasis in the original] 500 meters [1,640 feet] of each other." Kosmos 2612 had been making progressively closer passes by ICEYE X36 in recent days. "This is the most advanced and potentially dangerous uncooperative RPO we've observed," Adam Marsh, LeoLabs vice president for technical solutions, separately told Breaking Defense.
- 
-"It's important to note that 'red' on 'blue' engagements, such as this, are relatively uncommon in Low Earth Orbit (LEO)," LeoLabs' report points out. At the same time, "this was not a routine conjunction or 'fly by.' The sequence included a controlled approach, changes in relative position, close-proximity loitering, additional small maneuvers, and a controlled departure. The behavior is consistent with sophisticated rendezvous and proximity operations (RPO)."
- 
-"We can only speculate about the operation's goal, but it could have been anything from simply intimidation to outright destruction or sabotage of a U.S.-registered satellite," CSIS' Clayton Swope told TWZ. "Perhaps the operation is on hold. There are, however, several other satellites that shadowed ICEYE X36 back in May that could be brought in[to] action too."&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Russian+Satellite's+Close+Shadowing+of+Radar+Imaging+Satellite+Is+a+Big+Deal%3A+https%3A%2F%2Fscience.slashdot.org%2Fstory%2F26%2F10%2F21%2F0449230%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fscience.slashdot.org%2Fstory%2F26%2F10%2F21%2F0449230%2Frussian-satellites-close-shadowing-of-radar-imaging-satellite-is-a-big-deal%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://science.slashdot.org/story/26/10/21/0449230/russian-satellites-close-shadowing-of-radar-imaging-satellite-is-a-big-deal?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129748&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T07:00:00+00:00</dc:date>
-<dc:subject>space</dc:subject>
-<slash:department>crowded-skies</slash:department>
-<slash:section>science</slash:section>
-<slash:comments>48</slash:comments>
-<slash:hit_parade>48,46,34,31,11,6,2</slash:hit_parade>
-</item>
-<item rdf:about="https://yro.slashdot.org/story/26/10/20/2055251/judge-orders-meta-to-name-employees-who-approved-torrenting-annas-archive-libgen?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Judge Orders Meta To Name Employees Who Approved Torrenting Anna's Archive, Libgen</title>
-<link>https://yro.slashdot.org/story/26/10/20/2055251/judge-orders-meta-to-name-employees-who-approved-torrenting-annas-archive-libgen?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>An anonymous reader quotes a report from TorrentFreak: Last month, Magistrate Judge Thomas Hixson ordered Meta to hand over the command histories of the servers it used to torrent pirated books. These logs would presumably reveal how Meta's torrent clients were set up, including any changes to their upload settings. [...] The server logs could reveal what happened on Meta's machines. However, publisher Entrepreneur Media also wants to know who approved the torrenting activity.
- 
-Entrepreneur Media, which publishes Entrepreneur magazine, filed one of the related lawsuits where it accuses Meta of contributing to piracy by uploading (seeding) works to third parties, similar to the authors' contributory infringement claim. To find out more, the publisher asked Meta to identify everyone who "made, authorized, or approved" the decisions to obtain the shadow library datasets, and to do so via BitTorrent.
- 
-Meta's answers named several people who are believed to have been involved in data-related decisions. However, Meta said it couldn't identify anyone who "formally" made or approved decisions to acquire or use books for its first two Llama models. Those decisions were often the result of team consensus, Meta argued. When it came to the torrenting itself, Meta pointed to the employees who ran the downloads, describing their choices as technical decisions.
- 
-Meta added that the acquisition of data from Anna's Archive went through an internal legal review in early 2024, which involved its in-house lawyers. In other words, the company didn't name anyone higher up who approved the use of BitTorrent. "On that construction no one at Meta decided to torrent anything, yet Meta torrented shadow libraries repeatedly from 2022-2024," Entrepreneur Media countered. An internal Meta logbook warned that using torrents would involve sharing copyrighted material with others. "Using torrents would entail seeding the file such as sharing content outside. This would be legally not okay," the logbook stated.
- 
-Although Meta admits downloading data from LibGen and Anna's Archive via BitTorrent, it claims no one "made, authorized, or approved" a decision to distribute the material and that measures were taken to limit seeding. Meta's own expert previously estimated that uploads from its AWS servers amounted to no more than roughly 30% of the data downloaded during a period in 2024.
- 
-Judge Thomas Hixson is not convinced and ordered (PDF) the company to identify everyone involved in approving the downloads, including those who decided "whether or how to seed, or to mitigate seeding."&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Judge+Orders+Meta+To+Name+Employees+Who+Approved+Torrenting+Anna's+Archive%2C+Libgen%3A+https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F20%2F2055251%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fyro.slashdot.org%2Fstory%2F26%2F10%2F20%2F2055251%2Fjudge-orders-meta-to-name-employees-who-approved-torrenting-annas-archive-libgen%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://yro.slashdot.org/story/26/10/20/2055251/judge-orders-meta-to-name-employees-who-approved-torrenting-annas-archive-libgen?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129454&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-21T03:30:00+00:00</dc:date>
-<dc:subject>piracy</dc:subject>
-<slash:department>cough-them-up</slash:department>
-<slash:section>yro</slash:section>
-<slash:comments>76</slash:comments>
-<slash:hit_parade>76,73,59,54,18,9,6</slash:hit_parade>
-</item>
-<item rdf:about="https://tech.slashdot.org/story/26/10/20/1929211/ukraine-claims-worlds-first-drone-evacuation-of-wounded-soldier?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Ukraine Claims World's First Drone Evacuation of Wounded Soldier</title>
-<link>https://tech.slashdot.org/story/26/10/20/1929211/ukraine-claims-worlds-first-drone-evacuation-of-wounded-soldier?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>Ukraine says it carried out the world's first evacuation of a wounded soldier by aerial drone, using a heavy-lift hexacopter after enemy drones and landmines made conventional ground evacuation too dangerous. NBC News reports: Shared by the 92nd Separate Assault Brigade on Monday, the video shows the soldier strapping himself into a large drone and being flown at what appears to be relatively low altitude over blurred-out territory. The drone carefully lowers him, and the drone operator greets him with "Welcome back to the ground!" The video also shows blurred faces of drone operators who carried out the mission.
- 
-The post said the unidentified infantryman was wounded at his position. "Due to intense enemy drone activity and the presence of landmines, evacuation using conventional unmanned ground vehicles was impossible," the brigade said. "At that point, the specialists in our unit took it upon themselves to attempt something that had never been done before: evacuating a serviceman using an aerial drone," it added.
- 
-The craft was a heavy-lift hexacopter, it said, originally designed as a bomber by a Ukrainian manufacturer. It looks about twice the size of the soldier in the video. The specialists working on the mission had to ensure the drone could carry a human being without flipping over or swaying excessively, according to the unit.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Ukraine+Claims+World's+First+Drone+Evacuation+of+Wounded+Soldier%3A+https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F20%2F1929211%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F20%2F1929211%2Fukraine-claims-worlds-first-drone-evacuation-of-wounded-soldier%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://tech.slashdot.org/story/26/10/20/1929211/ukraine-claims-worlds-first-drone-evacuation-of-wounded-soldier?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129358&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-20T23:00:00+00:00</dc:date>
-<dc:subject>military</dc:subject>
-<slash:department>first-of-its-kind</slash:department>
-<slash:section>technology</slash:section>
-<slash:comments>77</slash:comments>
-<slash:hit_parade>77,73,60,51,23,14,6</slash:hit_parade>
-</item>
-<item rdf:about="https://hardware.slashdot.org/story/26/10/20/1923237/sony-updates-the-walkman-as-a-5900-gold-plated-mp3-player?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Sony Updates the Walkman As a $5,900 Gold-Plated MP3 Player</title>
-<link>https://hardware.slashdot.org/story/26/10/20/1923237/sony-updates-the-walkman-as-a-5900-gold-plated-mp3-player?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>Sony has revived its Walkman lineup with three Android 16-powered high-end music players ranging from $1,900 to $5,900, topped by the gold-plated NW-WM1ZM3 with 256GB of storage. The Register reports: The Japanese giant named the new models the NW-WM1ZM3, NW-WM1AM3 and NW-ZX900. All can store and play many codecs, including MP3s, WMA, and FLAC files, plus others like Direct Stream Digital (DSD) and Apple Lossless, which use various tricks to avoid nasty artefacts accruing during the digitization process. Sony also says it has used "key components made from oxygen-free copper" because that apparently delivers "uncompromising sound quality."
- 
-The machines also include "screws featuring a low-resistance gold-plated treatment ... providing a stable ground connection that delivers powerful bass, an expansive soundstage and smooth, extended high frequencies." Sony claims even the cabling it's used in the devices "further reduces noise and preserves signal integrity for rich, detailed sound." They're also housed in carefully-milled slabs of copper -- gold-plated in the case of the NW-WM1ZM3 -- because that apparently improves sound, too.
- 
-And then Sony's gone and spoiled it all by offering Bluetooth connectivity, a notorious music-mangler, in addition to wired headphone ports. Sony's US site lists all three devices, which run Android 16 and include Wi-Fi so they can access streaming music services. All are USB-chargeable and Sony claims their batteries allow 30-odd hours of music playback.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Sony+Updates+the+Walkman+As+a+%245%2C900+Gold-Plated+MP3+Player%3A+https%3A%2F%2Fhardware.slashdot.org%2Fstory%2F26%2F10%2F20%2F1923237%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fhardware.slashdot.org%2Fstory%2F26%2F10%2F20%2F1923237%2Fsony-updates-the-walkman-as-a-5900-gold-plated-mp3-player%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://hardware.slashdot.org/story/26/10/20/1923237/sony-updates-the-walkman-as-a-5900-gold-plated-mp3-player?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129356&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-20T22:00:00+00:00</dc:date>
-<dc:subject>music</dc:subject>
-<slash:department>eye-popping</slash:department>
-<slash:section>hardware</slash:section>
-<slash:comments>59</slash:comments>
-<slash:hit_parade>59,59,56,53,21,8,5</slash:hit_parade>
-</item>
-<item rdf:about="https://games.slashdot.org/story/26/10/20/1917248/amd-is-bringing-fsr-41-to-xbox-consoles-and-handhelds?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>AMD Is Bringing FSR 4.1 to Xbox Consoles and Handhelds</title>
-<link>https://games.slashdot.org/story/26/10/20/1917248/amd-is-bringing-fsr-41-to-xbox-consoles-and-handhelds?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>AMD is expanding its FSR 4.1 upscaling technology beyond Radeon RX 9000-series GPUs to Xbox Series X/S consoles, Xbox Ally handhelds, laptops, and Radeon RX 6000-series graphics cards. The Verge reports: AMD launched its FSR 4.1 update for Radeon RX 9000-series graphics cards in March, and promised to bring the technology to older GPUs and handhelds this year. FSR 4.1 can improve performance in more than 300 supported games, including Cyberpunk 2077, Battlefield 6, and Assassin's Creed Shadows.
- 
-[...] While owners of Radeon RX 6000-series GPUs and Gorgon Halo- or Strix Halo-powered devices will get FSR 4.1 today with the latest Adrenalin Edition 26.10.1 drivers, Xbox console owners will have to wait a little longer. "We've worked very closely with AMD to optimize this technology, giving developers another powerful tool for great performance and visual quality for players," says Xbox CTO Scott Van Vilet.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=AMD+Is+Bringing+FSR+4.1+to+Xbox+Consoles+and+Handhelds%3A+https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F20%2F1917248%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Fgames.slashdot.org%2Fstory%2F26%2F10%2F20%2F1917248%2Famd-is-bringing-fsr-41-to-xbox-consoles-and-handhelds%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://games.slashdot.org/story/26/10/20/1917248/amd-is-bringing-fsr-41-to-xbox-consoles-and-handhelds?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129354&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-20T21:00:00+00:00</dc:date>
-<dc:subject>xbox</dc:subject>
-<slash:department>what-to-expect</slash:department>
-<slash:section>games</slash:section>
-<slash:comments>10</slash:comments>
-<slash:hit_parade>10,10,8,8,1,0,0</slash:hit_parade>
-</item>
-<item rdf:about="https://tech.slashdot.org/story/26/10/20/199206/google-support-pages-start-defaulting-to-ai-chatbots?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed">
-<title>Google Support Pages Start Defaulting to AI Chatbots</title>
-<link>https://tech.slashdot.org/story/26/10/20/199206/google-support-pages-start-defaulting-to-ai-chatbots?utm_source=rss1.0mainlinkanon&amp;utm_medium=feed</link>
-<description>Google is beginning to replace traditional support articles with "Ask Google Help," a Gemini-powered interface that summarizes documentation and lets users troubleshoot through a chatbot. 9to5Google reports: "Ask Google Help" will display a condensed version of the support article with direct troubleshooting steps, with the user then able to type in queries to have Gemini help figure out the next step forward. A "View Sources" button at the bottom of the AI response allows users to still access the original article, but direct links to any of these articles now defaults to the AI experience.
- 
-An example can be seen below on the "Secure a hacked or compromised Google account" page that Google's own support account directed users to within the past few days. It can also be seen on the "Fix common issues with 2-Step Verification" page and, as far as we can tell, any support pages on the Google Account Help forum.
- 
-Google, as of right now, appears to only be testing this on select support topics. The Google Pixel Help section, for instance, still defaults to articles, whereas the Google Chrome topic has also moved to the new experience. Beyond support pages alone, this new design also impacts the central hub, with links to topics no longer showing by default in exchange for an AI chatbot that helps you find the relevant page.&lt;p&gt;&lt;div class="share_submission" style="position:relative;"&gt;
-&lt;a class="slashpop" href="http://twitter.com/home?status=Google+Support+Pages+Start+Defaulting+to+AI+Chatbots%3A+https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F20%2F199206%2F%3Futm_source%3Dtwitter%26utm_medium%3Dtwitter"&gt;&lt;img src="https://a.fsdn.com/sd/twitter_icon_large.png"&gt;&lt;/a&gt;
-&lt;a class="slashpop" href="http://www.facebook.com/sharer.php?u=https%3A%2F%2Ftech.slashdot.org%2Fstory%2F26%2F10%2F20%2F199206%2Fgoogle-support-pages-start-defaulting-to-ai-chatbots%3Futm_source%3Dslashdot%26utm_medium%3Dfacebook"&gt;&lt;img src="https://a.fsdn.com/sd/facebook_icon_large.png"&gt;&lt;/a&gt;
-
-
-
-&lt;/div&gt;&lt;/p&gt;&lt;p&gt;&lt;a href="https://tech.slashdot.org/story/26/10/20/199206/google-support-pages-start-defaulting-to-ai-chatbots?utm_source=rss1.0moreanon&amp;amp;utm_medium=feed"&gt;Read more of this story&lt;/a&gt; at Slashdot.&lt;/p&gt;&lt;iframe src="https://slashdot.org/slashdot-it.pl?op=discuss&amp;amp;id=24129340&amp;amp;smallembed=1" style="height: 300px; width: 100%; border: none;"&gt;&lt;/iframe&gt;</description>
-<dc:creator>BeauHD</dc:creator>
-<dc:date>2026-10-20T20:00:00+00:00</dc:date>
-<dc:subject>ai</dc:subject>
-<slash:department>AI-all-the-things</slash:department>
-<slash:section>technology</slash:section>
-<slash:comments>53</slash:comments>
-<slash:hit_parade>53,53,44,39,11,6,2</slash:hit_parade>
-</item>
-<textinput rdf:about="https://slashdot.org/search.pl">
-<title>Search Slashdot</title>
-<description>Search Slashdot stories</description>
-<name>query</name>
-<link>https://slashdot.org/search.pl</link>
-</textinput>
 </rdf:RDF>
