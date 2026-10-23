@@ -95,7 +95,7 @@ describe("cursor-blog tester edge cases", () => {
       await db.entry.findFirstOrThrow({ where: { feedId: feed.id } })
     ).toMatchObject({
       guid: postUrl("projects"),
-      title: "Introducing Projects",
+      title: "Weekend projects: a pottery wheel",
     })
   })
 
