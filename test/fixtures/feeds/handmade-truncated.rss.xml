@@ -1,78 +1,78 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
 <channel>
-<title>claude.dev Blog</title>
-<link>https://claude.dev/</link>
-<description>Articles, videos, and build logs from Anthropic’s developers on building with Claude and Claude Code, including tips, tricks, and points of view.</description>
+<title>Example Code Blog</title>
+<link>https://code.example/</link>
+<description>Invented posts for parser tests.</description>
 <language>en</language>
 <lastBuildDate>Thu, 15 Oct 2026 12:00:00 GMT</lastBuildDate>
-<atom:link href="https://claude.dev/rss.xml" rel="self" type="application/rss+xml"/>
+<atom:link href="https://code.example/rss.xml" rel="self" type="application/rss+xml"/>
 <item>
-<title>How the Claude Code team does code review</title>
-<link>https://claude.dev/blog/solving-code-review-at-anthropic/</link>
-<guid isPermaLink="true">https://claude.dev/blog/solving-code-review-at-anthropic/</guid>
+<title>Keeping a garden log through the seasons</title>
+<link>https://code.example/blog/keeping-a-garden-log/</link>
+<guid isPermaLink="true">https://code.example/blog/keeping-a-garden-log/</guid>
 <pubDate>Thu, 15 Oct 2026 12:00:00 GMT</pubDate>
-<description>How do you review code at the volume agents produce it? On the Claude Code team, once we had high coverage and deep reviews, we started optimizing for the minimum amount of human review time that doesn&apos;t raise reverts or incidents.</description>
-<dc:creator>Addy Osmani, Morgan Westlee Lunt, and Qing Wang</dc:creator>
-<category>Engineering</category>
+<description>A garden log is a notebook of what was planted, where and when. Ours started as a list of seed packets and grew into a record of frosts, harvests and the beds that never dry out. It doesn&apos;t need to be tidy. This invented description runs past three hundred characters so the summary is cut at its limit and the full text stays in the content.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
 </item>
 <item>
-<title>Building effective agent automations</title>
-<link>https://claude.dev/blog/building-effective-agent-automations/</link>
-<guid isPermaLink="true">https://claude.dev/blog/building-effective-agent-automations/</guid>
+<title>Watering herb pots, part 1</title>
+<link>https://code.example/blog/post-01/</link>
+<guid isPermaLink="true">https://code.example/blog/post-01/</guid>
+<pubDate>Wed, 14 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Pruning bean rows, part 2</title>
+<link>https://code.example/blog/post-02/</link>
+<guid isPermaLink="true">https://code.example/blog/post-02/</guid>
+<pubDate>Tue, 13 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Mulching apple trees, part 3</title>
+<link>https://code.example/blog/post-03/</link>
+<guid isPermaLink="true">https://code.example/blog/post-03/</guid>
+<pubDate>Mon, 12 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about apple trees.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Sowing tomato beds, part 4</title>
+<link>https://code.example/blog/post-04/</link>
+<guid isPermaLink="true">https://code.example/blog/post-04/</guid>
+<pubDate>Sun, 11 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about tomato beds.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Weeding herb pots, part 5</title>
+<link>https://code.example/blog/post-05/</link>
+<guid isPermaLink="true">https://code.example/blog/post-05/</guid>
+<pubDate>Sat, 10 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about herb pots.</description>
+<dc:creator>Dee Fixture</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Staking bean rows, part 6</title>
+<link>https://code.example/blog/post-06/</link>
+<guid isPermaLink="true">https://code.example/blog/post-06/</guid>
+<pubDate>Fri, 09 Oct 2026 12:00:00 GMT</pubDate>
+<description>An invented note about bean rows.</description>
+<dc:creator>Ada Example, Bo Sample, and Cy Placeholder</dc:creator>
+<category>Notes</category>
+</item>
+<item>
+<title>Harvesting apple trees, part 7</title>
+<link>https://code.example/blog/post-07/</link>
+<guid isPermaLink="true">https://code.example/blog/post-07/</guid>
 <pubDate>Thu, 08 Oct 2026 12:00:00 GMT</pubDate>
-<description>A reference implementation walkthrough with common failure modes</description>
-<dc:creator>Lance Martin and CJ Avilla</dc:creator>
-<category>Agents</category>
-</item>
-<item>
-<title>Claude Code in the cloud: a field guide to cloud sessions</title>
-<link>https://claude.dev/blog/claude-code-in-the-cloud/</link>
-<guid isPermaLink="true">https://claude.dev/blog/claude-code-in-the-cloud/</guid>
-<pubDate>Tue, 06 Oct 2026 12:00:00 GMT</pubDate>
-<description>Cloud sessions run Claude Code on a fresh VM for each task. Four real sessions, seven workflows that suit them, and how to connect GitHub without getting stuck.</description>
-<dc:creator>Addy Osmani</dc:creator>
-<category>Playbooks</category>
-</item>
-<item>
-<title>Getting started with Claude Code mods</title>
-<link>https://claude.dev/blog/getting-started-with-claude-code-mods/</link>
-<guid isPermaLink="true">https://claude.dev/blog/getting-started-with-claude-code-mods/</guid>
-<pubDate>Thu, 01 Oct 2026 12:00:00 GMT</pubDate>
-<description>Mods are hooks that ship inside plugins and run inside your Claude Code session. Build one from an empty folder, then tour two larger mods.</description>
-<dc:creator>Addy Osmani</dc:creator>
-<category>Tutorials</category>
-</item>
-<item>
-<title>Building with Claude Sonnet 5.5</title>
-<link>https://claude.dev/blog/building-with-claude-sonnet-5-5/</link>
-<guid isPermaLink="true">https://claude.dev/blog/building-with-claude-sonnet-5-5/</guid>
-<pubDate>Mon, 28 Sep 2026 12:00:00 GMT</pubDate>
-<description>When to choose Sonnet over Opus, what it costs, and how to tune it.</description>
-<dc:creator>Addy Osmani</dc:creator>
-<category>Playbooks</category>
-</item>
-<item>
-<title>Automating eval design and hillclimbing with Claude</title>
-<link>https://claude.dev/blog/automating-eval-design-and-hillclimbing/</link>
-<guid isPermaLink="true">https://claude.dev/blog/automating-eval-design-and-hillclimbing/</guid>
-<pubDate>Mon, 28 Sep 2026 12:00:00 GMT</pubDate>
-<description>Principles for designing evals and hillclimbing against them without fooling yourself, and how the claude-api skill&apos;s build-eval and hillclimb commands put them to work.</description>
-<dc:creator>Lance Martin</dc:creator>
-<category>Playbooks</category>
-</item>
-<item>
-<title>What a task costs on Opus 5.5</title>
-<link>https://claude.dev/blog/what-a-task-costs-on-opus-5-5/</link>
-<guid isPermaLink="true">https://claude.dev/blog/what-a-task-costs-on-opus-5-5/</guid>
-<pubDate>Fri, 25 Sep 2026 12:00:00 GMT</pubDate>
-<description>The same token price can cost very different amounts per task. Learn what Claude Code tasks cost on Opus 5.5 and which settings change the bill.</description>
-<dc:creator>Addy Osmani</dc:creator>
-<category>Playbooks</category>
-</item>
-<item>
-<title>Using Claude Code: Spending your effort</title>
-<link>https://claude.dev/blog/spending-your-effort/</link>
-<guid isPermaLink="true">https://claude.dev/blog/spending-your-effort/</guid>
-<pubDate>Fri, 25 Sep 2026 12:00:00 GMT</pubDate>
-<description>What effort really is and when to use which level in Claude Code, from my own tests of three builds and a deep dive into Terminal-Bench 3.0 on Opus 5.5 and
+<description>The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth invented garden post runs long. The eighth inve

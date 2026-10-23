@@ -39,7 +39,7 @@ function fetcher(
 }
 
 describe("consumer additional acceptance", () => {
-  test("redelivering a leased feed stores a saved fixture only once and retains the polling URL", async () => {
+  test("redelivering a leased feed stores a synthetic fixture only once and retains the polling URL", async () => {
     await seed()
     let calls = 0
     const fetch: SafeFetch = async (...args) => {

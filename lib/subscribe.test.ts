@@ -415,7 +415,7 @@ describe("subscribe to a new feed", () => {
     const feed = await db.feed.findUniqueOrThrow({
       where: { url: "https://claude.dev/rss.xml" },
     })
-    expect(feed).toMatchObject({ pluginId: null, title: "claude.dev Blog" })
+    expect(feed).toMatchObject({ pluginId: null, title: "Example Code Blog" })
     expect(await db.entry.count({ where: { feedId: feed.id } })).toBe(16)
   })
 
@@ -433,7 +433,7 @@ describe("subscribe to a new feed", () => {
     expect(result).toMatchObject({ ok: true, existed: false })
     expect(calls.map((c) => c.url)).toEqual([url])
     const feed = await db.feed.findUniqueOrThrow({ where: { url } })
-    expect(feed).toMatchObject({ pluginId: null, title: "LangChain Blog" })
+    expect(feed).toMatchObject({ pluginId: null, title: "Example Agents Blog" })
     const entries = await db.entry.findMany({ where: { feedId: feed.id } })
     expect(entries).toHaveLength(3)
     for (const entry of entries) {
@@ -457,12 +457,15 @@ describe("subscribe to a new feed", () => {
       expect(result).toMatchObject({ ok: true, existed: false })
       expect(calls.map((c) => c.url)).toEqual([url])
       const feed = await db.feed.findUniqueOrThrow({ where: { url } })
-      expect(feed).toMatchObject({ pluginId: null, title: "Node.js Blog" })
+      expect(feed).toMatchObject({
+        pluginId: null,
+        title: "Example Runtime Blog",
+      })
       const entries = await db.entry.findMany({ where: { feedId: feed.id } })
       expect(entries.map((e) => e.guid).sort()).toEqual([
-        "/blog/release/v24.22.1?1792579154786",
-        "/blog/release/v26.12.1?1792579160400",
-        "/blog/vulnerability/october-2026-security-releases?1792620000000",
+        "/blog/notice/sample-maintenance-notice?1792620000000",
+        "/blog/release/v8.4.1?1792579154786",
+        "/blog/release/v9.2.1?1792579160400",
       ])
       for (const entry of entries) {
         expect(entry.summary).toBeNull()
@@ -508,7 +511,7 @@ describe("subscribe to a new feed", () => {
 
   describe("cursor-blog through the registered plugin", () => {
     const LIST = "https://cursor.com/blog"
-    const saved: Record<string, string> = {
+    const fixtures: Record<string, string> = {
       [LIST]: fixture("cursor-blog.html"),
       [`${LIST}/projects`]: readFileSync(
         "test/fixtures/cursor-blog/projects.html",
@@ -519,12 +522,12 @@ describe("subscribe to a new feed", () => {
         "utf8"
       ),
     }
-    // Saved pages answer; the other posts are skipped as 404s.
+    // Fixture pages answer; the other posts are skipped as 404s.
     const fetch: SafeFetch = async (url) => ({
-      status: saved[url] === undefined ? 404 : 200,
+      status: fixtures[url] === undefined ? 404 : 200,
       url,
       headers: new Headers(),
-      text: saved[url] ?? "",
+      text: fixtures[url] ?? "",
       kind: "unknown",
     })
 
@@ -543,8 +546,8 @@ describe("subscribe to a new feed", () => {
         orderBy: { guid: "asc" },
       })
       expect(entries.map((e) => [e.guid, e.title])).toEqual([
-        [`${LIST}/git-at-any-scale`, "Git at any scale"],
-        [`${LIST}/projects`, "Introducing Projects"],
+        [`${LIST}/git-at-any-scale`, "Rope knots at any scale"],
+        [`${LIST}/projects`, "Weekend projects: a pottery wheel"],
       ])
       expect(await db.subscription.count({ where: { feedId: feed.id } })).toBe(
         1
@@ -572,7 +575,7 @@ describe("subscribe to a new feed", () => {
         status: url === LIST ? 200 : 404,
         url,
         headers: new Headers(),
-        text: url === LIST ? saved[LIST] : "",
+        text: url === LIST ? fixtures[LIST] : "",
         kind: "unknown",
       })
       expect(await fetchForAdd(LIST, { fetch: listOnly })).toEqual({
@@ -584,14 +587,14 @@ describe("subscribe to a new feed", () => {
 
   describe("the Anthropic built-in sources", () => {
     const ORIGIN = "https://www.anthropic.com"
-    const saved = (dir: string, pages: Record<string, string>) =>
+    const fixtures = (dir: string, pages: Record<string, string>) =>
       Object.fromEntries(
         Object.entries(pages).map(([url, file]) => [
           url,
           readFileSync(`test/fixtures/${dir}/${file}.html`, "utf8"),
         ])
       )
-    // Saved pages answer; the other posts are skipped as 404s.
+    // Fixture pages answer; the other posts are skipped as 404s.
     const fetchFrom =
       (pages: Record<string, string>): SafeFetch =>
       async (url) => ({
@@ -607,7 +610,7 @@ describe("subscribe to a new feed", () => {
         source: "anthropic-engineering",
         title: "Anthropic engineering",
         list: `${ORIGIN}/engineering`,
-        pages: saved("anthropic-engineering", {
+        pages: fixtures("anthropic-engineering", {
           [`${ORIGIN}/engineering`]: "list",
           [`${ORIGIN}/research/redesigning-source-control`]:
             "redesigning-source-control",
@@ -622,7 +625,7 @@ describe("subscribe to a new feed", () => {
         source: "anthropic-news",
         title: "Anthropic news",
         list: `${ORIGIN}/news`,
-        pages: saved("anthropic-news", {
+        pages: fixtures("anthropic-news", {
           [`${ORIGIN}/news`]: "list",
           [`${ORIGIN}/claude-opus-5-5`]: "claude-opus-5-5",
           [`${ORIGIN}/news/cyber-verification-program`]:
@@ -637,7 +640,7 @@ describe("subscribe to a new feed", () => {
         source: "bytes",
         title: "Bytes",
         list: "https://bytes.dev/archives",
-        pages: saved("bytes", {
+        pages: fixtures("bytes", {
           "https://bytes.dev/archives": "archives",
           "https://bytes.dev/archives/531": "531",
         }),
@@ -647,7 +650,7 @@ describe("subscribe to a new feed", () => {
         source: "firefox-releases",
         title: "Firefox release notes",
         list: "https://www.firefox.com/en-US/releases/",
-        pages: saved("firefox-releases", {
+        pages: fixtures("firefox-releases", {
           "https://www.firefox.com/en-US/releases/": "releases",
           "https://www.firefox.com/firefox/158.0/releasenotes/": "158.0",
         }),

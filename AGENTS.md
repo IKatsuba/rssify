@@ -96,9 +96,13 @@ bun --env-file=.env.local scripts/refresh.ts              # one refresh cycle
 
 - Colocated `*.test.ts`. `test/db.ts` (preloaded by `bunfig.toml`) only
   accepts a local `rssify_test` database and truncates tables between tests.
-- Tests never reach the live network, Neon, Vercel or a real queue: feeds
-  are fixtures under `test/fixtures/`, the queue is the `fanOut(enqueue)`
-  seam, safe-fetch tests use 127.0.0.1 sockets.
+- Tests never reach the live network, Neon, Vercel or a real queue: use
+  synthetic fixtures under `test/fixtures/`, the `fanOut(enqueue)` queue
+  seam and 127.0.0.1 sockets for safe-fetch.
+- Write fixtures by hand with invented content and example domains,
+  keeping only the structure the code reads; retain plugin canonical
+  hosts only where a test needs them. Never save live pages as fixtures.
+  Keep each fixture directory's README to one line saying it is synthetic.
 - `.well-known` route tests live in `lib/well-known*.test.ts` because Bun
   skips dot-directories.
 

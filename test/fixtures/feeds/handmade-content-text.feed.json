@@ -1,11 +1,11 @@
 {
   "version": "https://jsonfeed.org/version/1.1",
   "title": "Plain <text> feed",
-  "home_page_url": "https://ex.com/",
+  "home_page_url": "https://example.com/",
   "items": [
     {
       "id": "1",
-      "url": "https://ex.com/1",
+      "url": "https://example.com/1",
       "title": "Use <tag> & more",
       "content_text": "Use the <tag> element & <script>alert(1)</script>",
       "summary": "About <tag>",

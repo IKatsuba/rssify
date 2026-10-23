@@ -18,21 +18,21 @@ const post = (slug: string) => `https://cursor.com/blog/${slug}`
 
 // The list page's own posts, in document order (measured on the fixture).
 const LIST_POSTS = [
-  "joining-spacex",
+  "first-note",
   "git-at-any-scale",
-  "improved-token-efficiency",
-  "rollouts-and-security-reviewer",
+  "tea-kettles",
+  "paper-boats",
   "projects",
   "self-hosted-machines",
-  "firetiger",
-  "aiuc-1",
-  "builds",
-  "grok-4-6",
-  "how-cursor-router-works",
-  "navan",
-  "grab",
-  "basis",
-  "nokia",
+  "chalk-maps",
+  "rain-gauges",
+  "kite-strings",
+  "sand-timers",
+  "tide-tables",
+  "quilt-shop",
+  "ferry-line",
+  "orchard-co",
+  "lamp-works",
 ]
 
 type Answer = { status?: number; text?: string; headers?: HeadersInit } | Error
@@ -85,7 +85,7 @@ function run(
   })
 }
 
-const realPosts = {
+const fixturePages = {
   [LIST]: { text: fixture("feeds/cursor-blog.html") },
   [post("projects")]: { text: fixture("cursor-blog/projects.html") },
   [post("git-at-any-scale")]: {
@@ -108,12 +108,12 @@ describe("cursorBlog", () => {
     }
   })
 
-  test("reads posts from the saved list and post pages", async () => {
+  test("reads posts from the fixture list and post pages", async () => {
     const known = LIST_POSTS.filter(
       (slug) =>
         !["projects", "git-at-any-scale", "self-hosted-machines"].includes(slug)
     ).map(post)
-    const s = site(realPosts)
+    const s = site(fixturePages)
     const entries = await run(s.fetch, known)
 
     expect(entries.map((e) => e.url)).toEqual([
@@ -124,24 +124,24 @@ describe("cursorBlog", () => {
     const [git, projects, machines] = entries
     expect(projects).toMatchObject({
       guid: post("projects"),
-      title: "Introducing Projects",
+      title: "Weekend projects: a pottery wheel",
       summary:
-        "Projects lets you take on larger bodies of work with a coordinator that maintains context, delegates to subagents, and runs recurring work.",
+        "A pottery wheel, a bag of clay and three invented weekends of lopsided bowls.",
       publishedAt: new Date("2026-09-10T12:00:00.000Z"),
       author: null,
     })
-    expect(projects.contentHtml).toContain("launching Projects in Cursor")
-    expect(machines.title).toBe("Run cloud agents on machines you manage")
+    expect(projects.contentHtml).toContain("starting a pottery wheel project")
+    expect(machines.title).toBe("Bird feeders on self-hosted posts")
     expect(machines.publishedAt).toEqual(new Date("2026-09-02T12:00:00.000Z"))
     // No meta description: the summary comes from the content, as a parsed
     // feed's entry without one would.
-    expect(git.title).toBe("Git at any scale")
-    expect(git.summary).toStartWith("Hosting Git repositories at scale")
+    expect(git.title).toBe("Rope knots at any scale")
+    expect(git.summary).toStartWith("Tying knots in thick rope")
     expect(git.contentHtml).not.toContain("<script")
   })
 
   test("drops off-site, non-blog and duplicate links, keeping document order", async () => {
-    const s = site({ [LIST]: realPosts[LIST] })
+    const s = site({ [LIST]: fixturePages[LIST] })
     const asked: string[][] = []
     await cursorBlog.fetchEntries({
       url: LIST,

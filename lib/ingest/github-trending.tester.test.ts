@@ -59,8 +59,8 @@ describe("github-trending independent integration coverage", () => {
     expect(original).toHaveLength(17)
     // Both casing and stats change, but the repository identity does not.
     const changed = first
-      .replaceAll("/affaan-m/ECC", "/AFFAAN-M/ecc")
-      .replaceAll("38,199", "99,999")
+      .replaceAll("/harbour-lab/TIDE", "/HARBOUR-LAB/tide")
+      .replaceAll("41,207", "99,999")
     for (const offset of [HOUR, 2 * HOUR]) {
       expect(
         await refreshFeed(stored.id, {

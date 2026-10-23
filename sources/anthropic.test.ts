@@ -90,15 +90,15 @@ describe("anthropicEngineering", () => {
     expect(listed).toHaveLength(24)
     expect(listed.slice(0, 4)).toEqual([
       research("redesigning-source-control"),
-      research("how-we-contain-claude"),
-      research("april-23-postmortem"),
+      research("painting-the-boathouse"),
+      research("april-storm-notes"),
       research("managed-agents"),
     ])
-    expect(listed.at(-1)).toBe(research("claude-think-tool"))
+    expect(listed.at(-1)).toBe(research("thinking-about-lamps"))
     expect(new Set(listed).size).toBe(listed.length)
   })
 
-  test("reads the saved posts: title, date and the whole body", async () => {
+  test("reads the fixture posts: title, date and the whole body", async () => {
     const wanted = [
       research("redesigning-source-control"),
       research("managed-agents"),
@@ -118,32 +118,28 @@ describe("anthropicEngineering", () => {
     expect(git).toMatchObject({
       guid: wanted[0],
       url: wanted[0],
-      title: "Redesigning source control at Anthropic",
+      title: "Redesigning a lighthouse control room",
       publishedAt: new Date("2026-10-13T00:00:00.000Z"),
       author: null,
     })
-    expect(git.summary).toStartWith("As our merges per day grew")
+    expect(git.summary).toStartWith("As the lamp grew brighter each winter")
     expect(git.contentHtml).toContain(
-      "At Anthropic, coding is no longer the bottleneck"
+      "At the sample lighthouse, the lamp is no longer the hard part"
     )
-    expect(git.contentHtml).toContain("spent nearly two decades scaling")
+    expect(git.contentHtml).toContain("spent nearly two decades oiling")
 
     expect(agents).toMatchObject({
       guid: wanted[1],
-      title: "Scaling Managed Agents with stable interfaces",
+      title: "Keeping bees on a rooftop",
       publishedAt: new Date("2026-04-08T00:00:00.000Z"),
     })
-    expect(agents.contentHtml).toContain(
-      "Get started with Claude Managed Agents"
-    )
-    expect(agents.contentHtml).toContain(
-      "number or location of brains or hands"
-    )
+    expect(agents.contentHtml).toContain("Start your own rooftop hive")
+    expect(agents.contentHtml).toContain("However many hives sit on the roof")
 
     for (const entry of entries) {
       // Nav and footer are outside the body.
-      expect(entry.contentHtml).not.toContain("Try Claude")
-      expect(entry.contentHtml).not.toContain("Terms and policies")
+      expect(entry.contentHtml).not.toContain("Try the sample app")
+      expect(entry.contentHtml).not.toContain("Invented terms and notices")
       expect(entry.contentHtml).not.toContain("<script")
     }
   })
@@ -164,16 +160,18 @@ describe("anthropicEngineering", () => {
     )
     const byUrl = Object.fromEntries(entries.map((e) => [e.url, e]))
 
-    expect(byUrl[generic].title).toBe("Harness design for long-running apps")
+    expect(byUrl[generic].title).toBe("Designing a harness for sled dogs")
     expect(byUrl[generic].summary).toStartWith(
-      "Over the past several months I’ve been working on two interconnected problems"
+      "Over the past few winters we have been sewing harnesses"
     )
     // Cut like every other summary.
     expect(byUrl[generic].summary!.length).toBeLessThanOrEqual(300)
-    expect(byUrl[generic].summary).not.toContain("AI safety and research")
+    expect(byUrl[generic].summary).not.toContain(
+      "lighthouses, bees and sled dogs"
+    )
 
     expect(byUrl[normal].summary).toBe(
-      "Harnesses encode assumptions that go stale as models improve. See how Managed Agents is built around interfaces that stay stable as harnesses change."
+      "Rooftop hives need shade, water and a calm keeper. See how our invented hives stay steady through the seasons."
     )
   })
 
@@ -193,7 +191,7 @@ describe("anthropicEngineering", () => {
       [url]
     )
     expect(entries[0].summary).toBe(
-      "Anthropic is an AI safety and research company that's working to build reliable, interpretable, and steerable AI systems."
+      "An invented company that writes sample notes about lighthouses, bees and sled dogs."
     )
   })
 
@@ -310,15 +308,15 @@ describe("anthropicNews", () => {
     expect(listed).toHaveLength(24)
     expect(listed.slice(0, 6)).toEqual([
       `${ORIGIN}/claude-opus-5-5`,
-      news("public-benefit-fund"),
+      news("community-garden-fund"),
       news("cyber-verification-program"),
-      `${ORIGIN}/claude-haiku-5-5`,
-      `${ORIGIN}/claude-sonnet-5-5`,
-      news("christopher-stubbs-joins-long-term-benefit-trust"),
+      `${ORIGIN}/sample-kite-2`,
+      `${ORIGIN}/sample-boat-3`,
+      news("new-gardener-joins"),
     ])
     expect(listed).toContain(`${ORIGIN}/features/ebola-response`)
-    expect(listed).toContain(`${ORIGIN}/claude-fable-and-mythos-5-1`)
-    expect(listed.at(-1)).toBe(news("wellbeing-research-grants"))
+    expect(listed).toContain(`${ORIGIN}/sample-lamp-and-lantern-1`)
+    expect(listed.at(-1)).toBe(news("orchard-research-grants"))
     expect(new Set(listed).size).toBe(listed.length)
     for (const topic of ["announcements", "policy", "product"]) {
       expect(listed).not.toContain(news(topic))
@@ -343,38 +341,40 @@ describe("anthropicNews", () => {
 
     expect(byUrl[post]).toMatchObject({
       guid: post,
-      title: "Expanding the Cyber Verification Program",
+      title: "Expanding the tide watch",
       publishedAt: new Date("2026-10-06T00:00:00.000Z"),
     })
-    expect(byUrl[post].summary).toStartWith("We’re launching a new, expanded")
-    expect(byUrl[post].contentHtml).toContain(
-      "launching a new, expanded version of our Cyber Verification Program"
+    expect(byUrl[post].summary).toStartWith(
+      "We’re launching a new, expanded tide watch"
     )
     expect(byUrl[post].contentHtml).toContain(
-      "Full details on each tier can be found in our"
+      "launching a new, expanded version of our tide watch"
+    )
+    expect(byUrl[post].contentHtml).toContain(
+      "Full details on each shift can be found in our"
     )
 
     // No published time: the list tile's date.
     expect(byUrl[launch]).toMatchObject({
-      title: "Introducing Claude Opus 5.5",
+      title: "Introducing the Sample Lamp 5.5",
       publishedAt: new Date("2026-09-22T00:00:00.000Z"),
     })
     expect(byUrl[launch].contentHtml).toContain(
-      "the first model in our new Claude 5.5 family"
+      "the first lamp in our new invented 5.5 range"
     )
-    expect(byUrl[launch].contentHtml).toContain("migration guide for details.")
+    expect(byUrl[launch].contentHtml).toContain("wick guide for details.")
 
     // No body and no published time: summary only, dated by its row.
     expect(byUrl[feature]).toMatchObject({
-      title: "The Situation Report",
+      title: "The Weather Report",
       publishedAt: new Date("2026-09-21T00:00:00.000Z"),
     })
-    expect(byUrl[feature].summary).toStartWith("A rare Ebola strain")
+    expect(byUrl[feature].summary).toStartWith("A rare autumn storm")
     expect(byUrl[feature].contentHtml).toBe(byUrl[feature].summary)
 
     for (const entry of entries) {
-      expect(entry.contentHtml).not.toContain("Try Claude")
-      expect(entry.contentHtml).not.toContain("Terms and policies")
+      expect(entry.contentHtml).not.toContain("Try the sample app")
+      expect(entry.contentHtml).not.toContain("Invented terms and notices")
       expect(entry.contentHtml).not.toContain("<script")
     }
   })

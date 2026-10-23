@@ -98,7 +98,7 @@ describe("refreshFeed independent acceptance coverage", () => {
     expect(await db.entry.count()).toBe(1)
   })
 
-  test("stores the eight partial items returned from the saved truncated RSS", async () => {
+  test("stores the eight partial items returned from the synthetic truncated RSS", async () => {
     await seed()
     expect(
       await refreshFeed("tester-feed", {
@@ -110,7 +110,7 @@ describe("refreshFeed independent acceptance coverage", () => {
     expect((await row()).lastSuccessAt).toEqual(NOW)
   })
 
-  test("records a parse failure for the saved truncated Atom", async () => {
+  test("records a parse failure for the synthetic truncated Atom", async () => {
     await seed()
     expect(
       await refreshFeed("tester-feed", {

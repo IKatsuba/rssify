@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Notes on &lt;tag&gt;</title>
-  <link href="https://ex.com/" rel="alternate"/>
+  <link href="https://example.com/" rel="alternate"/>
   <id>urn:example:text</id>
   <updated>2026-10-01T00:00:00Z</updated>
   <entry>

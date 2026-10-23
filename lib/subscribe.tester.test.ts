@@ -122,7 +122,7 @@ describe("subscribe tester acceptance edges", () => {
     await assertEmpty()
   }, 20_000)
 
-  test("saved truncated Atom rejects without writes; truncated RSS keeps partial entries", async () => {
+  test("synthetic truncated Atom rejects without writes; truncated RSS keeps partial entries", async () => {
     expect(
       await subscribe(
         "tester",
@@ -147,7 +147,7 @@ describe("subscribe tester acceptance edges", () => {
     expect(await db.entry.count()).toBe(8)
   })
 
-  test("an empty saved feed succeeds and repeated GUIDs keep their first version", async () => {
+  test("an empty synthetic feed succeeds and repeated GUIDs keep their first version", async () => {
     const empty = JSON.stringify({ ...fixture, items: [] })
     expect(
       await subscribe(

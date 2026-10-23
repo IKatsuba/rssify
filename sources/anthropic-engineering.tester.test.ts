@@ -50,7 +50,7 @@ describe("Anthropic engineering tester regressions", () => {
     }
   )
 
-  test("saved list backfill fetches ten posts and forwards the deadline", async () => {
+  test("synthetic list backfill fetches ten posts and forwards the deadline", async () => {
     const calls: string[] = []
     const deadline = new AbortController().signal
     const entries = await anthropicEngineering.fetchEntries({

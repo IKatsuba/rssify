@@ -110,7 +110,7 @@ describe("Bytes tester regressions", () => {
     expect(calls).toEqual([LIST])
   })
 
-  test("saved archive fetches ten issues, forwards deadline, then skips known issues", async () => {
+  test("synthetic archive fetches ten issues, forwards deadline, then skips known issues", async () => {
     const calls: string[] = []
     const deadline = new AbortController().signal
     const fetch: SafeFetch = async (url, options) => {
