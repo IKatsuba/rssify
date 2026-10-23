@@ -142,7 +142,7 @@ describe("firefox-releases", () => {
       "<p>You can now fill in forms faster in <a"
     )
     expect(major.contentHtml).toContain(
-      `<li>Yeet: <a href="https://bugzilla.mozilla.org/1973441"`
+      `<li>Kit Example: <a href="https://bugs.example/1973441"`
     )
     // The section headings stay in the body and out of the summary.
     expect(major.summary).toStartWith("You can now fill in forms faster")
@@ -154,12 +154,12 @@ describe("firefox-releases", () => {
       publishedAt: new Date("2026-10-20T00:00:00.000Z"),
     })
     expect(dot.summary).toStartWith(
-      "Mozilla blocked compromised eMudhra intermediate certificates"
+      "Invented lanterns stopped flickering after a sample update"
     )
     expect(dot.contentHtml).toContain(
-      "Mozilla blocked compromised eMudhra intermediate certificates"
+      "Invented lanterns stopped flickering after a sample update"
     )
-    expect(dot.contentHtml).toContain("mfsa2026-111")
+    expect(dot.contentHtml).toContain("advisory-2026-111")
 
     for (const entry of [major, dot]) {
       // Sidebar, pagination, nav and footer are outside the notes.
