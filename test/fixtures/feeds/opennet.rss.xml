@@ -5,24 +5,24 @@
     <description>Вымышленные новости для тестов разбора</description>
     <link>https://novosti.example/opennews/</link>
 <item>
-    <title>Выпуск вымышленной среды Пример 2.0</title>
+    <title>Открыт вымышленный читальный зал Пример</title>
     <link>https://novosti.example/opennews/art.shtml?num=101</link>
     <pubDate>Wed, 21 Oct 2026 22:39:07 +0300</pubDate>
-    <description>Опубликован выпуск вымышленной среды Пример 2.0, которая работает поверх нескольких придуманных композитных серверов. Это первый выпуск после переименования проекта. Новое имя короче и проще. Среда развивает набор компонентов рабочего стола: панель задач, переключатель столов, меню приложений и настройки. Оформление следует придуманной концепции.</description>
+    <description>В придуманном городе открылся читальный зал с длинными столами, лампами и тихими стульями. На полках стоят книги о садах, реках и старых мостах. По вечерам здесь читают вслух, а по утрам поливают цветы на подоконниках. Вход свободный, чай бесплатный, кот спит у батареи. Этот вымышленный текст нужен, чтобы описание было длиннее трёхсот символов.</description>
     <guid>https://novosti.example/opennews/art.shtml?num=101</guid>
 </item>
 <item>
-    <title>Раскрыты детали вымышленной уязвимости</title>
+    <title>В парке посадили вымышленные липы</title>
     <link>https://novosti.example/opennews/art.shtml?num=100</link>
     <pubDate>Wed, 21 Oct 2026 20:10:00 +0300</pubDate>
-    <description>Придуманная уязвимость исправлена в обновлении.</description>
+    <description>Двадцать придуманных лип выросли вдоль аллеи.</description>
     <guid>https://novosti.example/opennews/art.shtml?num=100</guid>
 </item>
 <item>
-    <title>Доступен вымышленный компилятор 1.0</title>
+    <title>Пекарня примера испекла круглый хлеб</title>
     <link>https://novosti.example/opennews/art.shtml?num=99</link>
     <pubDate>Tue, 20 Oct 2026 09:00:00 +0300</pubDate>
-    <description>Первый стабильный выпуск придуманного компилятора.</description>
+    <description>Хлеб получился вымышленным, но тёплым.</description>
     <guid>https://novosti.example/opennews/art.shtml?num=99</guid>
 </item>
 </channel>

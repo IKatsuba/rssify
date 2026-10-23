@@ -34,9 +34,9 @@ describe("parseFeed: saved real feeds", () => {
       siteUrl: "https://code.example/",
       count: 16,
       first: {
-        guid: "https://code.example/blog/how-the-sample-team-reviews-code/",
-        url: "https://code.example/blog/how-the-sample-team-reviews-code/",
-        title: "How the sample team reviews code",
+        guid: "https://code.example/blog/keeping-a-garden-log/",
+        url: "https://code.example/blog/keeping-a-garden-log/",
+        title: "Keeping a garden log through the seasons",
         author: "Ada Example, Bo Sample, and Cy Placeholder",
         publishedAt: "2026-10-15T12:00:00.000Z",
       },
@@ -48,9 +48,9 @@ describe("parseFeed: saved real feeds", () => {
       siteUrl: "https://app.example/changelog",
       count: 3,
       first: {
-        guid: "https://app.example/changelog/shared-boards",
-        url: "https://app.example/changelog/shared-boards",
-        title: "Shared Boards and Faster Workspaces",
+        guid: "https://app.example/changelog/spoke-sets",
+        url: "https://app.example/changelog/spoke-sets",
+        title: "Spoke Sets and a Weekend Truing Bench",
         author: null,
         publishedAt: "2026-10-16T00:00:00.000Z",
       },
@@ -63,9 +63,9 @@ describe("parseFeed: saved real feeds", () => {
       siteUrl: "https://links.example/",
       count: 3,
       first: {
-        guid: "https://one.example/blog/2026/10/21/todays-sample-release/",
-        url: "https://one.example/blog/2026/10/21/todays-sample-release/",
-        title: "Today's sample release, and how we're hardening it",
+        guid: "https://one.example/2026/10/21/favourite-knots/",
+        url: "https://one.example/2026/10/21/favourite-knots/",
+        title: "Ask the board: what's your favourite knot, and why it's yours",
         author: null,
         publishedAt: "2026-10-21T15:48:56.000Z",
       },
@@ -95,7 +95,7 @@ describe("parseFeed: saved real feeds", () => {
       first: {
         guid: "https://novosti.example/opennews/art.shtml?num=101",
         url: "https://novosti.example/opennews/art.shtml?num=101",
-        title: "Выпуск вымышленной среды Пример 2.0",
+        title: "Открыт вымышленный читальный зал Пример",
         author: null,
         publishedAt: "2026-10-21T19:39:07.000Z",
       },
@@ -124,7 +124,7 @@ describe("parseFeed: saved real feeds", () => {
       first: {
         guid: "https://doodle.example/104/",
         url: "https://doodle.example/104/",
-        title: "Patch Day",
+        title: "Teapot",
         author: null,
         publishedAt: "2026-10-21T00:00:00.000Z",
       },
@@ -136,9 +136,9 @@ describe("parseFeed: saved real feeds", () => {
       siteUrl: "https://jsonfeed.example/",
       count: 2,
       first: {
-        guid: "http://mirror.example/2020/08/07/sample-version.html",
-        url: "https://jsonfeed.example/2020/08/07/sample-version.html",
-        title: "Sample format version 1.1",
+        guid: "http://mirror.example/2020/08/07/repainting-the-shed.html",
+        url: "https://jsonfeed.example/2020/08/07/repainting-the-shed.html",
+        title: "Repainting the shed",
         author: null,
         publishedAt: "2020-08-07T16:44:36.000Z",
       },
@@ -188,10 +188,10 @@ describe("parseFeed: saved real feeds", () => {
       "https://app.example/changelog/rss.xml"
     )
     expect(feed.entries[0].contentHtml).toStartWith(
-      '<h2>Boards from workers</h2>\n<p><a href="https://app.example/docs/workers" rel="noopener noreferrer nofollow" target="_blank">Workers</a>'
+      '<h2>Spoke sets online</h2>\n<p><a href="https://app.example/docs/spokes" rel="noopener noreferrer nofollow" target="_blank">Spoke sets</a>'
     )
     expect(feed.entries[0].summary).toStartWith(
-      "Workers can now build and share boards."
+      "Riders can now order spoke sets online."
     )
   })
 })
@@ -240,7 +240,7 @@ describe("parseFeed: failures", () => {
     )
     expect(feed.entries).toHaveLength(8)
     expect(feed.entries[0].guid).toBe(
-      "https://code.example/blog/how-the-sample-team-reviews-code/"
+      "https://code.example/blog/keeping-a-garden-log/"
     )
   })
 

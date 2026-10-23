@@ -6,20 +6,20 @@
 	"feed_url": "https://jsonfeed.example/feed.json",
 	"items": [
 			{
-				"id": "http://mirror.example/2020/08/07/sample-version.html",
-				"title": "Sample format version 1.1",
-				"content_html": "<p>We&rsquo;ve updated the invented spec to <a href=\"https://jsonfeed.example/version/1.1\">version 1.1</a>. It adds <code>authors</code> and <code>language</code>.</p>\n",
+				"id": "http://mirror.example/2020/08/07/repainting-the-shed.html",
+				"title": "Repainting the shed",
+				"content_html": "<p>We&rsquo;ve repainted the sample shed <a href=\"https://jsonfeed.example/colours/blue\">blue</a>. It now has <code>shelves</code> and <code>hooks</code>.</p>\n",
 				
 				"date_published": "2020-08-07T11:44:36-05:00",
-				"url": "https://jsonfeed.example/2020/08/07/sample-version.html"
+				"url": "https://jsonfeed.example/2020/08/07/repainting-the-shed.html"
 			},
 			{
-				"id": "http://mirror.example/2017/05/17/announcing-sample.html",
-				"title": "Announcing the sample format",
-				"content_html": "\n\n<p>An invented format, similar to <a href=\"http://rss.example/\">RSS</a> but in JSON.</p>\n",
+				"id": "http://mirror.example/2017/05/17/building-the-shed.html",
+				"title": "Building the shed",
+				"content_html": "\n\n<p>An invented shed, built from <a href=\"http://wood.example/\">planks</a> over one long weekend.</p>\n",
 				
 				"date_published": "2017-05-17T08:02:12-07:00",
-				"url": "https://jsonfeed.example/2017/05/17/announcing-sample.html"
+				"url": "https://jsonfeed.example/2017/05/17/building-the-shed.html"
 			}
 	]
 }

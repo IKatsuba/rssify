@@ -26,18 +26,18 @@
          "content_html" : "\n<p>All your invented widgets in one place.</p>\n\n<p class=\"x-hide\" style=\"padding-top: 1.5em;\"><em>Link: <strong><a href=\"https://widgetly.example/\">widgetly.example/</a></strong></em></p>\n"
       },
       {
-         "title" : "On invented essays",
+         "title" : "On hedges",
          "date_published" : "2026-10-20T01:12:26Z",
          "date_modified" : "2026-10-20T01:40:55Z",
-         "id" : "https://fireside.example/linked/2026/10/19/essays",
-         "url" : "https://fireside.example/linked/2026/10/19/essays",
-         "external_url" : "https://essays.example/1",
+         "id" : "https://fireside.example/linked/2026/10/19/hedges",
+         "url" : "https://fireside.example/linked/2026/10/19/hedges",
+         "external_url" : "https://hedges.example/1",
          "authors" : [
             {
                "name" : "Pat Example"
             }
          ],
-         "content_html" : "\n<p>A sample author, in a short essay:</p>\n\n<blockquote>\n  <p>It is a basic principle of invented prose that a quote\ncan wrap across lines. [...]</p>\n</blockquote>\n"
+         "content_html" : "\n<p>A neighbour, on hedges:</p>\n\n<blockquote>\n  <p>Hedges grow whether or not\nanyone trims them. [...]</p>\n</blockquote>\n"
       },
       {
          "title" : "★ A Longer Invented Column",

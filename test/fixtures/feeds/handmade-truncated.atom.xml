@@ -12,10 +12,10 @@
     <title>v3.1.0-canary.4</title>
     <content type="html">&lt;h3&gt;Core Changes&lt;/h3&gt;
 &lt;ul&gt;
-&lt;li&gt;Defer the invented refresh until the router is ready: &lt;a class=&quot;issue-link&quot; data-hovercard-type=&quot;pull_request&quot; href=&quot;https://code.example/sample/kit/pull/42&quot;&gt;#42&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;Add a sample widget option: &lt;a class=&quot;issue-link&quot; data-hovercard-type=&quot;pull_request&quot; href=&quot;https://code.example/sample/kit/pull/42&quot;&gt;#42&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-&lt;h3&gt;Credits&lt;/h3&gt;
-&lt;p&gt;Thanks to &lt;a class=&quot;user-mention&quot; href=&quot;https://code.example/sample-dev&quot;&gt;@sample-dev&lt;/a&gt; for helping!&lt;/p&gt;</content>
+&lt;h3&gt;Contributors&lt;/h3&gt;
+&lt;p&gt;&lt;a class=&quot;user-mention&quot; href=&quot;https://code.example/sample-dev&quot;&gt;@sample-dev&lt;/a&gt;&lt;/p&gt;</content>
     <author>
       <name>release-bot[bot]</name>
     </author>
@@ -24,4 +24,4 @@
   <entry>
     <id>tag:code.example,2008:Repository/1001/v3.1.0-canary.3</id>
     <updated>2026-10-19T10:00:00Z</updated>
-    <link rel="alternate" type="text/html" href="https://c
+    <link rel="alternate" type="text/html" href="https://cod

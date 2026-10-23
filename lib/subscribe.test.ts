@@ -463,9 +463,9 @@ describe("subscribe to a new feed", () => {
       })
       const entries = await db.entry.findMany({ where: { feedId: feed.id } })
       expect(entries.map((e) => e.guid).sort()).toEqual([
+        "/blog/notice/sample-maintenance-notice?1792620000000",
         "/blog/release/v8.4.1?1792579154786",
         "/blog/release/v9.2.1?1792579160400",
-        "/blog/vulnerability/october-2026-security-releases?1792620000000",
       ])
       for (const entry of entries) {
         expect(entry.summary).toBeNull()
