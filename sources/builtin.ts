@@ -48,6 +48,18 @@ export const builtinSources = [
     url: "https://nodejs.org/en/feed/blog.xml",
     note: "nodejs.org — the Node.js blog’s own feed",
   },
+  {
+    id: "perplexity-developers",
+    title: "Perplexity developers",
+    url: "https://www.perplexity.ai/hub/blog/category/developers",
+    note: "www.perplexity.ai — no feed of its own",
+  },
+  {
+    id: "perplexity-research",
+    title: "Perplexity research",
+    url: "https://www.perplexity.ai/hub/blog/category/research",
+    note: "www.perplexity.ai — no feed of its own",
+  },
 ] as const
 
 export type BuiltinSource = (typeof builtinSources)[number]
