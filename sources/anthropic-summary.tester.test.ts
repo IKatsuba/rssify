@@ -96,6 +96,6 @@ describe("Anthropic summary tester regressions", () => {
       release()
     }
     const [entry] = await first
-    expect(entry.summary).toStartWith("Over the past several months")
+    expect(entry.summary).toStartWith("Over the past few winters")
   })
 })
