@@ -90,11 +90,11 @@ describe("anthropicEngineering", () => {
     expect(listed).toHaveLength(24)
     expect(listed.slice(0, 4)).toEqual([
       research("redesigning-source-control"),
-      research("how-we-contain-claude"),
-      research("april-23-postmortem"),
+      research("painting-the-boathouse"),
+      research("april-storm-notes"),
       research("managed-agents"),
     ])
-    expect(listed.at(-1)).toBe(research("claude-think-tool"))
+    expect(listed.at(-1)).toBe(research("thinking-about-lamps"))
     expect(new Set(listed).size).toBe(listed.length)
   })
 
@@ -118,32 +118,28 @@ describe("anthropicEngineering", () => {
     expect(git).toMatchObject({
       guid: wanted[0],
       url: wanted[0],
-      title: "Redesigning source control at Anthropic",
+      title: "Redesigning a lighthouse control room",
       publishedAt: new Date("2026-10-13T00:00:00.000Z"),
       author: null,
     })
-    expect(git.summary).toStartWith("As our merges per day grew")
+    expect(git.summary).toStartWith("As the lamp grew brighter each winter")
     expect(git.contentHtml).toContain(
-      "At Anthropic, coding is no longer the bottleneck"
+      "At the sample lighthouse, the lamp is no longer the hard part"
     )
-    expect(git.contentHtml).toContain("spent nearly two decades scaling")
+    expect(git.contentHtml).toContain("spent nearly two decades oiling")
 
     expect(agents).toMatchObject({
       guid: wanted[1],
-      title: "Scaling Managed Agents with stable interfaces",
+      title: "Keeping bees on a rooftop",
       publishedAt: new Date("2026-04-08T00:00:00.000Z"),
     })
-    expect(agents.contentHtml).toContain(
-      "Get started with Claude Managed Agents"
-    )
-    expect(agents.contentHtml).toContain(
-      "number or location of brains or hands"
-    )
+    expect(agents.contentHtml).toContain("Start your own rooftop hive")
+    expect(agents.contentHtml).toContain("However many hives sit on the roof")
 
     for (const entry of entries) {
       // Nav and footer are outside the body.
-      expect(entry.contentHtml).not.toContain("Try Claude")
-      expect(entry.contentHtml).not.toContain("Terms and policies")
+      expect(entry.contentHtml).not.toContain("Try the sample app")
+      expect(entry.contentHtml).not.toContain("Invented terms and notices")
       expect(entry.contentHtml).not.toContain("<script")
     }
   })
@@ -164,16 +160,18 @@ describe("anthropicEngineering", () => {
     )
     const byUrl = Object.fromEntries(entries.map((e) => [e.url, e]))
 
-    expect(byUrl[generic].title).toBe("Harness design for long-running apps")
+    expect(byUrl[generic].title).toBe("Designing a harness for sled dogs")
     expect(byUrl[generic].summary).toStartWith(
-      "Over the past several months I’ve been working on two interconnected problems"
+      "Over the past few winters we have been sewing harnesses"
     )
     // Cut like every other summary.
     expect(byUrl[generic].summary!.length).toBeLessThanOrEqual(300)
-    expect(byUrl[generic].summary).not.toContain("AI safety and research")
+    expect(byUrl[generic].summary).not.toContain(
+      "lighthouses, bees and sled dogs"
+    )
 
     expect(byUrl[normal].summary).toBe(
-      "Harnesses encode assumptions that go stale as models improve. See how Managed Agents is built around interfaces that stay stable as harnesses change."
+      "Rooftop hives need shade, water and a calm keeper. See how our invented hives stay steady through the seasons."
     )
   })
 
@@ -193,7 +191,7 @@ describe("anthropicEngineering", () => {
       [url]
     )
     expect(entries[0].summary).toBe(
-      "Anthropic is an AI safety and research company that's working to build reliable, interpretable, and steerable AI systems."
+      "An invented company that writes sample notes about lighthouses, bees and sled dogs."
     )
   })
 
