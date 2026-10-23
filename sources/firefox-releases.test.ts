@@ -139,13 +139,13 @@ describe("firefox-releases", () => {
       publishedAt: new Date("2026-10-13T00:00:00.000Z"),
     })
     expect(major.contentHtml).toContain(
-      "<p>You can now fill in forms faster in <a"
+      "<p>Lanterns on the porch can now be lit from the hall with <a"
     )
     expect(major.contentHtml).toContain(
       `<li>Kit Example: <a href="https://bugs.example/1973441"`
     )
     // The section headings stay in the body and out of the summary.
-    expect(major.summary).toStartWith("You can now fill in forms faster")
+    expect(major.summary).toStartWith("Lanterns on the porch can now be lit")
     expect(major.contentHtml).toMatch(/<h3>\s*<span>[^]*New/)
 
     expect(dot).toMatchObject({
@@ -154,17 +154,17 @@ describe("firefox-releases", () => {
       publishedAt: new Date("2026-10-20T00:00:00.000Z"),
     })
     expect(dot.summary).toStartWith(
-      "Invented lanterns stopped flickering after a sample update"
+      "Invented lanterns stopped flickering once the new wicks arrived"
     )
     expect(dot.contentHtml).toContain(
-      "Invented lanterns stopped flickering after a sample update"
+      "Invented lanterns stopped flickering once the new wicks arrived"
     )
     expect(dot.contentHtml).toContain("advisory-2026-111")
 
     for (const entry of [major, dot]) {
       // Sidebar, pagination, nav and footer are outside the notes.
-      expect(entry.contentHtml).not.toContain("Get the most recent version")
-      expect(entry.contentHtml).not.toContain("Get Involved")
+      expect(entry.contentHtml).not.toContain("Fetch the newest invented build")
+      expect(entry.contentHtml).not.toContain("Join the invented crew")
       expect(entry.contentHtml).not.toContain("Cookie")
       expect(entry.contentHtml).not.toContain("<script")
     }
