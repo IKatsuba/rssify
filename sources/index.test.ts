@@ -7,6 +7,7 @@ import { cursorBlog } from "./cursor-blog"
 import { firefoxReleases } from "./firefox-releases"
 import { githubTrending } from "./github-trending"
 import { pluginFor, plugins } from "./index"
+import { perplexityBlog } from "./perplexity-blog"
 import type { SourcePlugin } from "./types"
 
 const fake: SourcePlugin = {
@@ -27,6 +28,8 @@ describe("builtinSources", () => {
       "firefox-releases",
       "langchain-blog",
       "nodejs-blog",
+      "perplexity-developers",
+      "perplexity-research",
     ])
     const titles = builtinSources.map((s) => s.title)
     expect(titles).toEqual([...titles].sort((a, b) => a.localeCompare(b)))
@@ -48,6 +51,12 @@ describe("builtinSources", () => {
     expect(builtinSource("nodejs-blog")?.url).toBe(
       "https://nodejs.org/en/feed/blog.xml"
     )
+    expect(builtinSource("perplexity-developers")?.url).toBe(
+      "https://www.perplexity.ai/hub/blog/category/developers"
+    )
+    expect(builtinSource("perplexity-research")?.url).toBe(
+      "https://www.perplexity.ai/hub/blog/category/research"
+    )
     expect(builtinSource("nope")).toBeUndefined()
   })
 })
@@ -61,6 +70,7 @@ describe("pluginFor", () => {
       "cursor-blog": cursorBlog,
       "firefox-releases": firefoxReleases,
       "github-trending": githubTrending,
+      "perplexity-blog": perplexityBlog,
     })
     expect(pluginFor("https://cursor.com/blog")).toEqual({
       plugin: cursorBlog,
