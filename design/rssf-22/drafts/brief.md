@@ -8,10 +8,8 @@ current state of the code.
 
 ## Problem
 
-The owner's katsuba.fm OPML
-(`/Users/igorkatsuba/projects/ikatsuba/katsuba.fm/news512/sources/katsuba-fm.opml`)
-reads nine feeds through a private rsshub. rssify cannot subscribe to
-them:
+An OPML of tech news feeds reads nine feeds through a private rsshub.
+rssify cannot subscribe to them:
 
 | rsshub route | What it is |
 | --- | --- |

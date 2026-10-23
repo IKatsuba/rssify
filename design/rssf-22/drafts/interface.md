@@ -8,11 +8,6 @@ at add time; GitHub entries are shaped so the existing list row and
 entry page read well. Everything else (Settings, Admin, keys, `/api/v1`,
 MCP) stays as built, apart from one MCP description string.
 
-No captures: every change is a sentence, a list entry or a scroll
-container on an existing dialog, and a capture would need code changes
-to `sources/builtin.ts` first, which this team does not make. The ship
-team takes the captures listed in §6 when it builds.
-
 Where this draft depends on what ingest measures (`drafts/ingest.md`,
 not landed when this was written) or on state's plugin interface
 (`drafts/state.md`), it says so and gives the rule, not a guess.
@@ -327,16 +322,13 @@ stays importable from the client: its new `{owner}/{repo}` parse is a
 stay server components; GitHub content is server-sanitised HTML like
 any other.
 
-Captures for the ship team to take when it builds (local dev server,
-seeded data, headless browser):
+Check these states on a local dev server with seeded data:
 
-| State | Capture |
-| --- | --- |
-| dialog with eight sources, desktop / phone (list scrolls) / dark | `desktop-add.png`, `phone-add.png`, `dark-add.png` (replace v1's) |
-| `unsupported`, `no_discussions`, `rate_limited` under the field | `desktop-add-github-error.png` (one is enough; same `FieldError`) |
-| a discussions feed and a trending feed in the list | `desktop-github-list.png` |
-| a discussion and a trending entry | `desktop-github-entry.png`, `phone-github-entry.png` |
-| a GitHub feed failing (no token) | `desktop-github-failing.png` |
+- dialog with eight sources, desktop / phone (list scrolls) / dark.
+- `unsupported`, `no_discussions`, `rate_limited` under the field.
+- a discussions feed and a trending feed in the list.
+- a discussion and a trending entry.
+- a GitHub feed failing (no token).
 
 ## 7. Questions for the lead
 

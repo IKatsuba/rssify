@@ -117,7 +117,7 @@ Vercel), `ADMIN_EMAIL`, `REGISTRATION_ENABLED` (exactly `true` opens it),
 
 ## Deploy
 
-Vercel project `katsubadev/rssify`, production at https://rss.katsuba.dev.
+Deploy to your Vercel project at your production domain.
 A merge to `main` deploys production; `vercel-build` runs
 `prisma migrate deploy` first, and a failed migration fails the build.
 PRs get preview deployments. Changing Vercel settings, env or Neon is the

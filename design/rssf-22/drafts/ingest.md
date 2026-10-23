@@ -5,8 +5,7 @@ below was measured on 2026-10-22 from a local machine with curl, Node's
 fetch (undici) and Deno, using our UA `rssify/1.0
 (+https://github.com/IKatsuba/rssify)` and our feed-preferring `Accept`
 unless a row says otherwise. Nothing ran against Vercel, Neon or a queue;
-no token was used. Excerpts of the pages the plugins read are in
-`drafts/ingest/` (each names its source URL and capture date).
+no token was used.
 
 ## 0. The answer in one table
 
@@ -96,7 +95,6 @@ Dates that are bare calendar days are read as UTC midnight.
 - List `https://www.anthropic.com/engineering` → 200, 55 KB, server-rendered
   (Next.js, Cloudflare, `s-maxage=300`). **24 `article` elements**, each
   with `time` (text only, e.g. `Apr 8, 2026`, no `datetime`) and `h3 a`.
-  Excerpt: `drafts/ingest/anthropic-engineering-cards.html`.
 - **The posts now live under `/research/…`**, not `/engineering/…`
   (e.g. `/research/managed-agents`). A selector on `/engineering/` would
   match nothing. Rule: every `article`'s `h3 a[href]`, same origin.
@@ -116,7 +114,6 @@ Dates that are bare calendar days are read as UTC midnight.
   card list: a featured grid (`FeaturedGrid-…__tileLink`, 3–4 items) and a
   table (`TableView-…__title-link`, ~18 rows), with topic links
   (`TopicLink-…`) to `/news/announcements`, `/news/policy`, etc. mixed in.
-  Excerpt: `drafts/ingest/anthropic-news-rows.html`.
 - **Model launches link outside `/news/`**: the featured tiles
   "Introducing Claude Opus 5.5" etc. go to `/claude-opus-5-5`, whose page
   has `og:type=website` and **no** `article:published_time`.
@@ -144,7 +141,7 @@ Dates that are bare calendar days are read as UTC midnight.
 - List `https://bytes.dev/archives` → 200, 63 KB, Vercel, weak `ETag`.
   **531 links** `a[href^="/archives/"]`, newest first; each card holds
   date `MM/DD/YYYY` (e.g. `10/20/2026`), "Issue 531", the title and an
-  image. Excerpt: `drafts/ingest/bytes-archive-cards.html`. The first card
+  image. The first card
   sits in a "Latest Issue" section; the rest in `li`. Rule:
   `a[href^="/archives/"]` with a numeric path, de-duplicated.
 - The `MM/DD/YYYY` order is confirmed by the issue page, which prints
@@ -169,7 +166,7 @@ Dates that are bare calendar days are read as UTC midnight.
 - Notes page `/en-US/firefox/158.0/releasenotes/` → 200: `.c-release-version`
   `158.0`, `.c-release-date` `October 13, 2026`, notes in `.c-release-notes`
   (19 KB of HTML for a major, 4 KB for a dot release). These are plain BEM
-  names. Excerpt: `drafts/ingest/firefox-notes-header.html`.
+  names.
 - Entry: title `Firefox <version>`; date `.c-release-date`; content
   `.c-release-notes`; summary its first 300 characters (normal
   normalisation). Document order is not date order; `storeEntries` sorts
@@ -202,13 +199,12 @@ Measured, unauthenticated, our UA:
 | `…/discussions/categories/nope.atom` (unknown category) | 200 | a valid feed with **0 entries** |
 | `…/discussions.atom?discussions_q=is%3Aopen` | 200 | **query ignored**: same entries as without it |
 | `…/categories/ideas.atom?discussions_q=is%3Aunanswered` | **302** to the HTML page | not a feed |
-| `github.com/IKatsuba/rssify/discussions.atom` (discussions off) | 404 | |
 | missing owner/repo | 404 | |
 
 - Entries: `<id>tag:github.com,2008:9397061</id>` (stable per
   discussion), `<link>` the discussion URL, `<published>` creation time,
   `<updated>` last activity, `<author>`, `<content type="html">` the
-  rendered body. Excerpt: `drafts/ingest/github-discussions-category.atom.head`.
+  rendered body.
 - **Order is by last activity, not creation**: next.js `ideas` listed a
   discussion published 2024-12-23 second, because it was updated
   2026-10-21. With first-version-wins and `sortAt = publishedAt`, an old
@@ -274,8 +270,7 @@ activity first, rendered HTML) with one GET and no budget of its own.
 - `https://github.com/trending/javascript?since=monthly` → 200
   `text/html`, 51 KB, server-rendered. Rows: `article.Box-row` (17 for
   JS monthly; 19 TS monthly, 9 all-languages daily, 10 C++ weekly, 13
-  Python daily zh; GitHub returns up to 25). Per row (excerpt
-  `drafts/ingest/github-trending-row.html`):
+  Python daily zh; GitHub returns up to 25). Per row:
 
   | Field | Selector | Example |
   | --- | --- | --- |
@@ -439,8 +434,10 @@ Alternatives that exist:
 
 ## 8. Test plan (ingest's part)
 
-Fixtures under `test/fixtures/`, cut from the excerpts in
-`drafts/ingest/` plus the full captures the ship team takes once:
+Fixtures under `test/fixtures/` are synthetic, hand-written with invented
+content and example domains, keeping only the structure the code reads.
+Retain plugin canonical hosts only where a test needs them; never save live
+pages. Each README is one line saying it is synthetic:
 
 - Each plugin: list fixture → expected post URLs in order; post fixture →
   expected entry; list with 0 links → "the page layout changed"; a 404 post
