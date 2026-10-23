@@ -118,7 +118,7 @@ describe("Firefox tester regressions", () => {
     })
   })
 
-  test("saved archive takes ten releases then an all-known run requests only the list", async () => {
+  test("synthetic archive takes ten releases then an all-known run requests only the list", async () => {
     const calls: string[] = []
     const fetch: SafeFetch = async (url) => {
       calls.push(url)
