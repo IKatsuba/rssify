@@ -308,15 +308,15 @@ describe("anthropicNews", () => {
     expect(listed).toHaveLength(24)
     expect(listed.slice(0, 6)).toEqual([
       `${ORIGIN}/claude-opus-5-5`,
-      news("public-benefit-fund"),
+      news("community-garden-fund"),
       news("cyber-verification-program"),
-      `${ORIGIN}/claude-haiku-5-5`,
-      `${ORIGIN}/claude-sonnet-5-5`,
-      news("christopher-stubbs-joins-long-term-benefit-trust"),
+      `${ORIGIN}/sample-kite-2`,
+      `${ORIGIN}/sample-boat-3`,
+      news("new-gardener-joins"),
     ])
     expect(listed).toContain(`${ORIGIN}/features/ebola-response`)
-    expect(listed).toContain(`${ORIGIN}/claude-fable-and-mythos-5-1`)
-    expect(listed.at(-1)).toBe(news("wellbeing-research-grants"))
+    expect(listed).toContain(`${ORIGIN}/sample-lamp-and-lantern-1`)
+    expect(listed.at(-1)).toBe(news("orchard-research-grants"))
     expect(new Set(listed).size).toBe(listed.length)
     for (const topic of ["announcements", "policy", "product"]) {
       expect(listed).not.toContain(news(topic))
@@ -341,38 +341,40 @@ describe("anthropicNews", () => {
 
     expect(byUrl[post]).toMatchObject({
       guid: post,
-      title: "Expanding the Cyber Verification Program",
+      title: "Expanding the tide watch",
       publishedAt: new Date("2026-10-06T00:00:00.000Z"),
     })
-    expect(byUrl[post].summary).toStartWith("We’re launching a new, expanded")
-    expect(byUrl[post].contentHtml).toContain(
-      "launching a new, expanded version of our Cyber Verification Program"
+    expect(byUrl[post].summary).toStartWith(
+      "We’re launching a new, expanded tide watch"
     )
     expect(byUrl[post].contentHtml).toContain(
-      "Full details on each tier can be found in our"
+      "launching a new, expanded version of our tide watch"
+    )
+    expect(byUrl[post].contentHtml).toContain(
+      "Full details on each shift can be found in our"
     )
 
     // No published time: the list tile's date.
     expect(byUrl[launch]).toMatchObject({
-      title: "Introducing Claude Opus 5.5",
+      title: "Introducing the Sample Lamp 5.5",
       publishedAt: new Date("2026-09-22T00:00:00.000Z"),
     })
     expect(byUrl[launch].contentHtml).toContain(
-      "the first model in our new Claude 5.5 family"
+      "the first lamp in our new invented 5.5 range"
     )
-    expect(byUrl[launch].contentHtml).toContain("migration guide for details.")
+    expect(byUrl[launch].contentHtml).toContain("wick guide for details.")
 
     // No body and no published time: summary only, dated by its row.
     expect(byUrl[feature]).toMatchObject({
-      title: "The Situation Report",
+      title: "The Weather Report",
       publishedAt: new Date("2026-09-21T00:00:00.000Z"),
     })
-    expect(byUrl[feature].summary).toStartWith("A rare Ebola strain")
+    expect(byUrl[feature].summary).toStartWith("A rare autumn storm")
     expect(byUrl[feature].contentHtml).toBe(byUrl[feature].summary)
 
     for (const entry of entries) {
-      expect(entry.contentHtml).not.toContain("Try Claude")
-      expect(entry.contentHtml).not.toContain("Terms and policies")
+      expect(entry.contentHtml).not.toContain("Try the sample app")
+      expect(entry.contentHtml).not.toContain("Invented terms and notices")
       expect(entry.contentHtml).not.toContain("<script")
     }
   })
