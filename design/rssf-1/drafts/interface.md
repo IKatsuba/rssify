@@ -9,21 +9,8 @@ flagged in the closing lists.
 
 ## 0. How the screens were made, and what the preset is
 
-The captures under `drafts/interface/` are real renders. The shadcn/ui
-components come from the owner's preset, and the screens are made of mock
-data in a throwaway app outside the repository:
-
-- The app is `/tmp/rss1-ui/app`, made with
-  `bunx --bun shadcn@latest init --preset b1D0dxmC --template next --pointer`,
-  and the components were added with `shadcn add`. Nothing was written to
-  the repository but the PNGs and this file.
-- The dev server ran on port 3917 and was stopped afterwards. The captures
-  were taken by puppeteer-core 24 driving local Chrome, from a Deno script.
-  Chrome's own `--headless --window-size` cannot go narrower than 500 px,
-  so the phone captures use viewport emulation at 390×844.
-- The mock source was not committed, so the PNGs are the record. Mark-up
-  details in this file (class names, props) come from that mock and were
-  checked by `tsc`.
+The screens use shadcn/ui preset `b1D0dxmC`. Mark-up details in this file
+(class names, props) were checked with mock data and `tsc`.
 
 What the preset turned out to be (from the generated `components.json` and
 `package.json`):
@@ -69,12 +56,12 @@ renders the sidebar. A signed-out visit redirects to `/sign-in`.
 One `Card` holds the app name, one line under it, and one full-width
 `Button`. There is no sign-up form, no email field and no other provider.
 
-| State | When | Capture |
-| --- | --- | --- |
-| default | first visit, or after signing out | `desktop-signin.png`, `dark-signin.png` |
-| redirecting | after the button is pressed, until the browser leaves for vercel.com: the button is disabled and shows a `Spinner` | `desktop-signin-redirecting.png` |
-| registration closed | `?error=signup_disabled` | `desktop-signin-closed.png`, `phone-signin-closed.png` |
-| sign-in error | `?error=<anything else>`, for example `access_denied` when the person cancels on Vercel | `desktop-signin-error.png` |
+| State | When |
+| --- | --- |
+| default | first visit, or after signing out |
+| redirecting | after the button is pressed, until the browser leaves for vercel.com: the button is disabled and shows a `Spinner` |
+| registration closed | `?error=signup_disabled` |
+| sign-in error | `?error=<anything else>`, for example `access_denied` when the person cancels on Vercel |
 
 The button calls
 `authClient.signIn.social({ provider: 'vercel', callbackURL: '/', errorCallbackURL: '/sign-in' })`.
@@ -137,29 +124,27 @@ every width (§6), and it is the simplest one that also works on a phone.
   is set. There is no infinite scroll: paging stays server-rendered, and
   Back works.
 
-| State | Sentences | Capture |
-| --- | --- | --- |
-| entries, unread filter | as above | `desktop-reader.png`, `wide-reader.png`, `dark-reader.png`, `phone-reader.png`, `phone-dark-reader.png` |
-| entries, All filter (read rows muted) | | `desktop-reader-allfilter.png` |
-| one feed, with its menu open | | `desktop-feed-menu.png` |
-| **no feeds yet** | **No feeds yet** · "Add a feed by its URL, or start with one of the built-in sources." · [Add feed] | `desktop-reader-empty.png` |
-| loading (`loading.tsx`) | `Skeleton` rows and `SidebarMenuSkeleton`; no text | `desktop-reader-loading.png` |
-| **nothing unread** | **All caught up** · "Nothing unread. New entries show up here as your feeds update." · [Show all entries] | `desktop-reader-caughtup.png` |
-| a feed with nothing under the filter | **No unread entries** · "Older entries from this feed are still under All." | in `desktop-feed-failing.png` |
-| **feed just added, not fetched yet** | **Nothing here yet** · "We’re fetching this feed for the first time. Entries appear in a minute or two." · [Reload] | `desktop-feed-new.png` |
-| **failing feed** | an `Alert` above the list: **This feed isn’t updating** · "Last updated 6 days ago. The last try failed: {lastError}. We’ll keep trying." | `desktop-feed-failing.png`, `dark-feed-failing.png`, `phone-feed-failing.png` |
-| failing, never succeeded | **This feed isn’t updating** · "We haven’t been able to fetch it yet. The last try failed: {lastError}. We’ll keep trying." | (same layout) |
-| page error (`error.tsx`) | **Couldn’t load your feeds** · "Something went wrong on our side. Try again in a moment." · [Try again] (`reset()`) | `desktop-reader-error.png` |
-| unknown or unsubscribed feed (`not-found.tsx`) | **Feed not found** · "You aren’t subscribed to this feed." · [Back to All feeds] | (same `Empty` layout) |
+| State | Sentences |
+| --- | --- |
+| entries, unread filter | as above |
+| entries, All filter (read rows muted) |  |
+| one feed, with its menu open |  |
+| **no feeds yet** | **No feeds yet** · "Add a feed by its URL, or start with one of the built-in sources." · [Add feed] |
+| loading (`loading.tsx`) | `Skeleton` rows and `SidebarMenuSkeleton`; no text |
+| **nothing unread** | **All caught up** · "Nothing unread. New entries show up here as your feeds update." · [Show all entries] |
+| a feed with nothing under the filter | **No unread entries** · "Older entries from this feed are still under All." |
+| **feed just added, not fetched yet** | **Nothing here yet** · "We’re fetching this feed for the first time. Entries appear in a minute or two." · [Reload] |
+| **failing feed** | an `Alert` above the list: **This feed isn’t updating** · "Last updated 6 days ago. The last try failed: {lastError}. We’ll keep trying." |
+| failing, never succeeded | **This feed isn’t updating** · "We haven’t been able to fetch it yet. The last try failed: {lastError}. We’ll keep trying." |
+| page error (`error.tsx`) | **Couldn’t load your feeds** · "Something went wrong on our side. Try again in a moment." · [Try again] (`reset()`) |
+| unknown or unsubscribed feed (`not-found.tsx`) | **Feed not found** · "You aren’t subscribed to this feed." · [Back to All feeds] |
 
 Notes:
 
 - The "failing" alert is the shadcn `Alert` in its default variant, with
   no red. Red (`destructive`) is kept for errors on the person's own
   actions.
-- The capture says "once a day" in the alert. The design sentence drops
-  the period, because ingest owns the backoff and the UI should not
-  promise a schedule.
+- The alert promises no schedule, because ingest owns the backoff.
 - "Failing" is state's `failing` (`failureCount >= 3`). The UI shows
   `lastError` as it is, so ingest must keep it short and readable (e.g.
   "the site answered 404 Not Found", "the response wasn’t a feed"). The
@@ -168,7 +153,7 @@ Notes:
   in the server render, no library). In the entry they are absolute
   ("Oct 21, 2026"). A `title` attribute on lists gives the absolute time.
 
-**Mark all as read** (`desktop-markall.png`) is an `AlertDialog`:
+**Mark all as read** is an `AlertDialog`:
 
 - **Mark 37 entries as read?** · "Everything unread in {All feeds | feed
   title} up to now. Entries that arrive later stay unread." · [Cancel]
@@ -179,7 +164,7 @@ Notes:
 - Afterwards a `sonner` toast says "Marked 37 entries as read". There is no
   undo.
 
-**Unsubscribe** (`desktop-feed-remove.png`) is an `AlertDialog`:
+**Unsubscribe** is an `AlertDialog`:
 
 - **Unsubscribe from {title}?** · "It leaves your sidebar, and its entries
   leave your lists. You can add it again later." · [Cancel] [Unsubscribe].
@@ -207,15 +192,12 @@ The body is an `<article>`:
 - the content is in a `prose` container (§5, owner question 1), at most
   65ch wide and centred.
 
-Captures: `desktop-entry.png`, `wide-entry.png`, `dark-entry.png`,
-`phone-entry.png`.
-
 | State | Sentences |
 | --- | --- |
 | content present | as above |
 | no content, summary only | the summary, then a `Button` [Read on {site}] |
 | neither | "This entry has no text. Read it on {site}." with the same button |
-| entry pruned or unknown (`not-found.tsx`) | **This entry is no longer kept** · "We keep the newest 500 entries of each feed, and this one is older." · [← Back to All feeds] (`dark-entry-gone.png`) |
+| entry pruned or unknown (`not-found.tsx`) | **This entry is no longer kept** · "We keep the newest 500 entries of each feed, and this one is older." · [← Back to All feeds] |
 | loading | `Skeleton` title and three lines |
 
 Opening an entry marks it read through a server action called from the
@@ -241,17 +223,17 @@ website’s address. We’ll find its feed." Under it:
   its own", and a [Subscribe] button, or a `Badge` "Subscribed" when the
   person already follows it.
 
-| State | Sentences | Capture |
-| --- | --- | --- |
-| default | as above | `desktop-add.png`, `dark-add.png`, `phone-add.png` |
-| adding | Input and button disabled; button: `Spinner` "Adding…" | `desktop-add-adding.png` |
-| several feeds found | "{host} has more than one feed. Pick one." with one `Item` per feed (title, URL, [Subscribe]) and [Back] | `desktop-add-choose.png` |
-| nothing found | `FieldError`: "We couldn’t find a feed at that address. Try the site’s feed URL directly." | `desktop-add-error.png` |
-| not a URL | `FieldError`: "That doesn’t look like a web address." | |
-| site unreachable or timed out | `FieldError`: "We couldn’t reach {host}. Check the address and try again." | |
-| blocked address (private or local, SSRF) | `FieldError`: "That address can’t be fetched from here." | |
-| already subscribed | the dialog closes and goes to the feed; toast "You already follow {title}." | |
-| added | the dialog closes and goes to `/feeds/[feedId]`; toast "Subscribed to {title}." The page shows "Nothing here yet" until the first poll lands. | |
+| State | Sentences |
+| --- | --- |
+| default | as above |
+| adding | Input and button disabled; button: `Spinner` "Adding…" |
+| several feeds found | "{host} has more than one feed. Pick one." with one `Item` per feed (title, URL, [Subscribe]) and [Back] |
+| nothing found | `FieldError`: "We couldn’t find a feed at that address. Try the site’s feed URL directly." |
+| not a URL | `FieldError`: "That doesn’t look like a web address." |
+| site unreachable or timed out | `FieldError`: "We couldn’t reach {host}. Check the address and try again." |
+| blocked address (private or local, SSRF) | `FieldError`: "That address can’t be fetched from here." |
+| already subscribed | the dialog closes and goes to the feed; toast "You already follow {title}." |
+| added | the dialog closes and goes to `/feeds/[feedId]`; toast "Subscribed to {title}." The page shows "Nothing here yet" until the first poll lands. |
 
 The error codes come from ingest's discovery (state passes them through
 as `422`). Ingest names them, and the UI keeps one sentence per code, with
@@ -270,14 +252,14 @@ Three `Card`s in one column:
 - **Keyboard shortcuts**: "Single-letter keys like J and K. Turn them off
   if they get in your way." · [Show shortcuts] [Turn off / Turn on].
 
-| State | Sentences | Capture |
-| --- | --- | --- |
-| keys listed | as above | `desktop-settings.png`, `dark-settings.png`, `phone-settings.png` (Created and Last used are hidden below 640 px) |
-| no keys | `Empty`: **No API keys** · "Create one when a reader app or a script needs to reach your feeds." · [+ Create API key] | `desktop-settings-empty.png` |
-| create | `Dialog` **Create API key** · "Name it after where you’ll use it, so you know which one to revoke later." · Field "Name" (required, 1–64 characters) · [Cancel] [Create] | `desktop-key-create.png` |
-| created, shown once | `Dialog` with no close button: **Copy your new key** · "This is the only time you’ll see it. If you lose it, revoke it and make another." An `InputGroup` holds the key read-only and a copy `InputGroupButton`, with the hint "Send it as the x-api-key header." · [Done]. After copying, the toast says "Key copied". | `desktop-key-created.png` |
-| revoke | `AlertDialog` **Revoke “{name}”?** · "Anything using this key stops working at once. This can’t be undone." · [Cancel] [Revoke key]; toast "Key revoked" | `desktop-key-revoke.png` |
-| create failed | toast "Couldn’t create the key. Try again." | |
+| State | Sentences |
+| --- | --- |
+| keys listed | as above; Created and Last used are hidden below 640 px |
+| no keys | `Empty`: **No API keys** · "Create one when a reader app or a script needs to reach your feeds." · [+ Create API key] |
+| create | `Dialog` **Create API key** · "Name it after where you’ll use it, so you know which one to revoke later." · Field "Name" (required, 1–64 characters) · [Cancel] [Create] |
+| created, shown once | `Dialog` with no close button: **Copy your new key** · "This is the only time you’ll see it. If you lose it, revoke it and make another." An `InputGroup` holds the key read-only and a copy `InputGroupButton`, with the hint "Send it as the x-api-key header." · [Done]. After copying, the toast says "Key copied". |
+| revoke | `AlertDialog` **Revoke “{name}”?** · "Anything using this key stops working at once. This can’t be undone." · [Cancel] [Revoke key]; toast "Key revoked" |
+| create failed | toast "Couldn’t create the key. Try again." |
 
 There is no expiry column: the create dialog sets no expiry, so every key
 would read "Never" (an answer to state's question 5). Expiring keys can
@@ -296,8 +278,6 @@ Kept to what state gives the admin, and nothing more:
 - **Delete** opens an `AlertDialog`: **Delete {email}?** · "Their
   subscriptions, read marks and API keys are deleted. Feeds others follow
   stay. This can’t be undone." · [Cancel] [Delete user].
-
-Captures: `dark-admin.png`, `dark-admin-delete.png`.
 
 There is no paging: at this scale a table of a few hundred rows is fine.
 If the owner wants no admin screen at all, this section and its build unit
@@ -356,7 +336,7 @@ shortcuts can be turned off or remapped. Hence the switch in §2.3.
 
 ### 2.2 How keys are shown
 
-- In the **shortcuts dialog** (`?`, `desktop-shortcuts.png`): a `Dialog`
+- In the **shortcuts dialog** (`?`): a `Dialog`
   with a two-column `Table` of label and `KbdGroup`/`Kbd`, the line "Enter
   also opens the selected entry, and Esc goes back to the list.", and
   [Turn shortcuts off].
@@ -505,8 +485,8 @@ These were added with
 
 The only classes put on top are for layout: widths, gaps, `max-sm:sr-only`,
 and `min-w-0` on `SidebarInset`. Without that last one, a long `<pre>` in
-an entry pushes the whole column wider than a phone; the first phone
-captures showed it. There is no colour, radius or type of our own.
+an entry pushes the whole column wider than a phone. There is no colour,
+radius or type of our own.
 
 Not covered by shadcn/ui:
 
@@ -540,18 +520,17 @@ in the UI moves.
 ## 6. Narrow (phone) layout
 
 - **Below 768 px**, the shadcn breakpoint: the sidebar becomes a `Sheet`,
-  opened by the `SidebarTrigger` in the header (`phone-reader-sidebar.png`).
+  opened by the `SidebarTrigger` in the header.
   Choosing a feed closes it (`setOpenMobile(false)` on navigation).
-- The **list** is full width with the same rows (`phone-reader.png`). In
+- The **list** is full width with the same rows. In
   the list header, Unread/All and ✓✓ stay, and the feed `…` menu stays.
 - The **entry** is full width. The header buttons are icon-only, with
-  labels kept for screen readers (`phone-entry.png`). Back is the ←
+  labels kept for screen readers. Back is the ←
   button, or the browser's own Back.
 - **Dialogs** are the shadcn `Dialog` as it comes: centred, near full
-  width (`phone-add.png`).
-- **Settings**: the API key table hides Created and Last used below 640 px
-  (`phone-settings.png`).
-- **Wide desktop** (`wide-reader.png`, `wide-entry.png`): the list is at
+  width.
+- **Settings**: the API key table hides Created and Last used below 640 px.
+- **Wide desktop**: the list is at
   most `max-w-3xl` and the article at most 65ch, both centred. There is no
   third pane.
 - There are no swipe gestures and no pull-to-refresh: the browser's own
@@ -626,14 +605,14 @@ The tests for these units are state's (§6). The UI part is:
 1. **Article typography.** Feed content is arbitrary HTML, and shadcn/ui
    has nothing that styles it. Options:
    - (a) `@tailwindcss/typography`, a new dev dependency: `prose
-     dark:prose-invert`, as in the captures. It adds no client JS.
+     dark:prose-invert`. It adds no client JS.
    - (b) About 30 lines of our own CSS for `article` elements.
    - (c) Leave it unstyled (Tailwind's reset leaves headings and lists
      flat, which reads badly).
 
    Recommended: (a).
 2. **Admin screen.** State gives the admin users and feeds lists plus
-   deleting a user (§1.6, two captures). Options: keep it, or have no admin
+   deleting a user (§1.6). Options: keep it, or have no admin
    screen in v1 (the admin is then only the person who can sign in while
    registration is closed). Recommended: keep it, since it is two tables.
 3. **Touch target size.** The preset's buttons are 28 px high, under the
@@ -692,30 +671,3 @@ The tests for these units are state's (§6). The UI part is:
    `{ id, feedId, feedTitle, title, summary, sortAt, read, url }`. Is
    `feedTitle` cheap to join there, or should the client map it from the
    sidebar data by `feedId`?
-
-## Capture index
-
-All are 1280×800 unless named `wide-` (1680×1000) or `phone-` (390×844).
-`dark-` is the dark theme.
-
-- Sign-in: `desktop-signin`, `desktop-signin-redirecting`,
-  `desktop-signin-closed`, `desktop-signin-error`, `phone-signin-closed`,
-  `dark-signin`.
-- Reader:
-  - lists: `desktop-reader`, `desktop-reader-allfilter`,
-    `desktop-reader-empty`, `desktop-reader-loading`,
-    `desktop-reader-caughtup`, `desktop-reader-error`;
-  - one feed: `desktop-feed-menu`, `desktop-feed-failing`,
-    `desktop-feed-new`, `desktop-feed-remove`, `desktop-markall`;
-  - wide, dark and phone: `wide-reader`, `dark-reader`,
-    `dark-feed-failing`, `phone-reader`, `phone-reader-sidebar`,
-    `phone-feed-failing`, `phone-dark-reader`.
-- Entry: `desktop-entry`, `wide-entry`, `dark-entry`, `phone-entry`,
-  `dark-entry-gone`.
-- Add a feed: `desktop-add`, `desktop-add-adding`, `desktop-add-choose`,
-  `desktop-add-error`, `dark-add`, `phone-add`.
-- Keys: `desktop-shortcuts`.
-- Settings: `desktop-settings`, `desktop-settings-empty`,
-  `desktop-key-create`, `desktop-key-created`, `desktop-key-revoke`,
-  `dark-settings`, `phone-settings`.
-- Admin: `dark-admin`, `dark-admin-delete`.

@@ -7,8 +7,8 @@ function.
 
 Everything below was read or measured on **2026-10-21**. Captures were taken
 locally into `/tmp` with a plain `fetch`/`curl` and are not committed (one file
-per member); the excerpts quoted here are the record, and §9 lists which of
-them the ship team should save as test fixtures.
+per member); the excerpts quoted here are the record, and §9 lists the
+structures synthetic test fixtures should model.
 
 ## Summary
 
@@ -655,7 +655,10 @@ All outbound requests (feeds, discovery, plugins) go through one
 | Site renders only in a browser | none today (§6) | not supported in v1; it shows as failing ("page layout changed") |
 
 **Fixtures to save in the repository** (ship team, under the test fixtures
-directory state picks). Fetch them again at build time; do not invent them.
+directory state picks). Hand-write synthetic fixtures with invented content
+and example domains, keeping only the structures below; never save live pages.
+Retain plugin canonical hosts only where needed and use a one-line README
+saying the fixtures are synthetic.
 
 - `claude.dev/rss.xml` (RSS 2.0, ETag)
 - `cursor.com/changelog/rss.xml` (RSS 2.0 with `content:encoded`)

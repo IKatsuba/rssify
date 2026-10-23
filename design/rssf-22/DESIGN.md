@@ -1,12 +1,12 @@
 # RSSF-22 design: sources for the rsshub-only feeds
 
-The merged design for the feeds the owner's katsuba.fm OPML read through a
+The merged design for an OPML of tech news feeds read through a
 private rsshub, and for the two feeds that answer 403. The owner's rule
 governs every choice: as simple as possible, nothing clever.
 
 The record stays in `drafts/`: `brief.md` (the task), `ingest.md` (what
-every site served on 2026-10-22, with excerpts in `drafts/ingest/`),
-`interface.md` (the dialog, titles, sentences, entries) and `state.md`
+every site served on 2026-10-22), `interface.md` (the dialog, titles,
+sentences, entries) and `state.md`
 (storage, guids, cadence, tests). Where this file and a draft disagree,
 this file wins. The drafts were written in parallel: state and interface
 assumed a GitHub API path that ingest's measurements removed, and the
@@ -131,11 +131,11 @@ cut down).
 - **Node.js** items have no description: the entry shows the no-text state
   with Open original. That is what the site serves.
 
-### 2.4 Captures (taken by the ship units, not this team)
+### 2.4 Screen checks for the ship units
 
-| Unit | Captures |
+| Unit | Check |
 | --- | --- |
-| 2 | The dialog with eight sources (desktop, phone with the list scrolled, dark), replacing v1's `desktop-add.png`, `phone-add.png` and `dark-add.png` |
+| 2 | The dialog with eight sources (desktop, phone with the list scrolled, dark) |
 | 4 | A trending feed's list and one entry, desktop and phone |
 | 5–7 | Each plugin site's list and one entry |
 
@@ -383,10 +383,11 @@ reaches github.com, anthropic.com, bytes.dev, firefox.com, nodejs.org or
 langchain.com.** Fakes go through the existing `fetch: SafeFetch` and
 `plugins` seams and record each `(url, options)`.
 
-**Fixtures** are saved from real responses by each ship unit, scrubbed of
-cookies, under `test/fixtures/<source>/`, with a README naming the capture
-date. The excerpts in `drafts/ingest/` are not enough (critic 8); each
-unit captures complete pages:
+**Fixtures** under `test/fixtures/<source>/` are synthetic, hand-written
+with invented content and example domains, keeping only the structure the
+code reads. Retain plugin canonical hosts only where a test needs them;
+never save live pages. Each README is one line saying it is synthetic.
+Cover these structures:
 
 | Source | Pages |
 | --- | --- |
@@ -431,7 +432,7 @@ it changes.
    - `cursor-blog` moves onto `canonical`, with its behaviour unchanged
      and its tests kept.
 2. **Native built-ins.** `nodejs-blog` and `langchain-blog` in
-   `builtinSources`, the scrolling source list, and the dialog captures.
+   `builtinSources`, the scrolling source list, and the dialog screen checks.
 3. **The list-and-posts helper.** `sources/list-posts.ts` with the
    30-link bound, stop-on-abort and the all-failed rule. `cursor-blog`
    moves onto it, with the deliberate all-failed change tested.
@@ -521,7 +522,7 @@ discussions became moot when the owner dropped them.
 | 5 | The deadline doesn't bound the run | Accepted: stop-on-abort, 20 s reserved, per-run cost named (§5.3) |
 | 6 | Starvation and re-fetching pruned history | Accepted: only the first 30 links; starvation bounded and accepted (§5.3) |
 | 7 | Atom is 25 by activity, not 100 by creation | Moot: discussions dropped |
-| 8 | Body selectors unproven | Accepted: complete-page fixtures, a body-coverage assertion, and a missing body is summary-only (§5.3, §9) |
+| 8 | Body selectors unproven | Accepted: synthetic, hand-written fixtures with invented content and example domains, a body-coverage assertion, and a missing body is summary-only (§5.3, §9) |
 | 9 | 403 doesn't honour `Retry-After` | Accepted: today's rule documented and tested, not changed |
 | 10 | The 403 cause is overstated | Accepted: reworded in §11.4 |
 | 11 | Rank order is not preserved | Accepted: no rank promise |

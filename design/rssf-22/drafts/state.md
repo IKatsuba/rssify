@@ -263,8 +263,10 @@ site.
 
 ### Fixtures (`test/fixtures/github/`, `test/fixtures/<site>/`)
 
-Saved from real responses by the ship team, not invented, and scrubbed of
-any token or cookie:
+Synthetic, hand-written with invented content and example domains, keeping
+only the structure the code reads. Retain plugin canonical hosts only where
+a test needs them; never save live pages. Each README is one line saying it
+is synthetic:
 
 - Trending HTML: `javascript?since=monthly`, `typescript?since=monthly`,
   one language with an empty list.
@@ -272,9 +274,7 @@ any token or cookie:
   filter, a repo with discussions disabled, a missing repo (GraphQL
   `NOT_FOUND` or REST 404), a rate-limited answer (status, headers
   `x-ratelimit-remaining: 0`, `x-ratelimit-reset`), a 401. API fixtures
-  need a token to capture: the owner captures them locally, or the ship
-  team builds them from GitHub's documented schema and says so in the
-  fixture README.
+  follow GitHub's documented schema and need no token.
 - Site fixtures for any scraped site per ingest, as `cursor-blog/`.
 
 ### Cases per unit

@@ -12,9 +12,8 @@ simple as possible, nothing clever.
 The record behind it stays in `drafts/`: `brief.md` (the task and the
 owner's settled answers), `ingest.md` (measurements, library comparisons,
 fixtures), `state.md` (schema sources, races), `interface.md` (screens,
-keys, sentences) and the captures in `drafts/interface/`. Where this file
-and a draft disagree, this file wins. Versions and doc citations are in the
-drafts and were checked on 2026-10-21.
+keys, sentences). Where this file and a draft disagree, this file wins.
+Versions and doc citations are in the drafts and were checked on 2026-10-21.
 
 Contents: 1 What a person sees · 2 Screens and states · 3 Keys ·
 4 Sentences · 5 Routes, server actions, API · 6 Cron, queue, ingest ·
@@ -52,11 +51,10 @@ output (dropped, owner answer O2), read-only API keys.
 
 ## 2. Screens and their states
 
-All captures are real renders of the owner's preset (`b1D0dxmC`:
-`base-mira` style on Base UI, neutral monochrome, lucide, Geist) with mock
-data, in `drafts/interface/`. 1280×800 unless `wide-` (1680×1000) or
-`phone-` (390×844); `dark-` is the dark theme. The preset composes with the
-`render` prop, not `asChild`.
+The preset (`b1D0dxmC`) uses `base-mira` style on Base UI, neutral
+monochrome, lucide and Geist. It composes with the `render` prop, not
+`asChild`. Layouts cover desktop (1280×800), wide desktop (1680×1000),
+phone (390×844), and light and dark themes.
 
 Layout everywhere: shadcn `Sidebar` + `SidebarInset`; the main column shows
 the list **or** the entry, never both, at every width. Below 768 px the
@@ -68,15 +66,12 @@ One `Card`: "rssify", one line, one full-width "Sign in with Vercel"
 `Button` (Vercel logomark SVG inline, `currentColor`). No sign-up form, no
 email field.
 
-| State | When | Capture |
-| --- | --- | --- |
-| default | first visit, after sign-out | `desktop-signin.png`, `dark-signin.png` |
-| redirecting | button pressed; disabled with `Spinner` | `desktop-signin-redirecting.png` |
-| registration closed | `?error=signup_disabled` | `desktop-signin-closed.png`, `phone-signin-closed.png` |
-| sign-in error | any other `?error=` (e.g. `access_denied`) | `desktop-signin-error.png` |
-
-![sign-in](drafts/interface/desktop-signin.png)
-![registration closed](drafts/interface/desktop-signin-closed.png)
+| State | When |
+| --- | --- |
+| default | first visit, after sign-out |
+| redirecting | button pressed; disabled with `Spinner` |
+| registration closed | `?error=signup_disabled` |
+| sign-in error | any other `?error=` (e.g. `access_denied`) |
 
 ### 2.2 The reader (`/`, `/feeds/[feedId]`)
 
@@ -96,25 +91,21 @@ Rows: an `Item` link with "Feed · 2h", the title (muted when read), a
 two-line summary. 50 per page; **Older entries** / **Newer entries** links
 with `?cursor=`. No infinite scroll.
 
-| State | Capture |
+| State | Display |
 | --- | --- |
-| entries, unread | `desktop-reader.png`, `wide-reader.png`, `dark-reader.png`, `phone-reader.png`, `phone-dark-reader.png`, `phone-reader-sidebar.png` |
-| entries, All (read rows muted) | `desktop-reader-allfilter.png` |
-| one feed, menu open | `desktop-feed-menu.png` |
-| no feeds yet | `desktop-reader-empty.png` |
-| loading (`loading.tsx`) | `desktop-reader-loading.png` |
-| all caught up | `desktop-reader-caughtup.png` |
-| feed has no entries | `desktop-feed-new.png` (sentence changed, §4) |
-| failing feed (`Alert`, default variant, no red) | `desktop-feed-failing.png`, `dark-feed-failing.png`, `phone-feed-failing.png` |
-| gone feed | same layout as failing, its own sentence (§4) |
-| page error (`error.tsx`) | `desktop-reader-error.png` |
+| entries, unread | Unread entries across feeds or in the selected feed |
+| entries, All (read rows muted) | All entries, read rows muted |
+| one feed, menu open | Open website, Copy feed URL, Mark all as read, Unsubscribe… |
+| no feeds yet | Empty state with Add feed (§4) |
+| loading (`loading.tsx`) | `Skeleton` rows |
+| all caught up | Empty state with Show all entries (§4) |
+| feed has no entries | Empty state (§4) |
+| failing feed (`Alert`, default variant, no red) | Last success and last error (§4) |
+| gone feed | Same layout as failing, its own sentence (§4) |
+| page error (`error.tsx`) | Error with Try again (§4) |
 | unknown / unsubscribed feed (`not-found.tsx`) | `Empty` layout |
-| mark all read confirm | `desktop-markall.png` |
-| unsubscribe confirm | `desktop-feed-remove.png` |
-
-![reader](drafts/interface/desktop-reader.png)
-![failing feed](drafts/interface/desktop-feed-failing.png)
-![phone reader](drafts/interface/phone-reader.png)
+| mark all read confirm | `AlertDialog` (§4) |
+| unsubscribe confirm | `AlertDialog` (§4) |
 
 ### 2.3 An entry (`/entries/[entryId]?feed=&filter=`)
 
@@ -125,11 +116,11 @@ disabled when the entry has no valid `url`). Below 640 px icon-only with
 `sr-only` labels. Body: `<article>`, meta line, `h1`, content in a `prose`
 container (`@tailwindcss/typography`, owner answer O5) at most 65ch.
 
-| State | Capture |
+| State | Display |
 | --- | --- |
-| content | `desktop-entry.png`, `wide-entry.png`, `dark-entry.png`, `phone-entry.png` |
-| summary only / nothing | the summary or "This entry has no text", then [Read on {site}] when `url` exists |
-| pruned or unknown | `dark-entry-gone.png` |
+| content | Article body |
+| summary only / nothing | The summary or "This entry has no text", then [Read on {site}] when `url` exists |
+| pruned or unknown | Not-found state (§4) |
 | loading | `Skeleton` |
 
 Opening marks read through a server action called from the client after
@@ -137,25 +128,22 @@ mount, never during the server render; entry links use `prefetch={false}`.
 If the person toggles with `m` before that call returns, the client chains
 the calls (one promise queue per entry) so the last intent wins.
 
-![entry](drafts/interface/desktop-entry.png)
-
 ### 2.4 Add a feed (dialog, from `+`, the empty state, or `a`)
 
 `Dialog` **Add a feed**: a `Field` "URL" + **Add**; a `FieldSeparator` "or
 pick a built-in source"; one `Item` per built-in source with [Subscribe]
 or a "Subscribed" `Badge`.
 
-| State | Capture |
+| State | Display |
 | --- | --- |
-| default | `desktop-add.png`, `dark-add.png`, `phone-add.png` |
-| adding (input and button disabled, "Adding…") | `desktop-add-adding.png` |
-| several feeds found → pick one | `desktop-add-choose.png` |
-| error under the field (`FieldError`) | `desktop-add-error.png` |
-| added / already subscribed | dialog closes, goes to `/feeds/[feedId]`, toast |
+| default | URL field and built-in sources |
+| adding | Input and button disabled, "Adding…" |
+| several feeds found | Pick one feed |
+| error under the field | `FieldError` |
+| added / already subscribed | Dialog closes, goes to `/feeds/[feedId]`, toast |
 
 The Claude Code item reads "claude.dev — the Claude Code blog's own feed"
-(owner answer O1; the capture's "claude.com/blog — no feed of its own"
-is superseded). The Cursor item reads "cursor.com/blog — no feed of its
+(owner answer O1). The Cursor item reads "cursor.com/blog — no feed of its
 own".
 
 ### 2.5 Settings (`/settings`)
@@ -164,18 +152,18 @@ Three `Card`s: **Account** (email, Sign out); **API keys** (`Table`: Name,
 Key `start…` monospace, Created, Last used; [Revoke]; [+ Create API key]);
 **Keyboard shortcuts** (Show, Turn off/on).
 
-| State | Capture |
+| State | Display |
 | --- | --- |
-| keys listed | `desktop-settings.png`, `dark-settings.png`, `phone-settings.png` |
-| no keys | `desktop-settings-empty.png` |
-| create (name, 1–64 chars) | `desktop-key-create.png` |
-| created, shown once, copy | `desktop-key-created.png` |
-| revoke confirm | `desktop-key-revoke.png` |
-| shortcuts dialog | `desktop-shortcuts.png` |
+| keys listed | API keys table |
+| no keys | Empty state with Create API key (§4) |
+| create | Name field, 1–64 characters |
+| created, shown once | Copy key dialog (§4) |
+| revoke confirm | `AlertDialog` (§4) |
+| shortcuts dialog | Keys and their actions (§3) |
 
 Keys have no expiry in v1, so there is no expiry column. A fourth card,
-**Connected apps**, lists MCP clients with [Disconnect] (§5.5; no
-capture: the same `Card` + `Table` + `AlertDialog` as API keys). The
+**Connected apps**, lists MCP clients with [Disconnect] (§5.5; the
+same `Card` + `Table` + `AlertDialog` as API keys). The
 consent screen `/consent` is one `Card` like sign-in (§5.5).
 
 ### 2.6 Admin (`/admin`, admin only, 404 for others, no link for others)
@@ -183,7 +171,7 @@ consent screen `/consent` is one `Card` like sign-in (§5.5).
 **Users** `Table` (Email, "you" badge, Joined, Feeds, [Delete]; not on own
 row) with the line about `REGISTRATION_ENABLED`; **Feeds** `Table` (URL,
 Subscribers, Status, Failures, Last error, Last success; failing first).
-Captures: `dark-admin.png`, `dark-admin-delete.png`. No paging.
+No paging.
 
 ### 2.7 shadcn/ui components, as they come
 
@@ -1360,8 +1348,8 @@ imports out of `lib/` (or alias in `bunfig.toml`).
 - **No test touches Neon, Vercel, the queue or the internet.** Two kinds:
   offline fixture tests (bytes in, entries out) and local-network tests
   (sockets on 127.0.0.1 only, for safe-fetch).
-- **Fixtures**: saved from the real feeds listed in `drafts/ingest.md` §9
-  (re-fetched by the ship team, not invented), plus hostile-HTML,
+- **Fixtures**: synthetic, hand-written with invented content and example
+  domains, keeping only the structure the code reads, plus hostile-HTML,
   `javascript:`-link, null-link, `content_text` with `<tag>`, and truncated
   copies.
 

@@ -133,11 +133,11 @@ considered and the one chosen, and lists any question that is the owner's.
 8. Fetch hygiene: timeouts, user agent, response size cap, redirects,
    SSRF (a user-supplied URL fetched from our function).
 
-### interface (`drafts/interface.md`, `drafts/interface/`)
+### interface (`drafts/interface.md`)
 
-1. The screens, as artboards or captures under `drafts/interface/`
-   (sign-in, sign-up when on, the reader, add feed, feed settings/remove,
-   API keys, admin if any), each with its states: empty, loading, error,
+1. Describe the screens (sign-in, sign-up when on, the reader, add feed,
+   feed settings/remove, API keys, admin if any), each with its states:
+   empty, loading, error,
    a failing feed, registration off.
 2. The keys (j/k, o/enter, m, shift+a, r, ?, …) and how they are shown.
 3. The sentences: every label, empty state, error and confirmation text.
