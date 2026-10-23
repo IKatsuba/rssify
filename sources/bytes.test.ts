@@ -107,12 +107,14 @@ describe("bytes", () => {
     expect(latest).toMatchObject({
       guid: issue(531),
       url: issue(531),
-      title: "Bytes #531 - A TypeScript Compiler Journey from Hell",
+      title: "Bytes #531 - A Journey Through the Sock Drawer",
       publishedAt: new Date("2026-10-20T00:00:00.000Z"),
     })
-    expect(latest.summary).toStartWith("This thing called math")
+    expect(latest.summary).toStartWith(
+      "Folding socks, a review of invented drawers"
+    )
     expect(latest.contentHtml).toContain("Today’s issue:")
-    expect(latest.contentHtml).toContain("doesn’t mutate the original array")
+    expect(latest.contentHtml).toContain("doesn’t mutate the original pile")
 
     // #400 is past the 30 candidates, so its own card from the saved
     // archive is the whole list; the site does not pad its date.
@@ -127,17 +129,19 @@ describe("bytes", () => {
     const [anniversary] = old.entries
     expect(anniversary).toMatchObject({
       guid: issue(400),
-      title: "Bytes #400 - React Native is pre-built different",
+      title: "Bytes #400 - Teapots, poured slowly",
       publishedAt: new Date("2025-06-12T00:00:00.000Z"),
     })
-    expect(anniversary.contentHtml).toContain("The haters told us")
     expect(anniversary.contentHtml).toContain(
-      "<code>Third</code>, <code>Second</code>."
+      "Four hundred issues about teapots"
+    )
+    expect(anniversary.contentHtml).toContain(
+      "<code>Gamma</code>, <code>Beta</code>."
     )
 
     for (const entry of [latest, anniversary]) {
       // Nav and footer are outside the body.
-      expect(entry.contentHtml).not.toContain("Learn React Query")
+      expect(entry.contentHtml).not.toContain("Learn Sample Knitting")
       expect(entry.contentHtml).not.toContain("Made with")
       expect(entry.contentHtml).not.toContain("<script")
     }
